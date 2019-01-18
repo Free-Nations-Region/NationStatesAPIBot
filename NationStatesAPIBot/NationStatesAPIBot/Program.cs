@@ -4,21 +4,28 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        static readonly string versionString = "v1.0";
+        public const string versionString = "v1.0";
         static bool running = true;
         static void Main(string[] args)
         {
-            Console.Title = $"NationStatesAPIBot {versionString}";
-            RequestManager.Initialize();
-            if (RequestManager.Initialized)
+            try
             {
-                Logger.Log(LogLevel.INFO, "Initialization successfull.");
-                Run();
+                Console.Title = $"NationStatesAPIBot {versionString}";
+                RequestManager.Initialize();
+                if (RequestManager.Initialized)
+                {
+                    Logger.Log(LogLevel.INFO, "Initialization successfull.");
+                    Run();
+                }
+                if (running)
+                {
+                    Console.WriteLine("Press any key to exit.");
+                    Console.ReadKey();
+                }
             }
-            if (running)
+            catch (Exception ex)
             {
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
+                Logger.Log(LogLevel.ERROR, ex.ToString());
             }
         }
 

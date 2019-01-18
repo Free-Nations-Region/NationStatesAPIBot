@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace NationStatesAPIBot
@@ -11,7 +13,7 @@ namespace NationStatesAPIBot
         static string telegramID;
         static string secretKey;
         static string contact;
-        static readonly string UserAgent;
+        static string UserAgent;
         public static void Initialize()
         {
             Logger.LogThreshold = (int)LogLevel.INFO;
@@ -41,6 +43,7 @@ namespace NationStatesAPIBot
                             Logger.LogThreshold = value;
                         }
                     }
+                    UserAgent = $"NationStatesAPIBot (https://github.com/drehtisch/NationStatesAPIBot) {Program.versionString} contact: {contact}";
                     return true;
                 }
                 else
@@ -53,8 +56,34 @@ namespace NationStatesAPIBot
             else
             {
                 Logger.Log(LogLevel.ERROR, $"File {path} not found.");
+                Console.Write("Create file now? (y/n)[n]");
+                if(Console.ReadKey().Key == ConsoleKey.Y)
+                {
+                    clientKey = GetValue("Enter your clientKey: ");
+                    telegramID = GetValue("Enter your telegramID: ");
+                    secretKey = GetValue("Enter your secretKey: ");
+                    contact = GetValue("Enter your contact: ");
+                    File.WriteAllText(path,
+                        $"clientKey={clientKey}{Environment.NewLine}" +
+                        $"telegramID={telegramID}{Environment.NewLine}" +
+                        $"secretKey={secretKey}{Environment.NewLine}" +
+                        $"contact={clientKey}{Environment.NewLine}");
+                }
                 return false;
             }
+        }
+
+        private static string GetValue(string description)
+        {
+            Console.Write(description);
+            var value = Console.ReadLine();
+            Console.WriteLine();
+            return value;
+        }
+
+        public static List<string> GetNewNations()
+        {
+            return new List<string>();
         }
     }
 }
