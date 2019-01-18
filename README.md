@@ -8,8 +8,7 @@ It will be extended as needed.
 
 It can be used for general purpose as well.
 
-If you want to add a feature or fix a bug or something like that send me pull request.
-Feature Requests via issues are accepted too.
+Feel free to contribute!
 
 # Usage - Command Reference
 
