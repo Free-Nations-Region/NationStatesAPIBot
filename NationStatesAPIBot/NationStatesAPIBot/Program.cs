@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace NationStatesAPIBot
 {
@@ -38,6 +39,7 @@ namespace NationStatesAPIBot
                 {
                     Evaluate(Console.ReadLine());
                 }
+                Thread.Sleep(25);
             }
         }
 
@@ -58,6 +60,14 @@ namespace NationStatesAPIBot
                 case "/quit":
                     running = false;
                     break;
+                case "/new":
+                    var nations = RequestManager.GetNewNations();
+                    foreach(string nation in nations)
+                    {
+                        Console.WriteLine(nation);
+                    }
+                    Logger.Log(LogLevel.INFO, "Done.");
+                    break;
                 default:
                     Logger.Log(LogLevel.ERROR, $"Unknown command '{line}'");
                     break;
@@ -69,6 +79,7 @@ namespace NationStatesAPIBot
             Console.WriteLine($"Available Commands in version {versionString}:");
             Console.WriteLine("/help, ? - Shows this help.");
             Console.WriteLine("/exit, /quit - Terminates this program.");
+            Console.WriteLine("/new - Fetches all new nations and prints them out.");
         }
     }
 }
