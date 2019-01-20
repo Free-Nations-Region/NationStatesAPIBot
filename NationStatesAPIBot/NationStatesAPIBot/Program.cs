@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace NationStatesAPIBot
@@ -32,9 +33,9 @@ namespace NationStatesAPIBot
 
         static void Run()
         {
+            Console.CancelKeyPress += Console_CancelKeyPress;
             while (running)
             {
-                Console.CancelKeyPress += Console_CancelKeyPress;
                 if (Console.KeyAvailable)
                 {
                     Evaluate(Console.ReadLine());
@@ -62,15 +63,26 @@ namespace NationStatesAPIBot
                     break;
                 case "/new":
                     var nations = RequestManager.GetNewNations();
-                    foreach(string nation in nations)
-                    {
-                        Console.WriteLine(nation);
-                    }
-                    Logger.Log(LogLevel.INFO, "Done.");
+                    PrintNations(nations);
                     break;
                 default:
                     Logger.Log(LogLevel.ERROR, $"Unknown command '{line}'");
                     break;
+            }
+        }
+
+        static void PrintNations(List<string> nations)
+        {
+            Logger.Log(LogLevel.INFO, "Done.");
+            Console.WriteLine($"{nations.Count} nations fetched.");
+            Console.Write("Do want to write them to console now? (y/n)[n]: ");
+            Console.WriteLine();
+            if (Console.ReadKey().Key == ConsoleKey.Y)
+            {
+                foreach (string nation in nations)
+                {
+                    Console.WriteLine(nation);
+                }
             }
         }
 
@@ -80,6 +92,7 @@ namespace NationStatesAPIBot
             Console.WriteLine("/help, ? - Shows this help.");
             Console.WriteLine("/exit, /quit - Terminates this program.");
             Console.WriteLine("/new - Fetches all new nations and prints them out.");
+            Console.WriteLine("/region <region> - Fetches all nations from specific region and prints them out.");
         }
     }
 }
