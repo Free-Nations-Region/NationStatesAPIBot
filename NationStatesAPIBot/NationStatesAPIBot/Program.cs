@@ -124,6 +124,10 @@ namespace NationStatesAPIBot
                     result.Add(nation);
                 }
             }
+            if (result.Count > 0)
+            {
+                WriteNationsToFile(nations, $"{regionName}_initial", true, false);
+            }
             return result;
         }
 
