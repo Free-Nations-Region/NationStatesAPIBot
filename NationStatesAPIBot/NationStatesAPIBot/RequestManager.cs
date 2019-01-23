@@ -134,5 +134,39 @@ namespace NationStatesAPIBot
                 return new List<string>();
             }
         }
+
+        public static List<string> GetNationsOfRegion(string region)
+        {
+            if (Initialized)
+            {
+                Logger.Log(LogLevel.INFO, $"Fetching nations of region {region}. This may take a while.");
+                while (DateTime.Now.Ticks - lastAPIRequest.Ticks < apiDelay) { }
+
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"http://www.nationstates.net/cgi-bin/api.cgi?region={region}&v={apiVersion}");
+                request.Method = "GET";
+                request.UserAgent = UserAgent;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Stream responseStream = response.GetResponseStream();
+
+                lastAPIRequest = DateTime.Now;
+
+                XmlDocument newNationsXML = new XmlDocument();
+                newNationsXML.Load(responseStream);
+
+                XmlNodeList newNationsXMLNodes = newNationsXML.GetElementsByTagName("NATIONS");
+
+                List<String> newNations = newNationsXMLNodes[0].InnerText.Split(':').ToList();
+                for (int i = 0; i < newNations.Count; i++)
+                {
+                    newNations[i] = ToNationID(newNations[i]);
+                }
+                return newNations;
+            }
+            else
+            {
+                Logger.Log(LogLevel.WARN, "Ignoring GetNationsOfRegion because of RequestManager not intialized yet.");
+                return new List<string>();
+            }
+        }
     }
 }
