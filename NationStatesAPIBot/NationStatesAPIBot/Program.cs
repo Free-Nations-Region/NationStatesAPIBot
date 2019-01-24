@@ -25,7 +25,7 @@ namespace NationStatesAPIBot
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.ERROR, ex.ToString());
-               
+
             }
             if (running)
             {
@@ -85,7 +85,7 @@ namespace NationStatesAPIBot
                         WriteNationsToFile(nations, $"{region_name}_initial", false, false);
                         var matched = MatchNations(nations, region_name);
                         PrintNations(matched);
-                        WriteNationsToFile(nations, "pending", false, true);
+                        WriteNationsToFile(matched, "pending", false, true);
                         break;
                     }
                     else
@@ -93,22 +93,19 @@ namespace NationStatesAPIBot
                         Logger.Log(LogLevel.ERROR, $"Unknown command '{line}'");
                         break;
                     }
-                    
+
             }
         }
 
         static void WriteNationsToFile(List<string> nations, string fileName, bool overwrite, bool append)
         {
-            if (!File.Exists(fileName) || overwrite)
+            if (!append || (File.Exists(fileName) && overwrite))
             {
-                if (!append)
-                {
-                    File.WriteAllLines(fileName, nations);
-                }
-                else
-                {
-                    File.AppendAllLines(fileName, nations);
-                }
+                File.WriteAllLines(fileName, nations);
+            }
+            else
+            {
+                File.AppendAllLines(fileName, nations);
             }
         }
 
@@ -117,7 +114,7 @@ namespace NationStatesAPIBot
             List<string> result = new List<string>();
             var preNations = File.ReadAllLines($"{regionName}_initial").ToList();
             preNations.Remove("");
-            foreach(string nation in nations)
+            foreach (string nation in nations)
             {
                 if (!preNations.Contains(nation))
                 {
