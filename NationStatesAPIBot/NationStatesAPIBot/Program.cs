@@ -65,27 +65,23 @@ namespace NationStatesAPIBot
                     running = false;
                     break;
                 case "/new":
-                    var nations = RequestManager.GetNewNations();
+                    AddNewNationsToPending(out List<string> nations);
                     PrintNations(nations);
-                    WriteNationsToFile(nations, "pending", false, true);
                     break;
                 default:
                     if (line.StartsWith("/region"))
                     {
                         var region_name = line.Substring("/region ".Length);
                         nations = RequestManager.GetNationsOfRegion(region_name);
-                        PrintNations(nations);
                         WriteNationsToFile(nations, $"{region_name}_initial", false, false);
+                        PrintNations(nations);
                         break;
                     }
                     else if (line.StartsWith("/new-in-region"))
                     {
                         var region_name = line.Substring("/new-in-region ".Length);
-                        nations = RequestManager.GetNationsOfRegion(region_name);
-                        WriteNationsToFile(nations, $"{region_name}_initial", false, false);
-                        var matched = MatchNations(nations, region_name);
+                        AddNewNationsFromRegionToPending(region_name, out List<string> matched);
                         PrintNations(matched);
-                        WriteNationsToFile(matched, "pending", false, true);
                         break;
                     }
                     else
@@ -109,10 +105,25 @@ namespace NationStatesAPIBot
             }
         }
 
-        static List<string> MatchNations(List<string> nations, string regionName)
+        public static void AddNewNationsToPending(out List<string> nations)
+        {
+            nations = RequestManager.GetNewNations();
+            var matched = MatchNations(nations, "pending");
+            WriteNationsToFile(matched, "pending", false, true);
+        }
+
+        public static void AddNewNationsFromRegionToPending(string region_name, out List<string> matched)
+        {
+            var nations = RequestManager.GetNationsOfRegion(region_name);
+            WriteNationsToFile(nations, $"{region_name}_initial", false, false);
+            matched = MatchNations(nations, region_name + "_initial");
+            WriteNationsToFile(matched, "pending", false, true);
+        }
+
+        static List<string> MatchNations(List<string> nations, string fileName)
         {
             List<string> result = new List<string>();
-            var preNations = File.ReadAllLines($"{regionName}_initial").ToList();
+            var preNations = File.ReadAllLines($"{fileName}").ToList();
             preNations.Remove("");
             foreach (string nation in nations)
             {
@@ -123,7 +134,7 @@ namespace NationStatesAPIBot
             }
             if (result.Count > 0)
             {
-                WriteNationsToFile(nations, $"{regionName}_initial", true, false);
+                WriteNationsToFile(nations, $"{fileName}", true, false);
             }
             return result;
         }

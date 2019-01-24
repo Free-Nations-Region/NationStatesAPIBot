@@ -12,14 +12,18 @@ namespace NationStatesAPIBot
     {
         static readonly int apiVersion = 9;
 
-        public static DateTime lastAPIRequest;
-        public static DateTime lastTelegramSending;
+        static DateTime lastAPIRequest;
+        static DateTime lastTelegramSending;
+        static DateTime lastNewNationRequest;
+        static DateTime lastRegionNationsRequest;
 
-        public const int apiDelay = 6000000;
-        public const int nonRecruitmentTelegramDelay = 300000000;
-        public const int recruitmentTelegramDelay = 1800000000;
-
+        public const long apiDelay = 6000000; //0,6 s
+        public const long nonRecruitmentTelegramDelay = 300000000; //30 s
+        public const long recruitmentTelegramDelay = 1800000000; //3 m
+        public const long newNationsRequestDelay = 36000000000; //1 h
+        public const long matchNewNationsInRegionRequestDelay = 432000000000; //12 h
         public static bool Initialized { get; private set; }
+        public static bool Recruiting { get; set; }
         static string clientKey;
         static string telegramID;
         static string secretKey;
@@ -166,6 +170,25 @@ namespace NationStatesAPIBot
             {
                 Logger.Log(LogLevel.WARN, "Ignoring GetNationsOfRegion because of RequestManager not intialized yet.");
                 return new List<string>();
+            }
+        }
+
+        public static void Recruit()
+        {
+            while (Recruiting)
+            {
+                if (DateTime.Now.Ticks - lastTelegramSending.Ticks < recruitmentTelegramDelay) 
+                {
+                    //Send
+                }
+                if(DateTime.Now.Ticks - lastNewNationRequest.Ticks < newNationsRequestDelay)
+                {
+                    //Get New Nations
+                }
+                if (DateTime.Now.Ticks - lastRegionNationsRequest.Ticks < matchNewNationsInRegionRequestDelay)
+                {
+                    //Get Rejected Nations
+                }
             }
         }
     }
