@@ -6,7 +6,7 @@ I wrote this bot to support the [region](https://www.nationstates.net/region=the
 It's purpose is mainly sending of Recruitment Telegrams. 
 It will be extended as needed.
 
-It can be used for general purpose as well.
+It can be probably used for general purpose as well.
 
 Feel free to contribute!
 
@@ -30,8 +30,12 @@ https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&
 
 - Rebuilding Bot to DiscordBot using Discord.Net to control it mainly via discord. 
 
+- Maybe writing required data to SQLite Database instead of direct file system write.
+
 - BasicStats, ExtendedStats, CustomStats about nations and regions
 
 - Backing Up Logs of Channels using Discord Chat Exporter
 
-- Basic Moderator Features
+- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment if verified after specified time.
+
+- Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
