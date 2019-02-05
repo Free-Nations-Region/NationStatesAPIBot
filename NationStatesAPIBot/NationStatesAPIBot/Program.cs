@@ -19,15 +19,14 @@ namespace NationStatesAPIBot
                 RequestManager.Initialize();
                 if (RequestManager.Initialized)
                 {
-                    Logger.Log(LogLevel.INFO, "Initialization successfull.");
+                    Logger.WriteColoredLine(LogLevel.INFO, "Initialization successfull.");
                     Console.Write("> ");
                     Run();
                 }
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.ERROR, ex.ToString());
-
+                Logger.WriteColoredLine(LogLevel.ERROR, ex.ToString());
             }
             if (running)
             {
@@ -66,7 +65,7 @@ namespace NationStatesAPIBot
                     break;
                 case "/exit":
                 case "/quit":
-                    Logger.Log(LogLevel.INFO, "Bot is about to be stopped. Bye Bye.");
+                    Logger.WriteColoredLine(LogLevel.INFO, "Bot is about to be stopped. Bye Bye.");
                     RequestManager.Recruiting = false;
                     //Wait to be sure that recruiting process is stopped.
                     Thread.Sleep(1500);
@@ -140,7 +139,7 @@ namespace NationStatesAPIBot
                                 Logger.LogThreshold = (int)LogLevel.ERROR;
                                 break;
                             default:
-                                Logger.Log(LogLevel.ERROR, $"Unknown LogLevel '{level_name}'");
+                                Logger.WriteColoredLine(LogLevel.ERROR, $"Unknown LogLevel '{level_name}'");
                                 break;
                         }
                         Console.WriteLine("LogLevel: " + Enum.GetName(typeof(LogLevel), Logger.LogThreshold));
@@ -148,7 +147,7 @@ namespace NationStatesAPIBot
                     }
                     else
                     {
-                        Logger.Log(LogLevel.ERROR, $"Unknown command '{line}'. Try help or ? for command reference.");
+                        Logger.WriteColoredLine(LogLevel.ERROR, $"Unknown command '{line}'. Try help or ? for command reference.");
                         break;
                     }
 
@@ -171,7 +170,7 @@ namespace NationStatesAPIBot
         {
             nations = RequestManager.GetNewNations();
             var matched = MatchNations(nations, "pending.txt");
-            Logger.Log(LogLevel.INFO, $"Adding {matched.Count} Nations to pending.");
+            Logger.WriteColoredLine(LogLevel.INFO, $"Adding {matched.Count} Nations to pending.");
             WriteNationsToFile(matched, "pending.txt", false, true);
         }
 
@@ -180,7 +179,7 @@ namespace NationStatesAPIBot
             var nations = RequestManager.GetNationsOfRegion(region_name);
             WriteNationsToFile(nations, $"{region_name}_initial.txt", false, false);
             matched = MatchNations(nations, region_name + "_initial.txt");
-            Logger.Log(LogLevel.INFO, $"Adding {matched.Count} Nations to pending.");
+            Logger.WriteColoredLine(LogLevel.INFO, $"Adding {matched.Count} Nations to pending.");
             WriteNationsToFile(matched, "pending.txt", false, true);
         }
 
@@ -200,7 +199,7 @@ namespace NationStatesAPIBot
 
         static void PrintNations(List<string> nations)
         {
-            Logger.Log(LogLevel.INFO, "Done.");
+            Logger.WriteColoredLine(LogLevel.INFO, "Done.");
             Console.WriteLine($"{nations.Count} nations fetched.");
             Console.Write("Do want to write them to console now? (y/n)[n]: ");
             if (Console.ReadKey().Key == ConsoleKey.Y)

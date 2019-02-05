@@ -23,7 +23,7 @@ namespace NationStatesAPIBot
         public const long recruitmentTelegramDelay = 1800000000; //3 m 1800000000
         public const long newNationsRequestDelay = 18000000000; //30 m 36000000000
         public const long matchNewNationsInRegionRequestDelay = 432000000000; //12 h 432000000000
-        public static bool Initialized { get; private set; }
+        public static bool Initialized { get; private set; } 
         public static bool Recruiting { get; set; }
         static string clientKey;
         static string telegramID;
@@ -49,7 +49,7 @@ namespace NationStatesAPIBot
             }
             else
             {
-                Logger.Log(LogLevel.INFO, "pending file does not exist.");
+                Logger.WriteColoredLine(LogLevel.INFO, "pending file does not exist.");
             }
         }
 
@@ -65,7 +65,7 @@ namespace NationStatesAPIBot
 
         private static bool LoadConfig()
         {
-            Logger.Log(LogLevel.INFO, "Trying to load config file");
+            Logger.WriteColoredLine(LogLevel.INFO, "Trying to load config file");
             string path = $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}keys.config";
             lastAPIRequest = new DateTime(0);
             lastTelegramSending = new DateTime(0);
@@ -93,14 +93,14 @@ namespace NationStatesAPIBot
                 }
                 else
                 {
-                    Logger.Log(LogLevel.ERROR, "Not all required values where specified. Please refer to documentation for information about how to configure properly.");
+                    Logger.WriteColoredLine(LogLevel.ERROR, "Not all required values where specified. Please refer to documentation for information about how to configure properly.");
                     return false;
                 }
 
             }
             else
             {
-                Logger.Log(LogLevel.ERROR, $"File {path} not found.");
+                Logger.WriteColoredLine(LogLevel.ERROR, $"File {path} not found.");
                 Console.Write("Create file now? (y/n)[n]");
                 if (Console.ReadKey().Key == ConsoleKey.Y)
                 {
@@ -132,7 +132,7 @@ namespace NationStatesAPIBot
         {
             if (Initialized && !DryRun)
             {
-                Logger.Log(LogLevel.INFO, "Fetching new nations. This may take a while.");
+                Logger.WriteColoredLine(LogLevel.INFO, "Fetching new nations. This may take a while.");
                 while (DateTime.Now.Ticks - lastAPIRequest.Ticks < apiDelay) { }
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://www.nationstates.net/cgi-bin/api.cgi?q=newnations&v=" + apiVersion);
@@ -157,7 +157,7 @@ namespace NationStatesAPIBot
             }
             else
             {
-                Logger.Log(LogLevel.INFO, "Ignoring GetNewNations because of RequestManager not intialized yet or currently in Dry-Run mode.");
+                Logger.WriteColoredLine(LogLevel.INFO, "Ignoring GetNewNations because of RequestManager not intialized yet or currently in Dry-Run mode.");
                 return new List<string>();
             }
         }
@@ -166,7 +166,7 @@ namespace NationStatesAPIBot
         {
             if (Initialized && !DryRun)
             {
-                Logger.Log(LogLevel.INFO, $"Fetching nations of region {region}. This may take a while.");
+                Logger.WriteColoredLine(LogLevel.INFO, $"Fetching nations of region {region}. This may take a while.");
                 while (DateTime.Now.Ticks - lastAPIRequest.Ticks < apiDelay) { }
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"http://www.nationstates.net/cgi-bin/api.cgi?region={ToID(region)}&v={apiVersion}");
@@ -191,7 +191,7 @@ namespace NationStatesAPIBot
             }
             else
             {
-                Logger.Log(LogLevel.INFO, "Ignoring GetNationsOfRegion because of RequestManager not intialized yet or currently in Dry-Run mode.");
+                Logger.WriteColoredLine(LogLevel.INFO, "Ignoring GetNationsOfRegion because of RequestManager not intialized yet or currently in Dry-Run mode.");
                 return new List<string>();
             }
         }
@@ -199,13 +199,13 @@ namespace NationStatesAPIBot
         public static bool DryRun { get; set; } = true;
         public static void Recruit()
         {
-            Logger.Log(LogLevel.INFO, "Starting recruitment.");
+            Logger.WriteColoredLine(LogLevel.INFO, "Starting recruitment.");
             while (Recruiting)
             {
-                Logger.Log(LogLevel.DEBUG, "Recruitment Loop");
+                Logger.WriteColoredLine(LogLevel.DEBUG, "Recruitment Loop");
                 if (DateTime.Now.Ticks - lastTelegramSending.Ticks > recruitmentTelegramDelay)
                 {
-                    Logger.Log(LogLevel.DEBUG, "Sending Telegram.");
+                    Logger.WriteColoredLine(LogLevel.DEBUG, "Sending Telegram.");
                     if (!DryRun)
                     {
                         LoadPendingNations();
@@ -214,7 +214,7 @@ namespace NationStatesAPIBot
                     var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                     if (nation != null)
                     {
-                        Logger.Log(LogLevel.DEBUG, $"Sending Telegram to {nation}");
+                        Logger.WriteColoredLine(LogLevel.DEBUG, $"Sending Telegram to {nation}");
                         if (SendTelegram(nation))
                         {
                             PendingNations.Remove(nation);
@@ -229,24 +229,24 @@ namespace NationStatesAPIBot
                     }
                     else
                     {
-                        Logger.Log(LogLevel.WARN, "Pending Nations empty can not send telegram: No recipient.");
+                        Logger.WriteColoredLine(LogLevel.WARN, "Pending Nations empty can not send telegram: No recipient.");
                     }
                 }
                 if (DateTime.Now.Ticks - lastNewNationRequest.Ticks > newNationsRequestDelay)
                 {
-                    Logger.Log(LogLevel.DEBUG, "Collecting New Nations.");
+                    Logger.WriteColoredLine(LogLevel.DEBUG, "Collecting New Nations.");
                     Program.AddNewNationsToPending(out List<string> nations);
                     lastNewNationRequest = DateTime.Now;
                 }
                 if (DateTime.Now.Ticks - lastRegionNationsRequest.Ticks > matchNewNationsInRegionRequestDelay)
                 {
-                    Logger.Log(LogLevel.DEBUG, "Collecting Rejected Nations.");
+                    Logger.WriteColoredLine(LogLevel.DEBUG, "Collecting Rejected Nations.");
                     Program.AddNewNationsFromRegionToPending("the_rejected_realms", out List<string> nations);
                     lastRegionNationsRequest = DateTime.Now;
                 }
                 Thread.Sleep(1000);
             }
-            Logger.Log(LogLevel.INFO, "Recruiting stopped.");
+            Logger.WriteColoredLine(LogLevel.INFO, "Recruiting stopped.");
         }
 
         private static bool SendTelegram(string recipient)
@@ -276,14 +276,14 @@ namespace NationStatesAPIBot
                 }
                 else
                 {
-                    Logger.Log(LogLevel.INFO, "Ignoring SendTelegram because of RequestManager not intialized yet or currently in Dry-Run mode.");
+                    Logger.WriteColoredLine(LogLevel.INFO, "Ignoring SendTelegram because of RequestManager not intialized yet or currently in Dry-Run mode.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
                 lastTelegramSending = DateTime.Now;
-                Logger.Log(LogLevel.ERROR, "Failed to queue telegram for " + FromID(recipient) + "! (" + ex.GetType() + ": " + ex.Message + " - " + ex.StackTrace + ")");
+                Logger.WriteColoredLine(LogLevel.ERROR, "Failed to queue telegram for " + FromID(recipient) + "! (" + ex.GetType() + ": " + ex.Message + " - " + ex.StackTrace + ")");
                 return false;
             }
         }
