@@ -68,24 +68,24 @@ namespace NationStatesAPIBot
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
-        public static void Initialize()
+        public static async Task StartUp()
         {
-            LoadConfig();
-            SetupDiscordBot();
+            await LoadConfig();
+            await SetupDiscordBot();
         }
         /// <summary>
         /// Loads the config
         /// </summary>
-        private static void LoadConfig()
+        private static async Task LoadConfig()
         {
-
+            throw new NotImplementedException("Not implemented yet");
         }
         /// <summary>
         /// Configures the Discord Connection and logs the bot in
         /// </summary>
-        private static void SetupDiscordBot()
+        private static async Task SetupDiscordBot()
         {
-
+            throw new NotImplementedException("Not implemented yet");
         }
         /// <summary>
         /// Does set the Bot action displayed in the discord
@@ -104,7 +104,7 @@ namespace NationStatesAPIBot
         /// <returns></returns>
         public static bool IsNationStatesApiActionAllowed(NationStatesApiRequestType type, bool isScheduledAction)
         {
-            return false; //temporary
+            throw new NotImplementedException("Not implemented yet");
         }
     }
 }

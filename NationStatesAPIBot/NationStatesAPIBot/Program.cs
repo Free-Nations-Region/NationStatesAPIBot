@@ -17,11 +17,8 @@ namespace NationStatesAPIBot
             try
             {
                 Console.Title = $"NationStatesAPIBot {versionString}";
-                ActionManager.Initialize();
-                if (ActionManager.Initialized)
-                {
-                    ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "Main", "Initialization successfull").GetAwaiter().GetResult();
-                }
+                ActionManager.StartUp().GetAwaiter().GetResult();
+                ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "Main", "Initialization successfull").GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -31,8 +28,7 @@ namespace NationStatesAPIBot
 
         static async Task RunAsync()
         {
-            //Add Logic here
-            ActionManager.Initialize();
+            ActionManager.StartUp();
             await Task.Delay(-1);
         }
     }
