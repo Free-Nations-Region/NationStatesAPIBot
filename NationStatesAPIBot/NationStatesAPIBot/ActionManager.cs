@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
 {
@@ -48,10 +49,6 @@ namespace NationStatesAPIBot
         /// </summary>
         internal static string DiscordBotLoginToken { get; private set; }
         /// <summary>
-        /// The DiscordSocketClient used for bot actions
-        /// </summary>
-        internal static DiscordSocketClient DiscordSocketClient { get; private set; }
-        /// <summary>
         /// The Logger Instance to be used for logging purposes
         /// </summary>
         internal static Logger LoggerInstance { get; private set; }
@@ -64,38 +61,40 @@ namespace NationStatesAPIBot
         /// </summary>
         internal static string BotDiscordUserId { get; private set; }
 
+        private static DiscordSocketClient discordClient { get; set; }
         private static CommandService commands;
         private static IServiceProvider services;
 
         /// <summary>
-        /// 
+        /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
         public static void Initialize()
         {
-
+            LoadConfig();
+            SetupDiscordBot();
         }
         /// <summary>
-        /// 
+        /// Loads the config
         /// </summary>
         private static void LoadConfig()
         {
 
         }
         /// <summary>
-        /// 
+        /// Configures the Discord Connection and logs the bot in
         /// </summary>
         private static void SetupDiscordBot()
         {
 
         }
         /// <summary>
-        /// 
+        /// Does set the Bot action displayed in the discord
         /// </summary>
-        /// <param name="description"></param>
-        /// <param name="activityType"></param>
-        public static void SetClientAction(string description, ActivityType activityType)
+        /// <param name="description">The text to be displayed</param>
+        /// <param name="activityType">The discord actionType</param>
+        public static async Task SetClientAction(string description, ActivityType activityType)
         {
-
+            await discordClient.SetGameAsync(description, null, activityType);
         }
         /// <summary>
         /// 
@@ -106,15 +105,6 @@ namespace NationStatesAPIBot
         public static bool IsNationStatesApiActionAllowed(NationStatesApiRequestType type, bool isScheduledAction)
         {
             return false; //temporary
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static bool IsNationStatesApiActionAllowed(NationStatesApiRequestType type)
-        {
-            return IsNationStatesApiActionAllowed(type, false);
         }
     }
 }
