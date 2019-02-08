@@ -17,6 +17,7 @@ namespace NationStatesAPIBot
         internal DateTime lastTelegramSending;
         internal DateTime lastAutomaticNewNationRequest;
         internal DateTime lastAutomaticRegionNationsRequest;
+        internal bool isRecruiting { get; set; }
         /// <summary>
         /// Creates an HttpWebRequest targeted to NationStatesAPI
         /// </summary>
@@ -212,5 +213,16 @@ namespace NationStatesAPIBot
             return text.Trim().ToLower().Replace('_', ' ');
         }
 
+        internal async Task StartRecruitingAsync()
+        {
+            Log(LogSeverity.Info, "Starting Recruitment process.");
+            await Task.Delay(1000); //To-Do
+        }
+
+        internal async Task StopRecruitingAsync()
+        {
+            Log(LogSeverity.Info, "Stopping Recruitment process.");
+            await Task.Delay(1000); //To-Do
+        }
     }
 }

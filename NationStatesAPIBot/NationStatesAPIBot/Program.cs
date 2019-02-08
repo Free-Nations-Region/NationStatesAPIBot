@@ -10,26 +10,36 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v1.0";
-        static bool running = true;
+        public const string versionString = "v2.0";
         static void Main(string[] args)
         {
             try
             {
+                Console.CancelKeyPress += Console_CancelKeyPress;
                 Console.Title = $"NationStatesAPIBot {versionString}";
-                ActionManager.StartUp().GetAwaiter().GetResult();
-                ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "Main", "Initialization successfull").GetAwaiter().GetResult();
+                Task.Run(() => RunAsync()).Wait();
             }
             catch (Exception ex)
             {
-                ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "Main", ex.ToString()).GetAwaiter().GetResult();
+                Task.Run(() => ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "Main", ex.ToString())).Wait();
+                Task.Run(() => Console.Out.WriteLineAsync("Press any key to quit.")).Wait();
+                Console.ReadKey();
             }
+        }
+
+        private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            await ActionManager.Shutdown();
+            
         }
 
         static async Task RunAsync()
         {
-            ActionManager.StartUp();
-            await Task.Delay(-1);
+            await ActionManager.StartUp();
+            while (ActionManager.Running)
+            {
+                await Task.Delay(1000);
+            }
         }
     }
 }

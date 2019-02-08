@@ -1,9 +1,11 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
@@ -56,37 +58,137 @@ namespace NationStatesAPIBot
         /// The discord user id of the main admin of the bot. Used for checking permissions on admin only commands.
         /// </summary>
         internal static string BotAdminDiscordUserId { get; private set; }
-        /// <summary>
-        /// The discord user id of the bot himself. Used for mentions.
-        /// </summary>
-        internal static string BotDiscordUserId { get; private set; }
 
         private static DiscordSocketClient discordClient { get; set; }
         private static CommandService commands;
         private static IServiceProvider services;
-
+        private static readonly string source = "ActionManager";
+        public static bool Running { get; private set; } = false;
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
         public static async Task StartUp()
         {
+            LoggerInstance = new Logger();
             await LoadConfig();
             await SetupDiscordBot();
+            NationStatesApiController = new NationStatesApiController();
+            Running = true;
         }
-        /// <summary>
-        /// Loads the config
-        /// </summary>
+
+        public static async Task Shutdown()
+        {
+            await LoggerInstance.LogAsync(LogSeverity.Info, source, "Shutdown requested.");
+            if (NationStatesApiController.isRecruiting)
+            {
+                await NationStatesApiController.StopRecruitingAsync();
+            }
+            await LoggerInstance.LogAsync(LogSeverity.Info, source, "Going offline.");
+            await discordClient.SetStatusAsync(UserStatus.Offline);
+            await discordClient.StopAsync();
+            Running = false;
+            Environment.Exit(0);
+        }
+        
         private static async Task LoadConfig()
         {
-            throw new NotImplementedException("Not implemented yet");
+            if (File.Exists("keys.config"))
+            {
+                var content = await File.ReadAllLinesAsync("keys.config");
+                var lines = content.ToList();
+                if (lines.Exists(cl => cl.StartsWith("clientKey=")) && lines.Exists(t => t.StartsWith("telegramId=")) &&
+                   lines.Exists(s => s.StartsWith("secretKey=")) && lines.Exists(c => c.StartsWith("contact=")) &&
+                   lines.Exists(s => s.StartsWith("botLoginToken=")) && lines.Exists(s => s.StartsWith("botAdminUser=")))
+                {
+                    NationStatesClientKey = lines.Find(l => l.StartsWith("clientKey=")).Split("=")[1];
+                    NationStatesRecruitmentTelegramID = lines.Find(l => l.StartsWith("telegramId=")).Split("=")[1];
+                    NationStatesSecretKey = lines.Find(l => l.StartsWith("secretKey=")).Split("=")[1];
+                    ContactInformation = lines.Find(c => c.StartsWith("contact=")).Split("=")[1];
+                    DiscordBotLoginToken = lines.Find(c => c.StartsWith("botLoginToken=")).Split("=")[1];
+                    BotAdminDiscordUserId = lines.Find(c => c.StartsWith("botAdminUser=")).Split("=")[1];
+                    if (lines.Exists(c => c.StartsWith("logLevel=")))
+                    {
+                        if (int.TryParse(lines.Find(c => c.StartsWith("logLevel=")).Split("=")[1], out int value))
+                        {
+                            LoggerInstance.SeverityThreshold = (LogSeverity)value;
+                        }
+                    }
+                    NationStatesAPIUserAgent = $"NationStatesAPIBot (https://github.com/drehtisch/NationStatesAPIBot) {Program.versionString} contact: {ContactInformation}";
+                }
+                else
+                {
+                    throw new InvalidDataException("Not all required values where specified. Please refer to documentation for information about how to configure properly.");
+                }
+            }
+            else
+            {
+                throw new FileNotFoundException("The 'keys.config' file could not be found.");
+            }
         }
-        /// <summary>
-        /// Configures the Discord Connection and logs the bot in
-        /// </summary>
+        
         private static async Task SetupDiscordBot()
         {
-            throw new NotImplementedException("Not implemented yet");
+            discordClient = new DiscordSocketClient(new DiscordSocketConfig
+            {
+                LogLevel = LoggerInstance.SeverityThreshold
+            });
+
+            commands = new CommandService(new CommandServiceConfig
+            {
+                LogLevel = LoggerInstance.SeverityThreshold,
+                SeparatorChar = ' ',
+                CaseSensitiveCommands = false,
+                DefaultRunMode = RunMode.Async
+            });
+
+            services = new ServiceCollection()
+                .BuildServiceProvider();
+            discordClient.Connected += DiscordClient_Connected;
+            discordClient.Disconnected += DiscordClient_Disconnected;
+            discordClient.MessageReceived += DiscordClient_MessageReceived;
+            await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+            discordClient.Ready += DiscordClient_Ready;
+            discordClient.Log += DiscordClient_Log;
+            await discordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
+            await discordClient.StartAsync();
         }
+
+        private static async Task DiscordClient_Log(LogMessage arg)
+        {
+            await LoggerInstance.LogAsync(arg.Severity, arg.Source, arg.Message);
+        }
+
+        
+
+        private static async Task DiscordClient_Ready()
+        {
+            await SetClientAction("Lections of BotFather", ActivityType.Listening);
+        }
+
+        private static async Task DiscordClient_MessageReceived(SocketMessage arg)
+        {
+            var message = arg as SocketUserMessage;
+            var context = new SocketCommandContext(discordClient, message);
+
+            if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
+
+            int argPos = 0;
+            if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos))) return;
+
+
+            var Result = await commands.ExecuteAsync(context, argPos, services);
+        }
+
+        private static async Task DiscordClient_Disconnected(Exception arg)
+        {
+            await LoggerInstance.LogAsync(LogSeverity.Info, source, "Disconnected from Discord");
+        }
+
+        private static async Task DiscordClient_Connected()
+        {
+            await LoggerInstance.LogAsync(LogSeverity.Info, source, "Connected to Discord");
+        }
+
         /// <summary>
         /// Does set the Bot action displayed in the discord
         /// </summary>
