@@ -1,36 +1,48 @@
 # NationStatesAPIBot
-A Bot for performing API Actions on NationStates (in future mainly via discord)
+A Bot for performing API Actions on NationStates and to provide other features via DiscordAPI. It can be controlled via discord.
 
-I wrote this bot to support the [region](https://www.nationstates.net/region=the_free_nations_region "The Free Nations Region") where i am currently member of. 
+I wrote this bot for the discord server of the [region](https://www.nationstates.net/region=the_free_nations_region "The Free Nations Region") where i am currently member of. 
 
-It's purpose is mainly sending of Recruitment Telegrams. 
+It can send automatically recruitment telegrams via the NationStates API.
+
+It is intended to provide:
+  - some statistics from NationStates API to discord users (To-Do)
+  - verification of nation ownership via the NationStates API (To-Do)
+  - backup functionality of discord channel chat logs. (To-Do)
+  - basic moderation functionality for authorized users (To-Do)
+  
 It will be extended as needed.
 
-It can be probably used for general purpose as well.
+It can probably be used for general purpose as well.
 
 Feel free to contribute!
 
-# Usage - Commandline Reference
+# Configuration - v2.0+
 
-Available Commands in version v1.0:  
-/help, ? - Shows this help.  
-/exit, /quit - Terminates this program.  
-/new - Fetches all new nations and prints them out.  
-/region <region> - Fetches all nations from specific region and prints them out.  
-/new-in-region <region> - Fetches all nations from specific region and matches them with nations of that region fetched before.  
-/recruit - Start recruiting process. Enter again to stop recruiting. Dry Run per default. Disable Dry Run to go productive.  
-/dryrun - Switches Dry Run Mode. No API Calls are performed as long Dry Run Mode is enabled.  
-/loglevel <Loglevel> - Changes Loglevel to either DEBUG, INFO, WARN or ERROR.  
+The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.
+Required:
+
+`clientKey=<your nation states clientKey>`  
+`telegramId=<your nation states recruitment telegramId>`  
+`secretKey=<your nation states telegram secretKey>`  
+`contact=<your nation states nation or an email address or something like that>`  
+`dbConnection=<your mysql database connection string>`  
+`botLoginToken=<your discord bot login token>`  
+`botAdminUser=<discord user id how is main admin on this bot>`  
+  
+Optional:  
+`logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
+See Discord.Net.Core LogSeverity for details
+
+Be sure to have at least dbConnection configured when you run `dotnet ef database update`
 
 # Roadmap
 
 Next features:
+- migrate earlier file writes to database with EntityFrameworkCore
+
 - check if recipient would receive telegram if not skip to next pending recipient by calling:
 https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&from=%regionName%
-
-- Rebuilding Bot to DiscordBot using Discord.Net to control it mainly via discord. 
-
-- Maybe writing required data to SQLite Database instead of direct file system write.
 
 - BasicStats, ExtendedStats, CustomStats about nations and regions
 
