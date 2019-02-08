@@ -1,16 +1,16 @@
 # NationStatesAPIBot
-A Bot for performing API Actions on NationStates
+A Bot for performing API Actions on NationStates (in future mainly via discord)
 
 I wrote this bot to support the [region](https://www.nationstates.net/region=the_free_nations_region "The Free Nations Region") where i am currently member of. 
 
 It's purpose is mainly sending of Recruitment Telegrams. 
 It will be extended as needed.
 
-It can be used for general purpose as well.
+It can be probably used for general purpose as well.
 
 Feel free to contribute!
 
-# Usage - Command Reference
+# Usage - Commandline Reference
 
 Available Commands in version v1.0:  
 /help, ? - Shows this help.  
@@ -24,8 +24,18 @@ Available Commands in version v1.0:
 
 # Roadmap
 
-Next feature:
+Next features:
 - check if recipient would receive telegram if not skip to next pending recipient by calling:
 https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&from=%regionName%
 
-- Maybe merging or integrating an Discord Bot into it. 
+- Rebuilding Bot to DiscordBot using Discord.Net to control it mainly via discord. 
+
+- Maybe writing required data to SQLite Database instead of direct file system write.
+
+- BasicStats, ExtendedStats, CustomStats about nations and regions
+
+- Backing Up Logs of Channels using Discord Chat Exporter
+
+- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment if verified after specified time.
+
+- Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
