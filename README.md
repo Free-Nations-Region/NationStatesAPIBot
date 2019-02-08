@@ -19,7 +19,8 @@ Feel free to contribute!
 
 # Configuration - v2.0+
 
-The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.
+The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.  
+
 Required:
 
 `clientKey=<your nation states clientKey>`  
