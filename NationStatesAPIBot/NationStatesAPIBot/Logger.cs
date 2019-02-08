@@ -1,44 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Discord;
+using System;
+using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
 {
-    public enum LogLevel
-    {
-        DEBUG = 30000,
-        INFO = 40000,
-        WARN = 50000,
-        ERROR = 60000
-    }
-
     public class Logger
     {
-        public static int LogThreshold { get; set; }
-        public static void Log(LogLevel level, string text)
+        public LogSeverity SeverityThreshold { get; set; } = LogSeverity.Info;
+        public async Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
-            if ((int)level >= LogThreshold)
+            if (logSeverity <= SeverityThreshold)
             {
                 ConsoleColor color = ConsoleColor.Gray;
-                if (level == LogLevel.ERROR)
+                if (logSeverity == LogSeverity.Critical)
                 {
                     color = ConsoleColor.Red;
                 }
-                else if (level == LogLevel.WARN)
+                else if (logSeverity == LogSeverity.Error)
+                {
+                    color = ConsoleColor.DarkRed;
+                }
+                else if (logSeverity == LogSeverity.Warning)
                 {
                     color = ConsoleColor.Yellow;
                 }
-                else if (level == LogLevel.INFO)
+                else if (logSeverity == LogSeverity.Info)
                 {
-                    color = ConsoleColor.Cyan;
+                    color = ConsoleColor.Magenta;
                 }
-                else if (level == LogLevel.DEBUG)
+                else if (logSeverity == LogSeverity.Debug)
                 {
                     color = ConsoleColor.Green;
                 }
+                else if (logSeverity == LogSeverity.Verbose)
+                {
+                    color = ConsoleColor.Cyan;
+                }
                 Console.ForegroundColor = color;
-                Console.WriteLine($"{level.ToString()}: {text}");
-                Console.ResetColor();
+                string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
+                await Console.Out.WriteLineAsync(message);
+                Console.ResetColor();                
             }
         }
     }
