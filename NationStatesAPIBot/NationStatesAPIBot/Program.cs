@@ -1,4 +1,5 @@
 ﻿using Discord;
+using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.IO;

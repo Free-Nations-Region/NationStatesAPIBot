@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace NationStatesAPIBot
+namespace NationStatesAPIBot.Managers
 {
     public static class ActionManager
     {
