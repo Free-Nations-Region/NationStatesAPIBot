@@ -4,11 +4,11 @@ using System.Text;
 
 namespace NationStatesAPIBot.Entities
 {
-    public class User
+    public class Role
     {
         public long Id { get; set; }
         public string DiscordUserId { get; set; }
-        public List<UserPermissions> UserPermissions {get; set;}
-        public List<UserRoles> Roles { get; set; }
+        public List<RolePermissions> RolePermissions { get; set; }
+        public List<UserRoles> Users { get; set; }
     }
 }

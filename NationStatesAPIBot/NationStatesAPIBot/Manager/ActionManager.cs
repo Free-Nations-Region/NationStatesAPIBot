@@ -174,8 +174,6 @@ namespace NationStatesAPIBot
 
             int argPos = 0;
             if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos))) return;
-
-
             var Result = await commands.ExecuteAsync(context, argPos, services);
         }
 

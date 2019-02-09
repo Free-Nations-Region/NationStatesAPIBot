@@ -8,5 +8,6 @@ namespace NationStatesAPIBot.Entities
         public string Name { get; set; }
         public string Description { get; set; }
         public List<UserPermissions> UserPermissions { get; set; }
+        public List<RolePermissions> RolePermissions { get; set; }
     }
 }
