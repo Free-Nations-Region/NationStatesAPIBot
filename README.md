@@ -35,7 +35,8 @@ Optional:
 `logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
 See Discord.Net.Core LogSeverity for details
 
-Be sure to have at least dbConnection configured when you run `dotnet ef database update`
+Be sure to have at least dbConnection configured when you run `dotnet ef database update`.  
+You need to have a copy of "keys.config" in the directory where you execute `dotnet ef database update` or `dotnet ef migrations add <name>`
 
 # Roadmap
 
