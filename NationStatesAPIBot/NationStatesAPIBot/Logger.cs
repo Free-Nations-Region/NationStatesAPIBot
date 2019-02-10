@@ -7,7 +7,7 @@ namespace NationStatesAPIBot
     public class Logger
     {
         public LogSeverity SeverityThreshold { get; set; } = LogSeverity.Info;
-        public async Task LogAsync(LogSeverity logSeverity, string source, string text)
+        public Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
             if (logSeverity <= SeverityThreshold)
             {
@@ -38,9 +38,10 @@ namespace NationStatesAPIBot
                 }
                 Console.ForegroundColor = color;
                 string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
-                await Console.Out.WriteLineAsync(message);
-                Console.ResetColor();                
+                Console.WriteLine(message);
+                Console.ResetColor();
             }
+            return Task.CompletedTask;
         }
     }
 }

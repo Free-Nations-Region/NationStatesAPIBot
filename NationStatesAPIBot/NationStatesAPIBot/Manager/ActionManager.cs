@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Types;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,7 +18,9 @@ namespace NationStatesAPIBot.Managers
         public const long SEND_NON_RECRUITMENTTELEGRAM_INTERVAL = 300000000; //30 s
         public const long SEND_RECRUITMENTTELEGRAM_INTERVAL = 1800000000; //3 m 1800000000
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 36000000000
-        public const long REQUEST_REJECTED_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
+        public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
+        public const string BOT_ADMIN_TERM = "BotFather"; //Change to something else if you don't like the term
+        public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue. Use /callHelp and i will contact {BOT_ADMIN_TERM} for you. (Do not overuse you could be ignored.)";
         /// <summary>
         /// Property that indicates if the bot was initialized and if config were loaded.
         /// </summary>
@@ -89,7 +92,7 @@ namespace NationStatesAPIBot.Managers
             Running = false;
             Environment.Exit(0);
         }
-        
+
         private static async Task LoadConfig()
         {
             if (File.Exists("keys.config"))
@@ -125,7 +128,7 @@ namespace NationStatesAPIBot.Managers
                 throw new FileNotFoundException("The 'keys.config' file could not be found.");
             }
         }
-        
+
         private static async Task SetupDiscordBot()
         {
             discordClient = new DiscordSocketClient(new DiscordSocketConfig
@@ -158,23 +161,30 @@ namespace NationStatesAPIBot.Managers
             await LoggerInstance.LogAsync(arg.Severity, arg.Source, arg.Message);
         }
 
-        
+
 
         private static async Task DiscordClient_Ready()
         {
-            await SetClientAction("Lections of BotFather", ActivityType.Listening);
+            await SetClientAction($"Lections of {BOT_ADMIN_TERM}", ActivityType.Listening);
         }
 
         private static async Task DiscordClient_MessageReceived(SocketMessage arg)
         {
-            var message = arg as SocketUserMessage;
-            var context = new SocketCommandContext(discordClient, message);
+            try
+            {
+                var message = arg as SocketUserMessage;
+                var context = new SocketCommandContext(discordClient, message);
 
-            if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
+                if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
 
-            int argPos = 0;
-            if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos))) return;
-            var Result = await commands.ExecuteAsync(context, argPos, services);
+                int argPos = 0;
+                if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos)  /* || await PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User)*/)) return;
+                var Result = await commands.ExecuteAsync(context, argPos, services);
+            }
+            catch (Exception ex)
+            {
+                await LoggerInstance.LogAsync(LogSeverity.Critical, $"{source}-MessageReceived", ex.ToString());
+            }
         }
 
         private static async Task DiscordClient_Disconnected(Exception arg)
@@ -202,9 +212,29 @@ namespace NationStatesAPIBot.Managers
         /// <param name="type"></param>
         /// <param name="isScheduledAction"></param>
         /// <returns></returns>
-        public static bool IsNationStatesApiActionAllowed(NationStatesApiRequestType type, bool isScheduledAction)
+        public static bool IsNationStatesApiActionReady(NationStatesApiRequestType type, bool isScheduledAction)
         {
-            throw new NotImplementedException("Not implemented yet");
+            if (type == NationStatesApiRequestType.GetNationsFromRegion)
+            {
+                return DateTime.Now.Ticks - NationStatesApiController.lastAutomaticRegionNationsRequest.Ticks > (isScheduledAction ? REQUEST_REGION_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
+            }
+            else if (type == NationStatesApiRequestType.GetNewNations)
+            {
+                return DateTime.Now.Ticks - NationStatesApiController.lastAutomaticNewNationsRequest.Ticks > (isScheduledAction ? REQUEST_NEW_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
+            }
+            else if (type == NationStatesApiRequestType.SendTelegram)
+            {
+                return DateTime.Now.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_NON_RECRUITMENTTELEGRAM_INTERVAL;
+            }
+            else if (type == NationStatesApiRequestType.SendRecruitmentTelegram)
+            {
+                return DateTime.Now.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_RECRUITMENTTELEGRAM_INTERVAL;
+            }
+            else
+            {
+                return DateTime.Now.Ticks - NationStatesApiController.lastAPIRequest.Ticks > API_REQUEST_INTERVAL;
+            }
+
         }
     }
 }

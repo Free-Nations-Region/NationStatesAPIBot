@@ -39,7 +39,7 @@ namespace NationStatesAPIBot
             await ActionManager.StartUp();
             while (ActionManager.Running)
             {
-                await Task.Delay(1000);
+                await Task.Delay(10000);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace NationStatesAPIBot
+﻿namespace NationStatesAPIBot.Types
 {
     public enum NationStatesApiRequestType
     {

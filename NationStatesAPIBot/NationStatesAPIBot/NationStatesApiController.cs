@@ -1,5 +1,8 @@
 ﻿using Discord;
+using Microsoft.EntityFrameworkCore;
+using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Managers;
+using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +19,7 @@ namespace NationStatesAPIBot
         private const string Source = "NationStatesApiController";
         internal DateTime lastAPIRequest;
         internal DateTime lastTelegramSending;
-        internal DateTime lastAutomaticNewNationRequest;
+        internal DateTime lastAutomaticNewNationsRequest;
         internal DateTime lastAutomaticRegionNationsRequest;
         internal bool isRecruiting { get; set; }
         /// <summary>
@@ -43,7 +46,7 @@ namespace NationStatesAPIBot
             try
             {
                 Log(LogSeverity.Debug, $"Waiting to execute {type}-Request. Once ActionManager grants the permit the request will be executed.");
-                while (!ActionManager.IsNationStatesApiActionAllowed(type, isScheduled))
+                while (!ActionManager.IsNationStatesApiActionReady(type, isScheduled))
                 {
                     await Task.Delay(1000); //Wait 1 second and try again
                 }
@@ -53,7 +56,7 @@ namespace NationStatesAPIBot
                         lastTelegramSending = DateTime.Now;
                         break;
                     case NationStatesApiRequestType.GetNewNations:
-                        lastAutomaticNewNationRequest = DateTime.Now;
+                        lastAutomaticNewNationsRequest = DateTime.Now;
                         break;
                     case NationStatesApiRequestType.GetNationsFromRegion:
                         lastAutomaticRegionNationsRequest = DateTime.Now;
@@ -67,7 +70,7 @@ namespace NationStatesAPIBot
             catch (Exception ex)
             {
                 Log(LogSeverity.Error, ex.ToString());
-                return Stream.Null;
+                return null;
             }
         }
         /// <summary>
@@ -106,7 +109,7 @@ namespace NationStatesAPIBot
             XmlDocument newNationsXML = new XmlDocument();
             using (var stream = await ExecuteRequestAsync(request, NationStatesApiRequestType.GetNewNations, isScheduled))
             {
-                if (stream.Length > 0)
+                if (stream != null)
                 {
                     newNationsXML.Load(stream);
                     XmlNodeList newNationsXMLNodes = newNationsXML.GetElementsByTagName("NEWNATIONS");
@@ -116,7 +119,7 @@ namespace NationStatesAPIBot
                 }
                 else
                 {
-                    Log(LogSeverity.Debug, "Resolving 'RequestNewNations' with empty list because got empty stream returned. Check if an error occurred.");
+                    Log(LogSeverity.Warning, "Finishing 'RequestNewNations' with empty list because got empty stream returned. Check if an error occurred.");
                     return new List<string>();
                 }
             }
@@ -129,25 +132,110 @@ namespace NationStatesAPIBot
         /// <returns>List of nation names</returns>
         internal async Task<List<string>> RequestNationsFromRegionAsync(string region, bool isScheduled)
         {
-            var request = CreateApiRequest($"q=region={ToID(region)}&v={ActionManager.API_VERSION}");
+            var id = ToID(region);
+            var request = CreateApiRequest($"region={id}&q=nations&v={ActionManager.API_VERSION}");
             XmlDocument nationsXML = new XmlDocument();
             using (var stream = await ExecuteRequestAsync(request, NationStatesApiRequestType.GetNationsFromRegion, isScheduled))
             {
-                if (stream.Length > 0)
+                if (stream != null)
                 {
                     nationsXML.Load(stream);
                     XmlNodeList newNationsXMLNodes = nationsXML.GetElementsByTagName("NATIONS");
 
-                    List<string> nations = newNationsXMLNodes[0].InnerText.Split(',').ToList().Select(nation => ToID(nation)).ToList();
+                    List<string> nations = newNationsXMLNodes[0].InnerText.Split(':').ToList().Select(nation => ToID(nation)).ToList();
                     return nations;
                 }
                 else
                 {
-                    Log(LogSeverity.Debug,"Finishing 'RequestNewNations' with empty list because got empty stream returned. Check if an error occurred.");
+                    Log(LogSeverity.Warning, "Finishing 'RequestNationsFromRegion' with empty list because got empty stream returned. Check if an error occurred.");
                     return new List<string>();
                 }
             }
         }
+        internal List<string> MatchNationsAgainstKnownNations(List<string> newNations, string StatusName)
+        {
+            Log(LogSeverity.Debug, "Match Nations - List, string");
+            return MatchNationsAgainstKnownNations(newNations, StatusName, null);
+        }
+        internal List<string> MatchNationsAgainstKnownNations(List<string> newNations, string StatusName, string StatusDescription)
+        {
+            using (var context = new BotDbContext())
+            {
+                List<string> current;
+                Log(LogSeverity.Debug, "Match Nations entered");
+                if (string.IsNullOrWhiteSpace(ToID(StatusDescription)))
+                {
+                    current = context.Nations.Where(n => n.Status.Name == StatusName).Select(n => n.Name).ToList();
+                }
+                else
+                {
+                    current = context.Nations.Where(n => n.Status.Name == StatusName && n.Status.Description == ToID(StatusDescription)).Select(n => n.Name).ToList();
+                }
+                Log(LogSeverity.Debug, "Matched Nations - done");
+                return newNations.Except(current).ToList();
+            }
+        }
+
+        internal async Task AddToPending(List<string> newNations)
+        {
+            using (var context = new BotDbContext())
+            {
+                Log(LogSeverity.Debug, "AddToPending");
+                var status = await context.NationStatuses.FirstOrDefaultAsync(n => n.Name == "pending");
+                if (status == null)
+                {
+                    status = new NationStatus() { Name = "pending" };
+                    await context.NationStatuses.AddAsync(status);
+                }
+                foreach (string name in newNations)
+                {
+                    await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
+                }
+                Log(LogSeverity.Debug, "Added to Pending");
+                await context.SaveChangesAsync();
+                Log(LogSeverity.Debug, "Changes saved");
+            }
+        }
+
+        /// <summary>
+        /// Compares new nations to stored nations, adds new ones and purges old ones that aren't members anymore
+        /// </summary>
+        /// <param name="newNations">List of new nation names</param>
+        /// <param name="regionName">The region name to be used</param>
+        /// <returns>An Tuple Item1 = joined Nations count, Item2 = left Nations count</returns>
+        internal async Task<Tuple<int, int>> SyncRegionMembersWithDatabase(List<string> newNations, string regionName)
+        {
+            using (var context = new BotDbContext())
+            {
+                var joined = MatchNationsAgainstKnownNations(newNations, "member", regionName);
+                var old = context.Nations.Where(n => n.Status.Name == "member" && n.Status.Description == ToID(regionName)).Select(n => n.Name).ToList();
+                var currentWithOutJoined = newNations.Except(joined);
+                var left = old.Except(currentWithOutJoined);
+                var leftNations = context.Nations.Where(n => left.Contains(n.Name)).ToList();
+                if (leftNations.Count > 0)
+                {
+                    context.RemoveRange(leftNations.ToArray());
+                }
+                if (joined.Count > 0)
+                {
+                    var status = await context.NationStatuses.FirstOrDefaultAsync(n => n.Name == "member" && n.Description == ToID(regionName));
+                    if (status == null)
+                    {
+                        status = new NationStatus() { Name = "member", Description = ToID(regionName) };
+                        await context.NationStatuses.AddAsync(status);
+                        //await context.SaveChangesAsync();
+                    }
+                    foreach (string name in joined)
+                    {
+                        await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
+                        //await context.SaveChangesAsync();
+                    }
+                }
+                await context.SaveChangesAsync();
+                return new Tuple<int, int>(joined.Count, leftNations.Count);
+            }
+        }
+
         /// <summary>
         /// Send an (Recruitment-)Telegram to an specified recipient
         /// </summary>
@@ -202,7 +290,7 @@ namespace NationStatesAPIBot
         /// <returns>Formated string</returns>
         private static string ToID(string text)
         {
-            return text.Trim().ToLower().Replace(' ', '_');
+            return text?.Trim().ToLower().Replace(' ', '_');
         }
         /// <summary>
         /// An API Id back to nation/region name
@@ -211,7 +299,7 @@ namespace NationStatesAPIBot
         /// <returns>Formated string convert back to name</returns>
         private static string FromID(string text)
         {
-            return text.Trim().ToLower().Replace('_', ' ');
+            return text?.Trim().ToLower().Replace('_', ' ');
         }
 
         internal async Task StartRecruitingAsync()
