@@ -55,6 +55,7 @@ namespace NationStatesAPIBot
                 .HasOne(up => up.Permission)
                 .WithMany(p => p.UserPermissions)
                 .HasForeignKey(up => up.PermissionId);
+
             //Many to Many Role <-> Permission
             modelBuilder.Entity<RolePermissions>()
                 .HasKey(rp => new { rp.RoleId, rp.PermissionId });

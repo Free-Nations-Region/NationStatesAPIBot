@@ -14,23 +14,25 @@ namespace NationStatesAPIBot.Commands.Management
         {
             try
             {
-                if (await PermissionManager.IsAllowed(PermissionType.AccessPending, Context.User))
+                if (PermissionManager.IsAllowed(PermissionType.AccessPending, Context.User))
                 {
-                    await ReplyAsync($"The action was queued successfully. Please be patient this may take a moment.");
+                    
                     if (type == "all" || string.IsNullOrWhiteSpace(type))
                     {
+                        await ReplyAsync($"The action was queued successfully. Please be patient this may take a moment."); //To-Do: Move text to variable
                         var syncResult = await HandleRejected();
                         var result = await HandleNew();
                         await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1 + result} Nations added to pending. {syncResult.Item1 + result} Nations added to database. {syncResult.Item2} removed from database."); //To-Do Send embeded
                     }
                     else if (type == "new")
                     {
+                        await ReplyAsync($"The action was queued successfully. Please be patient this may take a moment."); //To-Do: Move text to variable
                         var result = await HandleNew();
-                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to pending. {result} Nations added to database."); //To-Do Send embeded
+                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to pending. {result} Nations added to database."); //To-Do: Send embeded
                     }
                     else if (type == "rejected")
                     {
-
+                        await ReplyAsync($"The action was queued successfully. Please be patient this may take a moment."); //To-Do: Move text to variable
                         var syncResult = await HandleRejected();
                         await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1} Nations added to pending. {syncResult.Item1} Nations added to database. {syncResult.Item2} removed from database."); //To-Do Send embeded
                     }
