@@ -9,8 +9,8 @@ using NationStatesAPIBot;
 namespace NationStatesAPIBot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20190209003421_addRolePermissionUserRole")]
-    partial class addRolePermissionUserRole
+    [Migration("20190215231622_createDatabase")]
+    partial class createDatabase
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -69,7 +69,9 @@ namespace NationStatesAPIBot.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("DiscordUserId");
+                    b.Property<string>("Description");
+
+                    b.Property<string>("DiscordRoleId");
 
                     b.HasKey("Id");
 
@@ -156,7 +158,7 @@ namespace NationStatesAPIBot.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("NationStatesAPIBot.Entities.User", "User")
-                        .WithMany("Permissions")
+                        .WithMany("UserPermissions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });

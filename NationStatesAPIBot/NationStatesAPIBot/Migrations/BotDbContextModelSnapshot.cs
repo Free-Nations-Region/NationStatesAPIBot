@@ -67,7 +67,9 @@ namespace NationStatesAPIBot.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("DiscordUserId");
+                    b.Property<string>("Description");
+
+                    b.Property<string>("DiscordRoleId");
 
                     b.HasKey("Id");
 

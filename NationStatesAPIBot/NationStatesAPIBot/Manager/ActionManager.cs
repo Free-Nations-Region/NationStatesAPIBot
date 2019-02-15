@@ -2,8 +2,10 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -74,6 +76,7 @@ namespace NationStatesAPIBot.Managers
         {
             LoggerInstance = new Logger();
             await LoadConfig();
+            await InitDb();
             await SetupDiscordBot();
             NationStatesApiController = new NationStatesApiController();
             Running = true;
@@ -91,6 +94,37 @@ namespace NationStatesAPIBot.Managers
             await discordClient.StopAsync();
             Running = false;
             Environment.Exit(0);
+        }
+
+        private static async Task InitDb()
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                var executeCommandPermission = new Entities.Permission() { Name = "ExecuteCommands", Description = "Determines if a User or Role can execute bot commands." };
+                if (dbContext.Permissions.Count() == 0)
+                {
+                    await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing permissions.");
+                    dbContext.Permissions.Add(executeCommandPermission);
+                    dbContext.Permissions.Add(new Permission() { Name = "AccessPending", Description = "Determines if a User or Role is allowed to access or refresh the pending list of nations for the recruitment process." });
+                    dbContext.Permissions.Add(new Permission() { Name = "Shutdown", Description = "Determines if a User or Role is allowed to turn the bot off." });
+                    dbContext.Permissions.Add(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
+                    dbContext.Permissions.Add(new Permission() { Name = "ManageRoles", Description = "Determines if a User or Role is allowed to read, assign and remove Roles from Users." });
+                    await dbContext.SaveChangesAsync();
+                }
+                if(dbContext.Roles.Count() == 0)
+                {
+                    await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing roles.");
+                    var role = new Role() { Description = "Default-User" };
+                    dbContext.Roles.Add(role);
+                    await dbContext.SaveChangesAsync();
+                    role.RolePermissions = new List<RolePermissions>
+                    {
+                        new RolePermissions() { Permission = executeCommandPermission, PermissionId = executeCommandPermission.Id, Role = role, RoleId = role.Id }
+                    };
+                    dbContext.Update(role);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
         }
 
         private static async Task LoadConfig()
