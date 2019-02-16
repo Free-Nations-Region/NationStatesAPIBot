@@ -86,7 +86,7 @@ namespace NationStatesAPIBot.Managers
         public static async Task Shutdown()
         {
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Shutdown requested.");
-            if (NationStatesApiController.isRecruiting)
+            if (NationStatesApiController.IsRecruiting)
             {
                 await NationStatesApiController.StopRecruitingAsync();
             }

@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Commands.Management
         /// Request nations of the region "the rejected realms" syncs them to the database and adds new ones to pending
         /// </summary>
         /// <returns>A Tuple of 1: Added 2: Removed from Database 3: Added to pending</returns>
-        public async Task<Tuple<int, int, int>> HandleRejected()
+        private async Task<Tuple<int, int, int>> HandleRejected()
         {
             using (var dbContext = new BotDbContext())
             {
@@ -77,7 +77,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        public async Task<int> HandleNew()
+        private async Task<int> HandleNew()
         {
             await ActionManager.LoggerInstance.LogAsync(LogSeverity.Debug, "RefreshPending - HandleNew", "Entered");
             var result = await ActionManager.NationStatesApiController.RequestNewNationsAsync(false);

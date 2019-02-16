@@ -167,7 +167,7 @@ namespace NationStatesAPIBot.Commands.Management
                     $"I removed your command from the other channel. " +
                     $"Please try again here. " +
                     $"Sorry for the inconvenience. " + Environment.NewLine +
-                    $"Your command was: {content}" + $"<@{Context.User.Id}>");
+                    $"Your command was: {content}");
             }
         }
     }

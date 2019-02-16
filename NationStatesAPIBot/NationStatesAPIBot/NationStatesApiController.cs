@@ -21,7 +21,7 @@ namespace NationStatesAPIBot
         internal DateTime lastTelegramSending;
         internal DateTime lastAutomaticNewNationsRequest;
         internal DateTime lastAutomaticRegionNationsRequest;
-        internal bool isRecruiting { get; private set; }
+        internal bool IsRecruiting { get; private set; }
         /// <summary>
         /// Creates an HttpWebRequest targeted to NationStatesAPI
         /// </summary>
@@ -307,7 +307,7 @@ namespace NationStatesAPIBot
         internal async Task StartRecruitingAsync()
         {
             Log(LogSeverity.Info, "Starting Recruitment process.");
-            isRecruiting = true;
+            IsRecruiting = true;
 #pragma warning disable CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
             Task.Run(() => RecruitAsync());
 #pragma warning restore CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
@@ -380,7 +380,7 @@ namespace NationStatesAPIBot
         private async Task RecruitAsync()
         {
             List<Nation> pendingNations = new List<Nation>();
-            while (isRecruiting)
+            while (IsRecruiting)
             {
                 if (pendingNations.Count == 0)
                 {
