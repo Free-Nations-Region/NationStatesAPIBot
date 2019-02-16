@@ -41,8 +41,6 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 # Roadmap
 
 Next features:
-- migrate earlier file writes to database with EntityFrameworkCore
-
 - check if recipient would receive telegram if not skip to next pending recipient by calling:
 https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&from=%regionName%
 
@@ -50,6 +48,6 @@ https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&
 
 - Backing Up Logs of Channels using Discord Chat Exporter
 
-- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment if verified after specified time.
+- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
 
 - Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
