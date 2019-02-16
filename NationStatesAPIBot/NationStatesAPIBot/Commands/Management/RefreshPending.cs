@@ -18,25 +18,25 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 if (PermissionManager.IsAllowed(PermissionType.AccessPending, Context.User))
                 {
-                    
+
                     if (type == "all" || string.IsNullOrWhiteSpace(type))
                     {
                         await ReplyAsync(actionQueued);
                         var syncResult = await HandleRejected();
                         var result = await HandleNew();
-                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1 + result} Nations added to database. {syncResult.Item2} removed from database."); //To-Do Send embeded
+                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1 + result} Nations added to database. {syncResult.Item3 + result} Nations added to pending. {syncResult.Item2} removed from database."); //To-Do Send embeded
                     }
                     else if (type == "new")
                     {
                         await ReplyAsync(actionQueued);
                         var result = await HandleNew();
-                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to pending. {result} Nations added to database."); //To-Do: Send embeded
+                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to database. {result} Nations added to pending."); //To-Do: Send embeded
                     }
                     else if (type == "rejected")
                     {
                         await ReplyAsync(actionQueued);
                         var syncResult = await HandleRejected();
-                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1} Nations added to pending. {syncResult.Item1} Nations added to database. {syncResult.Item2} removed from database."); //To-Do Send embeded
+                        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {syncResult.Item1} Nations added to database. {syncResult.Item3} Nations added to pending. {syncResult.Item2} removed from database."); //To-Do Send embeded
                     }
                     else
                     {
@@ -54,20 +54,27 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        public async Task<Tuple<int, int>> HandleRejected()
+        /// <summary>
+        /// Request nations of the region "the rejected realms" syncs them to the database and adds new ones to pending
+        /// </summary>
+        /// <returns>A Tuple of 1: Added 2: Removed from Database 3: Added to pending</returns>
+        public async Task<Tuple<int, int, int>> HandleRejected()
         {
-            string regionName = "the rejected realms";
-            var result = await ActionManager.NationStatesApiController.RequestNationsFromRegionAsync(regionName, false);
-            var joined = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "member", regionName);
-            var syncResult = await ActionManager.NationStatesApiController.SyncRegionMembersWithDatabase(result, regionName);
             using (var dbContext = new BotDbContext())
             {
-                if (dbContext.Nations.Count() > 0)
+                string regionName = "the rejected realms";
+                int initialMemberCount = dbContext.Nations.Where(n => n.Status.Name == "member").Count();
+                var result = await ActionManager.NationStatesApiController.RequestNationsFromRegionAsync(regionName, false);
+                var joined = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "member", regionName);
+                var syncResult = await ActionManager.NationStatesApiController.SyncRegionMembersWithDatabase(result, regionName);
+                int addedToPending = 0;
+                if (initialMemberCount > 0)
                 {
                     await ActionManager.NationStatesApiController.AddToPending(joined);
+                    addedToPending = joined.Count;
                 }
+                return new Tuple<int, int, int>(syncResult.Item1, syncResult.Item2, addedToPending);
             }
-            return syncResult;
         }
 
         public async Task<int> HandleNew()

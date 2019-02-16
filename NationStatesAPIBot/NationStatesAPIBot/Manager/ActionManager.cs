@@ -64,6 +64,7 @@ namespace NationStatesAPIBot.Managers
         /// </summary>
         internal static string BotAdminDiscordUserId { get; private set; }
 
+        private static bool Reactive = true;
         private static DiscordSocketClient discordClient { get; set; }
         private static CommandService commands;
         private static IServiceProvider services;
@@ -105,7 +106,6 @@ namespace NationStatesAPIBot.Managers
                 {
                     await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing permissions.");
                     await dbContext.Permissions.AddAsync(executeCommandPermission);
-                    await dbContext.Permissions.AddAsync(new Permission() { Name = "Shutdown", Description = "Determines if a User or Role is allowed to turn the bot off." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "AccessPending", Description = "Determines if a User or Role is allowed to access or refresh the pending list of nations for the recruitment process." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRoles", Description = "Determines if a User or Role is allowed to read, assign and remove Roles from Users." });
@@ -209,17 +209,43 @@ namespace NationStatesAPIBot.Managers
             {
                 var message = arg as SocketUserMessage;
                 var context = new SocketCommandContext(discordClient, message);
+                if (Reactive)
+                {
+                    if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
 
-                if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
+                    int argPos = 0;
+                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos) || PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User))) return;
 
-                int argPos = 0;
-                if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos) || PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User))) return;
-                var Result = await commands.ExecuteAsync(context, argPos, services);
+                    //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
+                    if (IsBotAdmin(context.User.Id.ToString()) && message.Content == "/sleep")
+                    {
+                        await context.Channel.SendMessageAsync("Ok! Going to sleep now. Wake me up later with /wakeup.");
+                        Reactive = false;
+                    }
+                    else
+                    {
+                        var Result = await commands.ExecuteAsync(context, argPos, services);
+                    }
+                }
+                else
+                {
+                    // Reenables the Reactiveness of the bot using /wakeup command.
+                    if(IsBotAdmin(context.User.Id.ToString()) && message.Content == "/wakeup")
+                    {
+                        Reactive = true;
+                        await context.Channel.SendMessageAsync("Hey! I'm back.");
+                    }
+                }
             }
             catch (Exception ex)
             {
                 await LoggerInstance.LogAsync(LogSeverity.Critical, $"{source}-MessageReceived", ex.ToString());
             }
+        }
+
+        public static bool IsBotAdmin(string userId)
+        {
+            return userId == BotAdminDiscordUserId;
         }
 
         private static async Task DiscordClient_Disconnected(Exception arg)

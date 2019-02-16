@@ -7,10 +7,9 @@ namespace NationStatesAPIBot.Types
    public enum PermissionType
     {
         ExecuteCommands = 1,
-        ShutDown = 2,
-        AccessPending = 3,
-        ManagePermissions = 4,
-        ManageRoles = 5,
-        ManageRecruitment = 6,
+        AccessPending = 2,
+        ManagePermissions = 3,
+        ManageRoles = 4,
+        ManageRecruitment = 5,
     }
 }

@@ -13,14 +13,10 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("shutdown"), Summary("Shuts down the bot")]
         public async Task DoShutdown()
         {
-            if(PermissionManager.IsAllowed(PermissionType.ShutDown, Context.User))
+            if(ActionManager.IsBotAdmin(Context.User.Id.ToString()))
             {
                 await ReplyAsync("Shutting down. Bye Bye !");
                 await ActionManager.Shutdown();
-            }
-            else
-            {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
             }
         }
     }
