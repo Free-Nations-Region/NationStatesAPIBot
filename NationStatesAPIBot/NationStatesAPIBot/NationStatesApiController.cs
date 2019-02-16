@@ -21,7 +21,7 @@ namespace NationStatesAPIBot
         internal DateTime lastTelegramSending;
         internal DateTime lastAutomaticNewNationsRequest;
         internal DateTime lastAutomaticRegionNationsRequest;
-        internal bool isRecruiting { get; set; }
+        internal bool isRecruiting { get; private set; }
         /// <summary>
         /// Creates an HttpWebRequest targeted to NationStatesAPI
         /// </summary>
@@ -237,24 +237,25 @@ namespace NationStatesAPIBot
         }
 
         /// <summary>
-        /// Send an (Recruitment-)Telegram to an specified recipient
+        /// 
         /// </summary>
-        /// <param name="recipient">The name of the nation which should receive the telegram</param>
-        /// <param name="telegramId">The name of the nation which should receive the telegram</param>
-        /// <param name="isRecruitment">Flag that determines if the telegram is an recruitment telegram or not</param>
-        /// <returns>If the telegram could be queued successfully</returns>
-        internal async Task<bool> SendTelegramAsync(string recipient, string telegramId, bool isRecruitment)
+        /// <param name="recipient"></param>
+        /// <param name="telegramId"></param>
+        /// <param name="isRecruitment"></param>
+        /// <param name="isScheduled"></param>
+        /// <returns></returns>
+        internal async Task<bool> SendTelegramAsync(string recipient, string telegramId, string secretKey, bool isRecruitment, bool isScheduled)
         {
             try
             {
                 var request = CreateApiRequest($"a=sendTG" +
                     $"&client={HttpUtility.UrlEncode(ActionManager.NationStatesClientKey)}" +
-                    $"&tgid={HttpUtility.UrlEncode(ActionManager.NationStatesRecruitmentTelegramID)}" +
-                    $"&key={HttpUtility.UrlEncode(ActionManager.NationStatesSecretKey)}" +
+                    $"&tgid={HttpUtility.UrlEncode(telegramId)}" +
+                    $"&key={HttpUtility.UrlEncode(secretKey)}" +
                     $"&to={HttpUtility.UrlEncode(ToID(recipient))}");
                 var responseText = await ExecuteRequestWithTextResponseAsync(request, isRecruitment ?
                     NationStatesApiRequestType.SendRecruitmentTelegram :
-                    NationStatesApiRequestType.SendTelegram, true); //isScheduled true -> Telegrams can not be send manually
+                    NationStatesApiRequestType.SendTelegram, isScheduled);
                 if (!responseText.Contains("queued"))
                     throw new Exception("NationStates reported an error: " + responseText);
                 return true;
@@ -270,15 +271,16 @@ namespace NationStatesAPIBot
         /// </summary>
         /// <param name="recipient">The name of the nation which should receive the telegram</param>
         /// <returns>If the telegram could be queued successfully</returns>
-        internal async Task<bool> SendTelegramAsync(string recipient)
+        private async Task<bool> SendRecruitmentTelegramAsync(string recipient)
         {
-            return await SendTelegramAsync(recipient, ActionManager.NationStatesRecruitmentTelegramID, true);
+            return await SendTelegramAsync(recipient, ActionManager.NationStatesRecruitmentTelegramID, ActionManager.NationStatesRecruitmentTGSecretKey, true, true);
         }
-        /// <summary>
-        /// Local Helper Method for logging
-        /// </summary>
-        /// <param name="severity">LogSeverity of the message to log</param>
-        /// <param name="message">The message to log</param>
+
+        private static void Log(LogSeverity severity, string source, string message)
+        {
+            Task.Run(() => ActionManager.LoggerInstance.LogAsync(severity, $"{Source} - {source}", message));
+        }
+
         private static void Log(LogSeverity severity, string message)
         {
             Task.Run(() => ActionManager.LoggerInstance.LogAsync(severity, Source, message));
@@ -305,6 +307,10 @@ namespace NationStatesAPIBot
         internal async Task StartRecruitingAsync()
         {
             Log(LogSeverity.Info, "Starting Recruitment process.");
+            isRecruiting = true;
+#pragma warning disable CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
+            Task.Run(() => RecruitAsync());
+#pragma warning restore CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
             await Task.Delay(1000); //To-Do
         }
 
@@ -313,5 +319,172 @@ namespace NationStatesAPIBot
             Log(LogSeverity.Info, "Stopping Recruitment process.");
             await Task.Delay(1000); //To-Do
         }
+
+        private async Task SetNationStatusToSendAsync(Nation nation)
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == "send");
+                if (status != null)
+                {
+                    status = new NationStatus() { Name = "send" };
+                    await dbContext.NationStatuses.AddAsync(status);
+                    await dbContext.SaveChangesAsync();
+                }
+                nation.Status = status;
+                nation.StatusId = status.Id;
+                nation.StatusTime = DateTime.UtcNow;
+                dbContext.Nations.Update(nation);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+
+        private async Task SetNationStatusToSkippedAsync(Nation nation)
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == "skipped");
+                if (status != null)
+                {
+                    status = new NationStatus() { Name = "skipped" };
+                    await dbContext.NationStatuses.AddAsync(status);
+                    await dbContext.SaveChangesAsync();
+                }
+                nation.Status = status;
+                nation.StatusId = status.Id;
+                nation.StatusTime = DateTime.UtcNow;
+                dbContext.Nations.Update(nation);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+
+        private async Task SetNationStatusToFailedAsync(Nation nation)
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == "failed");
+                if (status != null)
+                {
+                    status = new NationStatus() { Name = "failed" };
+                    await dbContext.NationStatuses.AddAsync(status);
+                    await dbContext.SaveChangesAsync();
+                }
+                nation.Status = status;
+                nation.StatusId = status.Id;
+                nation.StatusTime = DateTime.UtcNow;
+                dbContext.Nations.Update(nation);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+
+        private async Task RecruitAsync()
+        {
+            List<Nation> pendingNations = new List<Nation>();
+            while (isRecruiting)
+            {
+                if (pendingNations.Count == 0)
+                {
+                    pendingNations = GetPendingNationAsync();
+                }
+
+                var picked = pendingNations.Take(1);
+                var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                if (nation != null)
+                {
+                    Log(LogSeverity.Debug, "Recruitment", $"Sending Telegram to {nation}");
+                    //To-Do: Check if recipient would receive telegram
+                    if (await SendRecruitmentTelegramAsync(nation.Name))
+                    {
+                        await SetNationStatusToSendAsync(nation);
+                    }
+                    else
+                    {
+                        await SetNationStatusToFailedAsync(nation);
+                        Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation} could not be send.");
+                    }
+                    pendingNations.Remove(nation);
+
+                }
+                else
+                {
+                    Log(LogSeverity.Warning, "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
+                }
+                if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))
+                {
+                    Log(LogSeverity.Debug, "Collecting new Nations");
+                    var result = await ActionManager.NationStatesApiController.RequestNewNationsAsync(true);
+                    var newnations = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "pending");
+                    await ActionManager.NationStatesApiController.AddToPending(newnations);
+                }
+                if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNationsFromRegion, true))
+                {
+                    string regionName = "the rejected realms";
+                    var result = await ActionManager.NationStatesApiController.RequestNationsFromRegionAsync(regionName, true);
+                    var joined = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "member", regionName);
+                    var syncResult = await ActionManager.NationStatesApiController.SyncRegionMembersWithDatabase(result, regionName);
+                    await ActionManager.NationStatesApiController.AddToPending(joined);
+                }
+            }
+        }
+
+        private List<Nation> GetPendingNationAsync()
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                return dbContext.Nations.Where(n => n.Status.Name == "pending").ToList();
+            }
+        }
+
+        //public static void Recruit()
+        //{
+        //    Logger.Log(LogLevel.INFO, "Starting recruitment.");
+        //    while (Recruiting)
+        //    {
+        //        Logger.Log(LogLevel.DEBUG, "Recruitment Loop");
+        //        if (DateTime.Now.Ticks - lastTelegramSending.Ticks > recruitmentTelegramDelay)
+        //        {
+        //            Logger.Log(LogLevel.DEBUG, "Sending Telegram.");
+        //            if (!DryRun)
+        //            {
+        //                LoadPendingNations();
+        //            }
+        //            var picked = PendingNations.Take(1);
+        //            var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+        //            if (nation != null)
+        //            {
+        //                Logger.Log(LogLevel.DEBUG, $"Sending Telegram to {nation}");
+        //                if (SendTelegram(nation))
+        //                {
+        //                    PendingNations.Remove(nation);
+        //                    WriteSend(nation);
+        //                    WritePending();
+        //                }
+        //                if (DryRun)
+        //                {
+        //                    lastTelegramSending = DateTime.Now;
+        //                    PendingNations.Remove(nation);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                Logger.Log(LogLevel.WARN, "Pending Nations empty can not send telegram: No recipient.");
+        //            }
+        //        }
+        //        if (DateTime.Now.Ticks - lastNewNationRequest.Ticks > newNationsRequestDelay)
+        //        {
+        //            Logger.Log(LogLevel.DEBUG, "Collecting New Nations.");
+        //            Program.AddNewNationsToPending(out List<string> nations);
+        //            lastNewNationRequest = DateTime.Now;
+        //        }
+        //        if (DateTime.Now.Ticks - lastRegionNationsRequest.Ticks > matchNewNationsInRegionRequestDelay)
+        //        {
+        //            Logger.Log(LogLevel.DEBUG, "Collecting Rejected Nations.");
+        //            Program.AddNewNationsFromRegionToPending("the_rejected_realms", out List<string> nations);
+        //            lastRegionNationsRequest = DateTime.Now;
+        //        }
+        //        Thread.Sleep(1000);
+        //    }
+        //    Logger.Log(LogLevel.INFO, "Recruiting stopped.");
+        //}
     }
 }

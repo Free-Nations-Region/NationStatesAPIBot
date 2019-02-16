@@ -38,7 +38,7 @@ namespace NationStatesAPIBot.Managers
         /// <summary>
         /// The secretKey required for sending telegrams
         /// </summary>
-        internal static string NationStatesSecretKey { get; private set; }
+        internal static string NationStatesRecruitmentTGSecretKey { get; private set; }
         /// <summary>
         /// The contact information to be added to the user agent. Could be a nation name or a email address or something like that.
         /// </summary>
@@ -104,18 +104,19 @@ namespace NationStatesAPIBot.Managers
                 if (dbContext.Permissions.Count() == 0)
                 {
                     await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing permissions.");
-                    dbContext.Permissions.Add(executeCommandPermission);
-                    dbContext.Permissions.Add(new Permission() { Name = "AccessPending", Description = "Determines if a User or Role is allowed to access or refresh the pending list of nations for the recruitment process." });
-                    dbContext.Permissions.Add(new Permission() { Name = "Shutdown", Description = "Determines if a User or Role is allowed to turn the bot off." });
-                    dbContext.Permissions.Add(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
-                    dbContext.Permissions.Add(new Permission() { Name = "ManageRoles", Description = "Determines if a User or Role is allowed to read, assign and remove Roles from Users." });
+                    await dbContext.Permissions.AddAsync(executeCommandPermission);
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "Shutdown", Description = "Determines if a User or Role is allowed to turn the bot off." });
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "AccessPending", Description = "Determines if a User or Role is allowed to access or refresh the pending list of nations for the recruitment process." });
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRoles", Description = "Determines if a User or Role is allowed to read, assign and remove Roles from Users." });
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRecruiting", Description = "Determines if a User or Role is allowed to start or stop the recruitment process." });
                     await dbContext.SaveChangesAsync();
                 }
                 if(dbContext.Roles.Count() == 0)
                 {
                     await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing roles.");
                     var role = new Role() { Description = "Default-User" };
-                    dbContext.Roles.Add(role);
+                    await dbContext.Roles.AddAsync(role);
                     await dbContext.SaveChangesAsync();
                     role.RolePermissions = new List<RolePermissions>
                     {
@@ -139,7 +140,7 @@ namespace NationStatesAPIBot.Managers
                 {
                     NationStatesClientKey = lines.Find(l => l.StartsWith("clientKey=")).Split("=")[1];
                     NationStatesRecruitmentTelegramID = lines.Find(l => l.StartsWith("telegramId=")).Split("=")[1];
-                    NationStatesSecretKey = lines.Find(l => l.StartsWith("secretKey=")).Split("=")[1];
+                    NationStatesRecruitmentTGSecretKey = lines.Find(l => l.StartsWith("secretKey=")).Split("=")[1];
                     ContactInformation = lines.Find(c => c.StartsWith("contact=")).Split("=")[1];
                     DiscordBotLoginToken = lines.Find(c => c.StartsWith("botLoginToken=")).Split("=")[1];
                     BotAdminDiscordUserId = lines.Find(c => c.StartsWith("botAdminUser=")).Split("=")[1];

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Managers;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -48,7 +49,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        [Command("checkPerm"), Summary("Returns all Users how have specified permission")]
+        [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
         public async Task DoCheckPerm(long id)
         {
             if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
@@ -117,41 +118,56 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("grantPermission"), Summary("Adds a User to the database")]
         public async Task DoGrantPermission(string id, int permissionId)
         {
-            if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
+            if (Context.IsPrivate)
             {
-                using (var dbContext = new BotDbContext())
+                if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
                 {
-                    var channel = await Context.User.GetOrCreateDMChannelAsync();
-                    var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);
-                    var permission = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == permissionId);
-                    if (permission != null)
+                    using (var dbContext = new BotDbContext())
                     {
-                        if (user == null)
+                        var channel = await Context.User.GetOrCreateDMChannelAsync();
+                        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);
+                        var permission = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == permissionId);
+                        if (permission != null)
                         {
-                            user = new User() { DiscordUserId = Context.User.Id.ToString() };
-                            await dbContext.Users.AddAsync(user);
-                            
-                            await channel.SendMessageAsync("User not found. -> User added");
-                        }
-                        if(user.UserPermissions == null)
-                        {
-                            user.UserPermissions = new System.Collections.Generic.List<UserPermissions>();
-                        }
-                        user.UserPermissions.Add(new UserPermissions() { PermissionId = permissionId, UserId = user.Id, User = user, Permission = permission });
-                        dbContext.Update(user);
-                        await dbContext.SaveChangesAsync();
-                        await channel.SendMessageAsync("Granted Permission");
+                            if (user == null)
+                            {
+                                user = new User() { DiscordUserId = Context.User.Id.ToString() };
+                                await dbContext.Users.AddAsync(user);
 
+                                await channel.SendMessageAsync("User not found. -> User added");
+                            }
+                            if (user.UserPermissions == null)
+                            {
+                                user.UserPermissions = new System.Collections.Generic.List<UserPermissions>();
+                            }
+                            user.UserPermissions.Add(new UserPermissions() { PermissionId = permissionId, UserId = user.Id, User = user, Permission = permission });
+                            dbContext.Update(user);
+                            await dbContext.SaveChangesAsync();
+                            await channel.SendMessageAsync("Granted Permission");
+
+                        }
+                        else
+                        {
+                            await channel.SendMessageAsync("Permission not found.");
+                        }
                     }
-                    else
-                    {
-                        await channel.SendMessageAsync("Permission not found.");
-                    }
+                }
+                else
+                {
+                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
                 }
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                var content = Context.Message.Content;
+                await Context.Message.DeleteAsync();
+                var channel = await Context.User.GetOrCreateDMChannelAsync();
+                await channel.SendMessageAsync($"This command is confidential. " +
+                    $"So it is only accepted in private channels. " +
+                    $"I removed your command from the other channel. " +
+                    $"Please try again here. " +
+                    $"Sorry for the inconvenience. " + Environment.NewLine +
+                    $"Your command was: {content}" + $"<@{Context.User.Id}>");
             }
         }
     }

@@ -8,6 +8,9 @@ namespace NationStatesAPIBot.Types
     {
         ExecuteCommands = 1,
         ShutDown = 2,
-        AccessPending = 3
+        AccessPending = 3,
+        ManagePermissions = 4,
+        ManageRoles = 5,
+        ManageRecruitment = 6,
     }
 }
