@@ -53,6 +53,7 @@ namespace NationStatesAPIBot
                 switch (type)
                 {
                     case NationStatesApiRequestType.SendTelegram:
+                    case NationStatesApiRequestType.SendRecruitmentTelegram:
                         lastTelegramSending = DateTime.Now;
                         break;
                     case NationStatesApiRequestType.GetNewNations:
@@ -94,8 +95,15 @@ namespace NationStatesAPIBot
         {
             using (var stream = await ExecuteRequestAsync(webRequest, type, isScheduled))
             {
-                StreamReader streamReader = new StreamReader(stream);
-                return await streamReader.ReadToEndAsync();
+                if (stream != null)
+                {
+                    StreamReader streamReader = new StreamReader(stream);
+                    return await streamReader.ReadToEndAsync();
+                }
+                else
+                {
+                    return string.Empty;
+                }
             }
         }
         /// <summary>
@@ -256,9 +264,19 @@ namespace NationStatesAPIBot
                 var responseText = await ExecuteRequestWithTextResponseAsync(request, isRecruitment ?
                     NationStatesApiRequestType.SendRecruitmentTelegram :
                     NationStatesApiRequestType.SendTelegram, isScheduled);
-                if (!responseText.Contains("queued"))
+                if (!string.IsNullOrWhiteSpace(responseText) && !responseText.Contains("queued"))
+                {
                     throw new Exception("NationStates reported an error: " + responseText);
-                return true;
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(responseText))
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+                
             }
             catch (Exception ex)
             {
@@ -325,7 +343,7 @@ namespace NationStatesAPIBot
             using (var dbContext = new BotDbContext())
             {
                 var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == "send");
-                if (status != null)
+                if (status == null)
                 {
                     status = new NationStatus() { Name = "send" };
                     await dbContext.NationStatuses.AddAsync(status);
@@ -363,7 +381,7 @@ namespace NationStatesAPIBot
             using (var dbContext = new BotDbContext())
             {
                 var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == "failed");
-                if (status != null)
+                if (status == null)
                 {
                     status = new NationStatus() { Name = "failed" };
                     await dbContext.NationStatuses.AddAsync(status);
@@ -391,8 +409,9 @@ namespace NationStatesAPIBot
                 var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                 if (nation != null)
                 {
-                    Log(LogSeverity.Debug, "Recruitment", $"Sending Telegram to {nation}");
-                    //To-Do: Check if recipient would receive telegram
+                    Log(LogSeverity.Debug, "Recruitment", $"Sending Telegram to {nation.Name}");
+                    //To-Do: Check if recipient would receive telegra
+
                     if (await SendRecruitmentTelegramAsync(nation.Name))
                     {
                         await SetNationStatusToSendAsync(nation);
@@ -400,7 +419,7 @@ namespace NationStatesAPIBot
                     else
                     {
                         await SetNationStatusToFailedAsync(nation);
-                        Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation} could not be send.");
+                        Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation.Name} could not be send.");
                     }
                     pendingNations.Remove(nation);
 
