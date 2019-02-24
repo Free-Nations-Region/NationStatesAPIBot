@@ -264,19 +264,15 @@ namespace NationStatesAPIBot
                 var responseText = await ExecuteRequestWithTextResponseAsync(request, isRecruitment ?
                     NationStatesApiRequestType.SendRecruitmentTelegram :
                     NationStatesApiRequestType.SendTelegram, isScheduled);
-                if (!string.IsNullOrWhiteSpace(responseText) && !responseText.Contains("queued"))
+                if (!string.IsNullOrWhiteSpace(responseText) && responseText.Contains("queued"))
                 {
-                    throw new Exception("NationStates reported an error: " + responseText);
+                    return true;
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(responseText))
-                    {
-                        return false;
-                    }
-                    return true;
+                    throw new Exception("NationStates reported an error: " + responseText);
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -326,9 +322,7 @@ namespace NationStatesAPIBot
         {
             Log(LogSeverity.Info, "Starting Recruitment process.");
             IsRecruiting = true;
-#pragma warning disable CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
-            Task.Run(() => RecruitAsync());
-#pragma warning restore CS4014 // Da dieser Aufruf nicht abgewartet wird, wird die Ausführung der aktuellen Methode fortgesetzt, bevor der Aufruf abgeschlossen ist
+            RecruitAsync();
             await Task.Delay(1000); //To-Do
         }
 
@@ -402,12 +396,12 @@ namespace NationStatesAPIBot
             {
                 if (pendingNations.Count == 0)
                 {
-                    pendingNations = GetPendingNationAsync();
+                    pendingNations = GetPendingNations();
                 }
 
                 var picked = pendingNations.Take(1);
                 var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                if (nation != null)
+                if (nation != null && ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                 {
                     Log(LogSeverity.Debug, "Recruitment", $"Sending Telegram to {nation.Name}");
                     //To-Do: Check if recipient would receive telegra
@@ -443,10 +437,11 @@ namespace NationStatesAPIBot
                     var syncResult = await ActionManager.NationStatesApiController.SyncRegionMembersWithDatabase(result, regionName);
                     await ActionManager.NationStatesApiController.AddToPending(joined);
                 }
+                await Task.Delay(1000);
             }
         }
 
-        private List<Nation> GetPendingNationAsync()
+        private List<Nation> GetPendingNations()
         {
             using (var dbContext = new BotDbContext())
             {
