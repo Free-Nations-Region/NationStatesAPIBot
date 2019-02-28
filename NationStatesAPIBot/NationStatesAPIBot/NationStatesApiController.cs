@@ -45,7 +45,7 @@ namespace NationStatesAPIBot
         {
             try
             {
-                Log(LogSeverity.Debug, $"Waiting to execute {type}-Request. Once ActionManager grants the permit the request will be executed.");
+                Log(LogSeverity.Info, $"Waiting to execute {type}-Request. Once ActionManager grants the permit the request will be executed.");
                 while (!ActionManager.IsNationStatesApiActionReady(type, isScheduled))
                 {
                     await Task.Delay(1000); //Wait 1 second and try again
@@ -102,6 +102,7 @@ namespace NationStatesAPIBot
                 }
                 else
                 {
+                    Log(LogSeverity.Warning, "Tried executing request. Return stream were null. Check if an error occurred");
                     return string.Empty;
                 }
             }
@@ -162,7 +163,6 @@ namespace NationStatesAPIBot
         }
         internal List<string> MatchNationsAgainstKnownNations(List<string> newNations, string StatusName)
         {
-            Log(LogSeverity.Debug, "Match Nations - List, string");
             return MatchNationsAgainstKnownNations(newNations, StatusName, null);
         }
         internal List<string> MatchNationsAgainstKnownNations(List<string> newNations, string StatusName, string StatusDescription)
@@ -170,7 +170,6 @@ namespace NationStatesAPIBot
             using (var context = new BotDbContext())
             {
                 List<string> current;
-                Log(LogSeverity.Debug, "Match Nations entered");
                 if (string.IsNullOrWhiteSpace(ToID(StatusDescription)))
                 {
                     current = context.Nations.Where(n => n.Status.Name == StatusName).Select(n => n.Name).ToList();
@@ -179,7 +178,7 @@ namespace NationStatesAPIBot
                 {
                     current = context.Nations.Where(n => n.Status.Name == StatusName && n.Status.Description == ToID(StatusDescription)).Select(n => n.Name).ToList();
                 }
-                Log(LogSeverity.Debug, "Matched Nations - done");
+
                 return newNations.Except(current).ToList();
             }
         }
@@ -188,7 +187,6 @@ namespace NationStatesAPIBot
         {
             using (var context = new BotDbContext())
             {
-                Log(LogSeverity.Debug, "AddToPending");
                 var status = await context.NationStatuses.FirstOrDefaultAsync(n => n.Name == "pending");
                 if (status == null)
                 {
@@ -199,9 +197,7 @@ namespace NationStatesAPIBot
                 {
                     await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
                 }
-                Log(LogSeverity.Debug, "Added to Pending");
                 await context.SaveChangesAsync();
-                Log(LogSeverity.Debug, "Changes saved");
             }
         }
 
@@ -256,6 +252,7 @@ namespace NationStatesAPIBot
         {
             try
             {
+                Log(LogSeverity.Info, $"Sending Telegram to {recipient} scheduled: {isScheduled} recruitment: {isRecruitment}");
                 var request = CreateApiRequest($"a=sendTG" +
                     $"&client={HttpUtility.UrlEncode(ActionManager.NationStatesClientKey)}" +
                     $"&tgid={HttpUtility.UrlEncode(telegramId)}" +
@@ -403,7 +400,6 @@ namespace NationStatesAPIBot
                 var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                 if (nation != null && ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                 {
-                    Log(LogSeverity.Debug, "Recruitment", $"Sending Telegram to {nation.Name}");
                     //To-Do: Check if recipient would receive telegra
 
                     if (await SendRecruitmentTelegramAsync(nation.Name))
@@ -424,7 +420,6 @@ namespace NationStatesAPIBot
                 }
                 if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))
                 {
-                    Log(LogSeverity.Debug, "Collecting new Nations");
                     var result = await ActionManager.NationStatesApiController.RequestNewNationsAsync(true);
                     var newnations = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "pending");
                     await ActionManager.NationStatesApiController.AddToPending(newnations);
@@ -449,56 +444,5 @@ namespace NationStatesAPIBot
             }
         }
 
-        //public static void Recruit()
-        //{
-        //    Logger.Log(LogLevel.INFO, "Starting recruitment.");
-        //    while (Recruiting)
-        //    {
-        //        Logger.Log(LogLevel.DEBUG, "Recruitment Loop");
-        //        if (DateTime.Now.Ticks - lastTelegramSending.Ticks > recruitmentTelegramDelay)
-        //        {
-        //            Logger.Log(LogLevel.DEBUG, "Sending Telegram.");
-        //            if (!DryRun)
-        //            {
-        //                LoadPendingNations();
-        //            }
-        //            var picked = PendingNations.Take(1);
-        //            var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-        //            if (nation != null)
-        //            {
-        //                Logger.Log(LogLevel.DEBUG, $"Sending Telegram to {nation}");
-        //                if (SendTelegram(nation))
-        //                {
-        //                    PendingNations.Remove(nation);
-        //                    WriteSend(nation);
-        //                    WritePending();
-        //                }
-        //                if (DryRun)
-        //                {
-        //                    lastTelegramSending = DateTime.Now;
-        //                    PendingNations.Remove(nation);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                Logger.Log(LogLevel.WARN, "Pending Nations empty can not send telegram: No recipient.");
-        //            }
-        //        }
-        //        if (DateTime.Now.Ticks - lastNewNationRequest.Ticks > newNationsRequestDelay)
-        //        {
-        //            Logger.Log(LogLevel.DEBUG, "Collecting New Nations.");
-        //            Program.AddNewNationsToPending(out List<string> nations);
-        //            lastNewNationRequest = DateTime.Now;
-        //        }
-        //        if (DateTime.Now.Ticks - lastRegionNationsRequest.Ticks > matchNewNationsInRegionRequestDelay)
-        //        {
-        //            Logger.Log(LogLevel.DEBUG, "Collecting Rejected Nations.");
-        //            Program.AddNewNationsFromRegionToPending("the_rejected_realms", out List<string> nations);
-        //            lastRegionNationsRequest = DateTime.Now;
-        //        }
-        //        Thread.Sleep(1000);
-        //    }
-        //    Logger.Log(LogLevel.INFO, "Recruiting stopped.");
-        //}
     }
 }

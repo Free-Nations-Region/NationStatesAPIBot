@@ -1,5 +1,7 @@
 ﻿using Discord;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
@@ -7,7 +9,7 @@ namespace NationStatesAPIBot
     public class Logger
     {
         public LogSeverity SeverityThreshold { get; set; } = LogSeverity.Info;
-        public Task LogAsync(LogSeverity logSeverity, string source, string text)
+        public async Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
             if (logSeverity <= SeverityThreshold)
             {
@@ -40,8 +42,16 @@ namespace NationStatesAPIBot
                 string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
                 Console.WriteLine(message);
                 Console.ResetColor();
+                try
+                {
+                    await File.AppendAllLinesAsync($"log_{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}.txt", new List<string>() { message });
+                }
+                catch(Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.WriteLine($"[{DateTime.Now} at {source}] {LogSeverity.Error} : {ex.ToString()}");
+                }
             }
-            return Task.CompletedTask;
         }
     }
 }
