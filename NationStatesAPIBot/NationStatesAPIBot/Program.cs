@@ -22,7 +22,7 @@ namespace NationStatesAPIBot
             }
             catch (Exception ex)
             {
-                Task.Run(() => ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "Main", ex.ToString())).Wait();
+                Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "Main", ex.ToString())).Wait();
                 Task.Run(() => Console.Out.WriteLineAsync("Press any key to quit.")).Wait();
                 Console.ReadKey();
             }

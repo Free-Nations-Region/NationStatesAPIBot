@@ -289,12 +289,12 @@ namespace NationStatesAPIBot
 
         private static void Log(LogSeverity severity, string source, string message)
         {
-            Task.Run(() => ActionManager.LoggerInstance.LogAsync(severity, $"{Source} - {source}", message));
+            Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(severity, $"{Source} - {source}", message));
         }
 
         private static void Log(LogSeverity severity, string message)
         {
-            Task.Run(() => ActionManager.LoggerInstance.LogAsync(severity, Source, message));
+            Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(severity, Source, message));
         }
         /// <summary>
         /// Converts nation/region name to format that can be used on api calls

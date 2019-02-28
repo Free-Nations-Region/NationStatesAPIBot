@@ -93,6 +93,7 @@ namespace NationStatesAPIBot.Managers
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Going offline.");
             await discordClient.SetStatusAsync(UserStatus.Offline);
             await discordClient.StopAsync();
+            LoggerInstance.StopFileLogging();
             Running = false;
             Environment.Exit(0);
         }

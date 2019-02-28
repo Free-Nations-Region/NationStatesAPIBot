@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
@@ -9,8 +10,14 @@ namespace NationStatesAPIBot
     public class Logger
     {
         public LogSeverity SeverityThreshold { get; set; } = LogSeverity.Info;
+        private StringBuilder loggingStringBuilder = new StringBuilder();
+         bool fileLogging = false;
         public async Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
+            if (!fileLogging)
+            {
+                StartFileLogging();
+            }
             if (logSeverity <= SeverityThreshold)
             {
                 ConsoleColor color = ConsoleColor.Gray;
@@ -42,16 +49,40 @@ namespace NationStatesAPIBot
                 string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
                 Console.WriteLine(message);
                 Console.ResetColor();
+                loggingStringBuilder.AppendLine(message);    
+                Console.ResetColor();
+            }
+        }
+
+        private void StartFileLogging()
+        {
+            fileLogging = true;
+            Task.Run(async () => await RunFileLogging());
+        }
+
+        private async Task RunFileLogging()
+        {
+            while (fileLogging)
+            {
+                string toWrite = loggingStringBuilder.ToString();
+                loggingStringBuilder.Clear();
                 try
                 {
-                    await File.AppendAllLinesAsync($"log_{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}.txt", new List<string>() { message });
+                    await File.AppendAllTextAsync($"log_{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}.txt", toWrite);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine($"[{DateTime.Now} at {source}] {LogSeverity.Error} : {ex.ToString()}");
+                    Console.WriteLine($"[{DateTime.Now} at RunFileLogging] {LogSeverity.Error} : {ex.ToString()}");
+                    Console.ResetColor();
                 }
+                await Task.Delay(1000);
             }
+        }
+
+        public void StopFileLogging()
+        {
+            fileLogging = false;
         }
     }
 }
