@@ -29,7 +29,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                await ActionManager.NationStatesApiController.StartRecruitingAsync();
+                await ActionManager.NationStatesApiController.StopRecruitingAsync();
                 await ReplyAsync("Recruitment Process stopped.");
             }
             else

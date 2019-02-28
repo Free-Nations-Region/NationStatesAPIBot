@@ -326,6 +326,7 @@ namespace NationStatesAPIBot
         internal async Task StopRecruitingAsync()
         {
             Log(LogSeverity.Info, "Stopping Recruitment process.");
+            IsRecruiting = false;
             await Task.Delay(1000); //To-Do
         }
 
@@ -398,20 +399,22 @@ namespace NationStatesAPIBot
 
                 var picked = pendingNations.Take(1);
                 var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                if (nation != null && ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
+                if (nation != null)
                 {
                     //To-Do: Check if recipient would receive telegra
-
-                    if (await SendRecruitmentTelegramAsync(nation.Name))
+                    if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                     {
-                        await SetNationStatusToSendAsync(nation);
+                        if (await SendRecruitmentTelegramAsync(nation.Name))
+                        {
+                            await SetNationStatusToSendAsync(nation);
+                        }
+                        else
+                        {
+                            await SetNationStatusToFailedAsync(nation);
+                            Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation.Name} could not be send.");
+                        }
+                        pendingNations.Remove(nation);
                     }
-                    else
-                    {
-                        await SetNationStatusToFailedAsync(nation);
-                        Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation.Name} could not be send.");
-                    }
-                    pendingNations.Remove(nation);
 
                 }
                 else
