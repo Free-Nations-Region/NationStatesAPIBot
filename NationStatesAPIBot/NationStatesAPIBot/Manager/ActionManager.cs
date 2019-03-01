@@ -102,10 +102,10 @@ namespace NationStatesAPIBot.Managers
         {
             using (var dbContext = new BotDbContext())
             {
-                var executeCommandPermission = new Entities.Permission() { Name = "ExecuteCommands", Description = "Determines if a User or Role can execute bot commands." };
+                var executeCommandPermission = new Permission() { Name = "ExecuteCommands", Description = "Determines if a User or Role can execute bot commands." };
                 if (dbContext.Permissions.Count() == 0)
                 {
-                    await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing permissions.");
+                    await LoggerInstance.LogAsync(LogSeverity.Info, source, "Initializing permissions.");
                     await dbContext.Permissions.AddAsync(executeCommandPermission);
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "AccessPending", Description = "Determines if a User or Role is allowed to access or refresh the pending list of nations for the recruitment process." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
@@ -115,7 +115,7 @@ namespace NationStatesAPIBot.Managers
                 }
                 if(dbContext.Roles.Count() == 0)
                 {
-                    await LoggerInstance.LogAsync(LogSeverity.Debug, source, "Initializing roles.");
+                    await LoggerInstance.LogAsync(LogSeverity.Info, source, "Initializing roles.");
                     var role = new Role() { Description = "Default-User" };
                     await dbContext.Roles.AddAsync(role);
                     await dbContext.SaveChangesAsync();

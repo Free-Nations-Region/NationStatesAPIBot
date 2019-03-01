@@ -14,12 +14,12 @@ namespace NationStatesAPIBot
          bool fileLogging = false;
         public async Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
-            if (!fileLogging)
-            {
-                StartFileLogging();
-            }
             if (logSeverity <= SeverityThreshold)
             {
+                if (!fileLogging)
+                {
+                    StartFileLogging();
+                }
                 ConsoleColor color = ConsoleColor.Gray;
                 if (logSeverity == LogSeverity.Critical)
                 {
@@ -73,7 +73,7 @@ namespace NationStatesAPIBot
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine($"[{DateTime.Now} at RunFileLogging] {LogSeverity.Error} : {ex.ToString()}");
+                    Console.WriteLine($"[{DateTime.Now} at RunFileLogging] {LogSeverity.Critical} : {ex.ToString()}");
                     Console.ResetColor();
                 }
                 await Task.Delay(1000);

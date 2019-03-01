@@ -51,3 +51,7 @@ https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
 
 - Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
+
+- Polls  
+
+- Games (Werewolf)  

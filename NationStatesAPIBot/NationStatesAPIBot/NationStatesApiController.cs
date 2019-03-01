@@ -45,7 +45,7 @@ namespace NationStatesAPIBot
         {
             try
             {
-                Log(LogSeverity.Info, $"Waiting to execute {type}-Request. Once ActionManager grants the permit the request will be executed.");
+                Log(LogSeverity.Verbose, $"Waiting to execute {type}-Request. Once ActionManager grants the permit the request will be executed.");
                 while (!ActionManager.IsNationStatesApiActionReady(type, isScheduled))
                 {
                     await Task.Delay(1000); //Wait 1 second and try again
@@ -185,6 +185,7 @@ namespace NationStatesAPIBot
 
         internal async Task AddToPending(List<string> newNations)
         {
+            int counter = 0;
             using (var context = new BotDbContext())
             {
                 var status = await context.NationStatuses.FirstOrDefaultAsync(n => n.Name == "pending");
@@ -193,10 +194,17 @@ namespace NationStatesAPIBot
                     status = new NationStatus() { Name = "pending" };
                     await context.NationStatuses.AddAsync(status);
                 }
+                List<Nation> notAddableNations = GetNationsByStatusName("send");
+                notAddableNations.AddRange(GetNationsByStatusName("skipped"));
                 foreach (string name in newNations)
                 {
-                    await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
+                    if (!notAddableNations.Exists(n => n.Name == name))
+                    {
+                        await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
+                        counter++;
+                    }
                 }
+                Log(LogSeverity.Verbose, $"{counter} nations added to pending");
                 await context.SaveChangesAsync();
             }
         }
@@ -227,12 +235,10 @@ namespace NationStatesAPIBot
                     {
                         status = new NationStatus() { Name = "member", Description = ToID(regionName) };
                         await context.NationStatuses.AddAsync(status);
-                        //await context.SaveChangesAsync();
                     }
                     foreach (string name in joined)
                     {
                         await context.Nations.AddAsync(new Nation() { Name = name, StatusTime = DateTime.UtcNow, Status = status });
-                        //await context.SaveChangesAsync();
                     }
                 }
                 await context.SaveChangesAsync();
@@ -252,7 +258,7 @@ namespace NationStatesAPIBot
         {
             try
             {
-                Log(LogSeverity.Info, $"Sending Telegram to {recipient} scheduled: {isScheduled} recruitment: {isRecruitment}");
+                Log(LogSeverity.Verbose, $"Sending Telegram to {recipient} scheduled: {isScheduled} recruitment: {isRecruitment}");
                 var request = CreateApiRequest($"a=sendTG" +
                     $"&client={HttpUtility.UrlEncode(ActionManager.NationStatesClientKey)}" +
                     $"&tgid={HttpUtility.UrlEncode(telegramId)}" +
@@ -263,6 +269,7 @@ namespace NationStatesAPIBot
                     NationStatesApiRequestType.SendTelegram, isScheduled);
                 if (!string.IsNullOrWhiteSpace(responseText) && responseText.Contains("queued"))
                 {
+                    Log(LogSeverity.Verbose, "Telegram was queued successfully.");
                     return true;
                 }
                 else
@@ -394,14 +401,14 @@ namespace NationStatesAPIBot
             {
                 if (pendingNations.Count == 0)
                 {
-                    pendingNations = GetPendingNations();
+                    pendingNations = GetNationsByStatusName("pending");
                 }
 
                 var picked = pendingNations.Take(1);
                 var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                 if (nation != null)
                 {
-                    //To-Do: Check if recipient would receive telegra
+                    //ToDo: Check if recipient would receive telegra
                     if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                     {
                         if (await SendRecruitmentTelegramAsync(nation.Name))
@@ -439,13 +446,12 @@ namespace NationStatesAPIBot
             }
         }
 
-        private List<Nation> GetPendingNations()
+        private List<Nation> GetNationsByStatusName(string name)
         {
             using (var dbContext = new BotDbContext())
             {
-                return dbContext.Nations.Where(n => n.Status.Name == "pending").ToList();
+                return dbContext.Nations.Where(n => n.Status.Name == name).ToList();
             }
         }
-
     }
 }

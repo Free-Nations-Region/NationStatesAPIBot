@@ -79,13 +79,9 @@ namespace NationStatesAPIBot.Commands.Management
 
         private async Task<int> HandleNew()
         {
-            await ActionManager.LoggerInstance.LogAsync(LogSeverity.Debug, "RefreshPending - HandleNew", "Entered");
             var result = await ActionManager.NationStatesApiController.RequestNewNationsAsync(false);
-            await ActionManager.LoggerInstance.LogAsync(LogSeverity.Debug, "RefreshPending - HandleNew", "Nations requested");
             var newnations = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "pending");
-            await ActionManager.LoggerInstance.LogAsync(LogSeverity.Debug, "RefreshPending - HandleNew", "Nations matched");
             await ActionManager.NationStatesApiController.AddToPending(newnations);
-            await ActionManager.LoggerInstance.LogAsync(LogSeverity.Debug, "RefreshPending - HandleNew", $"{newnations.Count} Added to Pending - done");
             return newnations.Count;
         }
     }
