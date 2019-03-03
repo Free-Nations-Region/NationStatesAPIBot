@@ -14,44 +14,45 @@ namespace NationStatesAPIBot
          bool fileLogging = false;
         public async Task LogAsync(LogSeverity logSeverity, string source, string text)
         {
-            if (logSeverity <= SeverityThreshold)
+            await Task.Run(() =>
             {
-                if (!fileLogging)
+                if (logSeverity <= SeverityThreshold)
                 {
-                    StartFileLogging();
+                    if (!fileLogging)
+                    {
+                        StartFileLogging();
+                    }
+                    ConsoleColor color = ConsoleColor.Gray;
+                    if (logSeverity == LogSeverity.Critical)
+                    {
+                        color = ConsoleColor.Red;
+                    }
+                    else if (logSeverity == LogSeverity.Error)
+                    {
+                        color = ConsoleColor.DarkRed;
+                    }
+                    else if (logSeverity == LogSeverity.Warning)
+                    {
+                        color = ConsoleColor.Yellow;
+                    }
+                    else if (logSeverity == LogSeverity.Info)
+                    {
+                        color = ConsoleColor.Magenta;
+                    }
+                    else if (logSeverity == LogSeverity.Debug)
+                    {
+                        color = ConsoleColor.Green;
+                    }
+                    else if (logSeverity == LogSeverity.Verbose)
+                    {
+                        color = ConsoleColor.Cyan;
+                    }
+                    Console.ForegroundColor = color;
+                    string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
+                    Console.WriteLine(message);
+                    loggingStringBuilder.AppendLine(message);
                 }
-                ConsoleColor color = ConsoleColor.Gray;
-                if (logSeverity == LogSeverity.Critical)
-                {
-                    color = ConsoleColor.Red;
-                }
-                else if (logSeverity == LogSeverity.Error)
-                {
-                    color = ConsoleColor.DarkRed;
-                }
-                else if (logSeverity == LogSeverity.Warning)
-                {
-                    color = ConsoleColor.Yellow;
-                }
-                else if (logSeverity == LogSeverity.Info)
-                {
-                    color = ConsoleColor.Magenta;
-                }
-                else if (logSeverity == LogSeverity.Debug)
-                {
-                    color = ConsoleColor.Green;
-                }
-                else if (logSeverity == LogSeverity.Verbose)
-                {
-                    color = ConsoleColor.Cyan;
-                }
-                Console.ForegroundColor = color;
-                string message = $"[{DateTime.Now} at {source}] {logSeverity} : {text}";
-                Console.WriteLine(message);
-                Console.ResetColor();
-                loggingStringBuilder.AppendLine(message);    
-                Console.ResetColor();
-            }
+            });
         }
 
         private void StartFileLogging()

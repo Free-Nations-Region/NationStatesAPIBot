@@ -8,6 +8,7 @@
         GetRegionStats,
         GetGlobalStats,
         SendTelegram,
-        SendRecruitmentTelegram
+        SendRecruitmentTelegram,
+        WouldReceiveRecruitmentTelegram
     }
 }

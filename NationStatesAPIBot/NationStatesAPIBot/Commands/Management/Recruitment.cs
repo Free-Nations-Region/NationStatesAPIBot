@@ -15,11 +15,12 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                await ActionManager.NationStatesApiController.StartRecruitingAsync();
+                ActionManager.NationStatesApiController.StartRecruitingAsync();
                 await ReplyAsync("Recruitment Process started.");
             }
             else
             {
+                //TODO: Move permission denied into isAllowed
                 await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
             }
         }
@@ -29,7 +30,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                await ActionManager.NationStatesApiController.StopRecruitingAsync();
+                ActionManager.NationStatesApiController.StopRecruitingAsync();
                 await ReplyAsync("Recruitment Process stopped.");
             }
             else

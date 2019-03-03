@@ -63,7 +63,10 @@ namespace NationStatesAPIBot.Managers
         /// The discord user id of the main admin of the bot. Used for checking permissions on admin only commands.
         /// </summary>
         internal static string BotAdminDiscordUserId { get; private set; }
-
+        /// <summary>
+        /// The name of the region your are recruiting for.
+        /// </summary>
+        internal static string RegionName { get; private set; }
         private static bool Reactive = true;
         private static DiscordSocketClient discordClient { get; set; }
         private static CommandService commands;
@@ -88,7 +91,7 @@ namespace NationStatesAPIBot.Managers
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Shutdown requested.");
             if (NationStatesApiController.IsRecruiting)
             {
-                await NationStatesApiController.StopRecruitingAsync();
+                NationStatesApiController.StopRecruitingAsync();
             }
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Going offline.");
             await discordClient.SetStatusAsync(UserStatus.Offline);
@@ -137,7 +140,8 @@ namespace NationStatesAPIBot.Managers
                 var lines = content.ToList();
                 if (lines.Exists(cl => cl.StartsWith("clientKey=")) && lines.Exists(t => t.StartsWith("telegramId=")) &&
                    lines.Exists(s => s.StartsWith("secretKey=")) && lines.Exists(c => c.StartsWith("contact=")) &&
-                   lines.Exists(s => s.StartsWith("botLoginToken=")) && lines.Exists(s => s.StartsWith("botAdminUser=")))
+                   lines.Exists(s => s.StartsWith("botLoginToken=")) && lines.Exists(s => s.StartsWith("botAdminUser=")) &&
+                   lines.Exists(s => s.StartsWith("regionName=")))
                 {
                     NationStatesClientKey = lines.Find(l => l.StartsWith("clientKey=")).Split("=")[1];
                     NationStatesRecruitmentTelegramID = lines.Find(l => l.StartsWith("telegramId=")).Split("=")[1];
@@ -145,6 +149,7 @@ namespace NationStatesAPIBot.Managers
                     ContactInformation = lines.Find(c => c.StartsWith("contact=")).Split("=")[1];
                     DiscordBotLoginToken = lines.Find(c => c.StartsWith("botLoginToken=")).Split("=")[1];
                     BotAdminDiscordUserId = lines.Find(c => c.StartsWith("botAdminUser=")).Split("=")[1];
+                    RegionName = lines.Find(c => c.StartsWith("regionName=")).Split("=")[1];
                     if (lines.Exists(c => c.StartsWith("logLevel=")))
                     {
                         if (int.TryParse(lines.Find(c => c.StartsWith("logLevel=")).Split("=")[1], out int value))

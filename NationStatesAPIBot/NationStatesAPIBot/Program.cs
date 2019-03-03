@@ -11,7 +11,7 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v2.0.1";
+        public const string versionString = "v2.1";
         static void Main(string[] args)
         {
             try
@@ -30,6 +30,7 @@ namespace NationStatesAPIBot
 
         private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
+            Console.ResetColor();
             await ActionManager.Shutdown();
             
         }

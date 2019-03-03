@@ -4,6 +4,7 @@ A Bot for performing API Actions on NationStates and to provide other features v
 I wrote this bot for the discord server of the [region](https://www.nationstates.net/region=the_free_nations_region "The Free Nations Region") where i am currently member of. 
 
 It can send automatically recruitment telegrams via the NationStates API.
+It will check if the recipient would receive the telegram before actually sending it, if not it will be skipped. Which increases the efficency because no telegrams are wasted.
 
 It is intended to provide:
   - some statistics from NationStates API to discord users (To-Do)
@@ -17,7 +18,7 @@ It can probably be used for general purpose as well.
 
 Feel free to contribute!
 
-# Configuration - v2.0+
+# Configuration - v2.1+
 
 The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.  
 
@@ -29,7 +30,8 @@ Required:
 `contact=<your nation states nation or an email address or something like that>`  
 `dbConnection=<your mysql database connection string>`  
 `botLoginToken=<your discord bot login token>`  
-`botAdminUser=<discord user id how is main admin on this bot>`  
+`botAdminUser=<discord user id how is main admin on this bot>`
+`regionName`=<name of the region you are recruiting for>  
   
 Optional:  
 `logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
@@ -41,17 +43,19 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 # Roadmap
 
 Next features:
-- check if recipient would receive telegram if not skip to next pending recipient by calling:
-https://www.nationstates.net/cgi-bin/api.cgi?nation=%nationName%&q=tgcanrecruit&from=%regionName%
 
 - BasicStats, ExtendedStats, CustomStats about nations and regions
 
 - Backing Up Logs of Channels using Discord Chat Exporter
 
+- BasicStats about the bot (uptime, version, configuration -> dev/prod, etc.)
+
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
+
+- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started
 
 - Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
 
-- Polls  
-
 - Games (Werewolf)  
+
+- Polls  
