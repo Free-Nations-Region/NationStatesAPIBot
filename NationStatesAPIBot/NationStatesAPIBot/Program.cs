@@ -18,7 +18,7 @@ namespace NationStatesAPIBot
             {
                 Console.CancelKeyPress += Console_CancelKeyPress;
                 Console.Title = $"NationStatesAPIBot {versionString}";
-                RunAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                Task.Run(async () => await RunAsync()).Wait();
             }
             catch (Exception ex)
             {
@@ -28,11 +28,10 @@ namespace NationStatesAPIBot
             }
         }
 
-        private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             Console.ResetColor();
-            await ActionManager.Shutdown();
-            
+            ActionManager.Shutdown().Wait();
         }
 
         static async Task RunAsync()

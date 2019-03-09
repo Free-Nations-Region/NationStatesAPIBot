@@ -250,6 +250,7 @@ namespace NationStatesAPIBot.Managers
                 {
                     var user = new User() { DiscordUserId = userId };
                     await dbContext.Users.AddAsync(user);
+                    await dbContext.SaveChangesAsync();
 
                     var defaultUserRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.Description == "Default-User");
                     if (defaultUserRole == null)
