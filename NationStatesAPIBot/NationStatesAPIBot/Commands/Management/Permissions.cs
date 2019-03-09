@@ -97,8 +97,7 @@ namespace NationStatesAPIBot.Commands.Management
                     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);
                     if (user == null)
                     {
-                        await dbContext.Users.AddAsync(new User() { DiscordUserId = id });
-                        await dbContext.SaveChangesAsync();
+                        await ActionManager.AddUserToDbAsync(id);
                         var channel = await Context.User.GetOrCreateDMChannelAsync();
                         await channel.SendMessageAsync("User not found. -> User added");
                     }
@@ -120,7 +119,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (Context.IsPrivate)
             {
-                if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
+                if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
                 {
                     using (var dbContext = new BotDbContext())
                     {

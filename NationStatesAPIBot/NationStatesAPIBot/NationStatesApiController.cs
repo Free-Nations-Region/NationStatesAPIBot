@@ -22,6 +22,7 @@ namespace NationStatesAPIBot
         internal DateTime lastAutomaticNewNationsRequest = DateTime.Now;
         internal DateTime lastAutomaticRegionNationsRequest = DateTime.Now;
         internal bool IsRecruiting { get; private set; }
+        internal DateTime RecruitmentStarttime { get; private set; }
         /// <summary>
         /// Creates an HttpWebRequest targeted to NationStatesAPI
         /// </summary>
@@ -54,16 +55,16 @@ namespace NationStatesAPIBot
                 {
                     case NationStatesApiRequestType.SendTelegram:
                     case NationStatesApiRequestType.SendRecruitmentTelegram:
-                        lastTelegramSending = DateTime.Now;
+                        lastTelegramSending = DateTime.UtcNow;
                         break;
                     case NationStatesApiRequestType.GetNewNations:
-                        lastAutomaticNewNationsRequest = DateTime.Now;
+                        lastAutomaticNewNationsRequest = DateTime.UtcNow;
                         break;
                     case NationStatesApiRequestType.GetNationsFromRegion:
-                        lastAutomaticRegionNationsRequest = DateTime.Now;
+                        lastAutomaticRegionNationsRequest = DateTime.UtcNow;
                         break;
                     default:
-                        lastAPIRequest = DateTime.Now;
+                        lastAPIRequest = DateTime.UtcNow;
                         break;
                 }
                 Log(LogSeverity.Debug, $"Executing an API Call to: {webRequest.RequestUri} now.");
@@ -330,6 +331,7 @@ namespace NationStatesAPIBot
         {
             Log(LogSeverity.Info, "Starting Recruitment process.");
             IsRecruiting = true;
+            RecruitmentStarttime = DateTime.UtcNow;
             Task.Run(async () => await RecruitAsync());
         }
         internal void StopRecruitingAsync()

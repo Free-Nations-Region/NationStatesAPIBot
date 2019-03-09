@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
@@ -22,7 +23,8 @@ namespace NationStatesAPIBot.Managers
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 36000000000
         public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
         public const string BOT_ADMIN_TERM = "BotFather"; //Change to something else if you don't like the term
-        public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue. Use /callHelp and i will contact {BOT_ADMIN_TERM} for you. (Do not overuse you could be ignored.)";
+        public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue.";
+        public static string Configuration { get; private set; } = "Release";
         /// <summary>
         /// Property that indicates if the bot was initialized and if config were loaded.
         /// </summary>
@@ -72,12 +74,16 @@ namespace NationStatesAPIBot.Managers
         private static CommandService commands;
         private static IServiceProvider services;
         private static readonly string source = "ActionManager";
+        internal static DateTime StartUpTime { get; private set; }
         public static bool Running { get; private set; } = false;
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
         public static async Task StartUp()
         {
+#if DEBUG
+            Configuration = "Debug";
+#endif
             LoggerInstance = new Logger();
             await LoadConfig();
             await InitDb();
@@ -116,7 +122,7 @@ namespace NationStatesAPIBot.Managers
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRecruiting", Description = "Determines if a User or Role is allowed to start or stop the recruitment process." });
                     await dbContext.SaveChangesAsync();
                 }
-                if(dbContext.Roles.Count() == 0)
+                if (dbContext.Roles.Count() == 0)
                 {
                     await LoggerInstance.LogAsync(LogSeverity.Info, source, "Initializing roles.");
                     var role = new Role() { Description = "Default-User" };
@@ -193,8 +199,16 @@ namespace NationStatesAPIBot.Managers
             await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
             discordClient.Ready += DiscordClient_Ready;
             discordClient.Log += DiscordClient_Log;
+            discordClient.UserLeft += DiscordClient_UserLeft;
             await discordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
             await discordClient.StartAsync();
+        }
+        //URL for Basic Stats
+        //https://www.nationstates.net/cgi-bin/api.cgi?nation=tigerania&q=fullname+name+population+region+founded+influence+lastactivity+census;mode=score;scale=66
+        private static async Task DiscordClient_UserLeft(SocketGuildUser arg)
+        {
+            await RemoveUserFromDbAsync(arg.Id.ToString());
+            await LoggerInstance.LogAsync(LogSeverity.Info, source, $"User {arg.Username}{arg.Discriminator} left the server and is therefore removed from the database.");
         }
 
         private static async Task DiscordClient_Log(LogMessage arg)
@@ -202,10 +216,59 @@ namespace NationStatesAPIBot.Managers
             await LoggerInstance.LogAsync(arg.Severity, arg.Source, arg.Message);
         }
 
+        private static async Task<bool> IsUserInDb(string userId)
+        {
+            using (var context = new BotDbContext())
+            {
+                return await context.Users.FirstOrDefaultAsync(u => u.DiscordUserId == userId) != null;
+            }
+        }
 
+        internal static async Task RemoveUserFromDbAsync(string userId)
+        {
+            using (var dbContext = new BotDbContext())
+            {
+                var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == userId);
+                if(user != null)
+                {
+                    dbContext.Remove(user);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        internal static async Task AddUserToDbAsync(string userId)
+        {
+            await AddUserToDbAsync(userId, true);
+        }
+
+        private static async Task AddUserToDbAsync(string userId, bool checkIfUserAlreadyExists)
+        {
+            if (!checkIfUserAlreadyExists || !await IsUserInDb(userId)) //check
+            {
+                using (var dbContext = new BotDbContext())
+                {
+                    var user = new User() { DiscordUserId = userId };
+                    await dbContext.Users.AddAsync(user);
+
+                    var defaultUserRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.Description == "Default-User");
+                    if (defaultUserRole == null)
+                    {
+                        defaultUserRole = new Role() { Description = "Default-User" };
+                        await dbContext.Roles.AddAsync(defaultUserRole);
+                    }
+                    var userRole = new UserRoles() { User = user, Role = defaultUserRole, RoleId = defaultUserRole.Id };
+                    user.Roles.Add(userRole);
+                    dbContext.Users.Update(user);
+                    await dbContext.SaveChangesAsync();
+                    await LoggerInstance.LogAsync(LogSeverity.Verbose, source, $"Added User {userId} to database");
+                }
+            }
+        }
 
         private static async Task DiscordClient_Ready()
         {
+            StartUpTime = DateTime.UtcNow;
             await SetClientAction($"Lections of {BOT_ADMIN_TERM}", ActivityType.Listening);
         }
 
@@ -215,6 +278,7 @@ namespace NationStatesAPIBot.Managers
             {
                 var message = arg as SocketUserMessage;
                 var context = new SocketCommandContext(discordClient, message);
+                await LoggerInstance.LogAsync(LogSeverity.Debug, source, arg.Content);
                 if (Reactive)
                 {
                     if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
@@ -222,21 +286,28 @@ namespace NationStatesAPIBot.Managers
                     int argPos = 0;
                     if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos) || PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User))) return;
 
+
+                    string userId = context.User.Id.ToString();
                     //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
-                    if (IsBotAdmin(context.User.Id.ToString()) && message.Content == "/sleep")
+                    if (IsBotAdmin(userId) && message.Content == "/sleep")
                     {
+                        await context.Client.SetStatusAsync(UserStatus.AFK);
                         await context.Channel.SendMessageAsync("Ok! Going to sleep now. Wake me up later with /wakeup.");
                         Reactive = false;
                     }
                     else
                     {
+                        if (!await IsUserInDb(userId))
+                        {
+                            await AddUserToDbAsync(userId, false);
+                        }
                         var Result = await commands.ExecuteAsync(context, argPos, services);
                     }
                 }
                 else
                 {
                     // Reenables the Reactiveness of the bot using /wakeup command.
-                    if(IsBotAdmin(context.User.Id.ToString()) && message.Content == "/wakeup")
+                    if (IsBotAdmin(context.User.Id.ToString()) && message.Content == "/wakeup")
                     {
                         Reactive = true;
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
@@ -283,23 +354,23 @@ namespace NationStatesAPIBot.Managers
         {
             if (type == NationStatesApiRequestType.GetNationsFromRegion)
             {
-                return DateTime.Now.Ticks - NationStatesApiController.lastAutomaticRegionNationsRequest.Ticks > (isScheduledAction ? REQUEST_REGION_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
+                return DateTime.UtcNow.Ticks - NationStatesApiController.lastAutomaticRegionNationsRequest.Ticks > (isScheduledAction ? REQUEST_REGION_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
             }
             else if (type == NationStatesApiRequestType.GetNewNations)
             {
-                return DateTime.Now.Ticks - NationStatesApiController.lastAutomaticNewNationsRequest.Ticks > (isScheduledAction ? REQUEST_NEW_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
+                return DateTime.UtcNow.Ticks - NationStatesApiController.lastAutomaticNewNationsRequest.Ticks > (isScheduledAction ? REQUEST_NEW_NATIONS_INTERVAL : API_REQUEST_INTERVAL);
             }
             else if (type == NationStatesApiRequestType.SendTelegram)
             {
-                return DateTime.Now.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_NON_RECRUITMENTTELEGRAM_INTERVAL;
+                return DateTime.UtcNow.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_NON_RECRUITMENTTELEGRAM_INTERVAL;
             }
             else if (type == NationStatesApiRequestType.SendRecruitmentTelegram)
             {
-                return DateTime.Now.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_RECRUITMENTTELEGRAM_INTERVAL;
+                return DateTime.UtcNow.Ticks - NationStatesApiController.lastTelegramSending.Ticks > SEND_RECRUITMENTTELEGRAM_INTERVAL;
             }
             else
             {
-                return DateTime.Now.Ticks - NationStatesApiController.lastAPIRequest.Ticks > API_REQUEST_INTERVAL;
+                return DateTime.UtcNow.Ticks - NationStatesApiController.lastAPIRequest.Ticks > API_REQUEST_INTERVAL;
             }
 
         }

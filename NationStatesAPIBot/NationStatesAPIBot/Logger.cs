@@ -69,12 +69,12 @@ namespace NationStatesAPIBot
                 loggingStringBuilder.Clear();
                 try
                 {
-                    await File.AppendAllTextAsync($"log_{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}.txt", toWrite);
+                    await File.AppendAllTextAsync($"log_{DateTime.UtcNow.Year}{DateTime.UtcNow.Month}{DateTime.UtcNow.Day}.txt", toWrite);
                 }
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine($"[{DateTime.Now} at RunFileLogging] {LogSeverity.Critical} : {ex.ToString()}");
+                    Console.WriteLine($"[{DateTime.UtcNow} at RunFileLogging] {LogSeverity.Critical} : {ex.ToString()}");
                     Console.ResetColor();
                 }
                 await Task.Delay(1000);

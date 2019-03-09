@@ -11,14 +11,14 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v2.1";
+        public const string versionString = "v2.2";
         static void Main(string[] args)
         {
             try
             {
                 Console.CancelKeyPress += Console_CancelKeyPress;
                 Console.Title = $"NationStatesAPIBot {versionString}";
-                Task.Run(() => RunAsync()).Wait();
+                RunAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
