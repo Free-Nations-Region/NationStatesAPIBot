@@ -104,6 +104,7 @@ namespace NationStatesAPIBot.Managers
             await discordClient.StopAsync();
             LoggerInstance.StopFileLogging();
             Running = false;
+            Console.ResetColor();
             Environment.Exit(0);
         }
 
