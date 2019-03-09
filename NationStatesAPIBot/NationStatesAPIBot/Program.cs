@@ -11,14 +11,14 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v2.1";
+        public const string versionString = "v2.2";
         static void Main(string[] args)
         {
             try
             {
                 Console.CancelKeyPress += Console_CancelKeyPress;
                 Console.Title = $"NationStatesAPIBot {versionString}";
-                Task.Run(() => RunAsync()).Wait();
+                Task.Run(async () => await RunAsync()).Wait();
             }
             catch (Exception ex)
             {
@@ -28,11 +28,10 @@ namespace NationStatesAPIBot
             }
         }
 
-        private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             Console.ResetColor();
-            await ActionManager.Shutdown();
-            
+            ActionManager.Shutdown().Wait();
         }
 
         static async Task RunAsync()

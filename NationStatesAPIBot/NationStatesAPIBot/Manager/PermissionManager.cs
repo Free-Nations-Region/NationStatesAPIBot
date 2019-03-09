@@ -11,7 +11,7 @@ namespace NationStatesAPIBot.Managers
     {
         public static bool IsAllowed(PermissionType permissionType, SocketUser user)
         {
-            if (ActionManager.BotAdminDiscordUserId == user.Id.ToString())
+            if (ActionManager.IsBotAdmin(user.Id.ToString()))
             {
                 return true;
             }
@@ -27,7 +27,6 @@ namespace NationStatesAPIBot.Managers
 
         public static IQueryable<Permission> GetUserPermissions(string discordUserId, BotDbContext dbContext)
         {
-            //dbContext.Permissions.Where(p => p.Id == id).SelectMany(u => u.UserPermissions).Select(p => p.User)
             var perms = dbContext.Users.Where(u => u.DiscordUserId == discordUserId).SelectMany(u => u.UserPermissions).Select(p => p.Permission);
             return perms;
         }
