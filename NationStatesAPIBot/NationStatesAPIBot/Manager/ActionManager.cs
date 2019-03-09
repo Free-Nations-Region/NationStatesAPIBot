@@ -279,7 +279,6 @@ namespace NationStatesAPIBot.Managers
             {
                 var message = arg as SocketUserMessage;
                 var context = new SocketCommandContext(discordClient, message);
-                await LoggerInstance.LogAsync(LogSeverity.Debug, source, arg.Content);
                 if (Reactive)
                 {
                     if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;

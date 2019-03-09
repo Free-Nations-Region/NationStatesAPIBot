@@ -14,6 +14,8 @@ namespace NationStatesAPIBot.Commands.Management
         {
             var builder = new EmbedBuilder();
             builder.WithTitle("Bot Status");
+            TimeSpan uptime = DateTime.UtcNow.Subtract(ActionManager.StartUpTime);
+            TimeSpan recruitingTime = DateTime.UtcNow.Subtract(ActionManager.NationStatesApiController.RecruitmentStarttime);
             builder.WithFields(new List<EmbedFieldBuilder>
             {
                 new EmbedFieldBuilder()
@@ -29,7 +31,7 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Uptime:",
-                    Value = DateTime.UtcNow.Subtract(ActionManager.StartUpTime).ToString()
+                    Value = $"{uptime.Days} Days {uptime.Hours} Hours {uptime.Minutes} Minutes"
                 },
                 new EmbedFieldBuilder()
                 {
@@ -40,7 +42,7 @@ namespace NationStatesAPIBot.Commands.Management
                 {
                     Name = "Recruitment Uptime:",
                     Value = ActionManager.NationStatesApiController.IsRecruiting?
-                    DateTime.UtcNow.Subtract(ActionManager.NationStatesApiController.RecruitmentStarttime).ToString():
+                    $"{recruitingTime.Days} Days {recruitingTime.Hours} Hours {recruitingTime.Minutes} Minutes":
                     "-"
                 }
             });
