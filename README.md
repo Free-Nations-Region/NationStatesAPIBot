@@ -48,8 +48,6 @@ Next features:
 
 - Backing Up Logs of Channels using Discord Chat Exporter
 
-- BasicStats about the bot (uptime, version, configuration -> dev/prod, etc.)
-
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
 
 - BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started
