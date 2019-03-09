@@ -30,8 +30,8 @@ Required:
 `contact=<your nation states nation or an email address or something like that>`  
 `dbConnection=<your mysql database connection string>`  
 `botLoginToken=<your discord bot login token>`  
-`botAdminUser=<discord user id how is main admin on this bot>`
-`regionName`=<name of the region you are recruiting for>  
+`botAdminUser=<discord user id how is main admin on this bot>`  
+`regionName=<name of the region you are recruiting for>`
   
 Optional:  
 `logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
