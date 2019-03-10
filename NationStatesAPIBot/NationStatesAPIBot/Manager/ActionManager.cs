@@ -204,8 +204,7 @@ namespace NationStatesAPIBot.Managers
             await discordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
             await discordClient.StartAsync();
         }
-        //URL for Basic Stats
-        //https://www.nationstates.net/cgi-bin/api.cgi?nation=tigerania&q=fullname+name+population+region+founded+influence+lastactivity+census;mode=score;scale=66
+        
         private static async Task DiscordClient_UserLeft(SocketGuildUser arg)
         {
             await RemoveUserFromDbAsync(arg.Id.ToString());
@@ -311,6 +310,7 @@ namespace NationStatesAPIBot.Managers
                     if (IsBotAdmin(context.User.Id.ToString()) && message.Content == "/wakeup")
                     {
                         Reactive = true;
+                        await context.Client.SetStatusAsync(UserStatus.Online);
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
                     }
                 }
