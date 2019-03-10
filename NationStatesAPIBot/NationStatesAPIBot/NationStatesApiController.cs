@@ -28,7 +28,7 @@ namespace NationStatesAPIBot
         /// </summary>
         /// <param name="parameters">The api parameters to pass into the request</param>
         /// <returns>A prepared HttpWebRequest ready to be executed</returns>
-        private HttpWebRequest CreateApiRequest(string parameters)
+        internal HttpWebRequest CreateApiRequest(string parameters)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}");
             request.Method = "GET";
@@ -83,7 +83,7 @@ namespace NationStatesAPIBot
         /// <param name="webRequest">The HttpWebRequest to be executed </param>
         /// <param name="type">The Type of API Action to be executed</param>
         /// <returns>The response stream of the HttpWebRequest</returns>
-        private async Task<Stream> ExecuteRequestAsync(HttpWebRequest webRequest, NationStatesApiRequestType type)
+        internal async Task<Stream> ExecuteRequestAsync(HttpWebRequest webRequest, NationStatesApiRequestType type)
         {
             return await ExecuteRequestAsync(webRequest, type, false);
         }
@@ -274,7 +274,7 @@ namespace NationStatesAPIBot
                     NationStatesApiRequestType.SendTelegram, isScheduled);
                 if (!string.IsNullOrWhiteSpace(responseText) && responseText.Contains("queued"))
                 {
-                    Log(LogSeverity.Verbose, "Telegram was queued successfully.");
+                    Log(LogSeverity.Info, $"Telegram to {recipient} was queued successfully.");
                     return true;
                 }
                 else
@@ -313,7 +313,7 @@ namespace NationStatesAPIBot
         /// </summary>
         /// <param name="text">The text to ensure format on</param>
         /// <returns>Formated string</returns>
-        private static string ToID(string text)
+        internal static string ToID(string text)
         {
             return text?.Trim().ToLower().Replace(' ', '_');
         }
@@ -432,7 +432,7 @@ namespace NationStatesAPIBot
                             await SetNationStatusToSkippedAsync(nation);
                             picked = pendingNations.Take(1);
                             nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                            Log(LogSeverity.Debug, $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped.");
+                            Log(LogSeverity.Debug, "Recruitment", $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped.");
                         }
                         if (nation != null)
                         {
@@ -443,14 +443,14 @@ namespace NationStatesAPIBot
                             else
                             {
                                 await SetNationStatusToFailedAsync(nation);
-                                Log(LogSeverity.Warning, "Recruitment", $"Telegram to {nation.Name} could not be send.");
+                                Log(LogSeverity.Error, "Recruitment", $"Telegram to {nation.Name} could not be send.");
                             }
                             pendingNations.Remove(nation);
 
                         }
                         else
                         {
-                            Log(LogSeverity.Warning, "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
+                            Log(LogSeverity.Warning, "Recruitment", "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
                         }
                     }
                     if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))

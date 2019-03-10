@@ -83,8 +83,6 @@ namespace NationStatesAPIBot.Commands.Stats
                         await ReplyAsync(embed: builder.Build());
                     }
                 }
-                //URL for Basic Stats
-                //https://www.nationstates.net/cgi-bin/api.cgi?nation=tigerania&q=fullname+name+population+region+founded+influence+lastactivity+census;mode=score;scale=66
             }
             catch (Exception ex)
             {
