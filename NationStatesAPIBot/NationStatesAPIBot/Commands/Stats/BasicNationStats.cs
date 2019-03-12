@@ -3,6 +3,7 @@ using Discord.Commands;
 using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -10,13 +11,15 @@ namespace NationStatesAPIBot.Commands.Stats
 {
     public class BasicNationStats : ModuleBase<SocketCommandContext>
     {
+        //TODO: Make CultureInfo configurable
+        //TODO: Make Seperator configurable
         [Command("nation", false), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
             try
             {
-                if (Context.Message.Content.StartsWith("/nation"))
-                {
+                //if (Context.Message.Content.StartsWith("/nation"))
+                //{
                     string nationName = string.Join(" ", args);
                     await ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "BasicNationStats", $"BasicNationStats for {nationName} requested.");
                     var request = ActionManager.NationStatesApiController.CreateApiRequest($"nation={NationStatesApiController.ToID(nationName)}&q=flag+wa+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
@@ -62,7 +65,7 @@ namespace NationStatesAPIBot.Commands.Stats
                             builder.WithThumbnailUrl(flagUrl);
                             builder.WithTitle($"BasicStats for Nation");
                             builder.WithDescription($"**[{fullname}]({nationUrl})** {Environment.NewLine}" +
-                                $"{(populationdbl / 1000.0 < 1 ? populationdbl : populationdbl / 1000.0)} {(populationdbl / 1000.0 < 1 ? "million" : "billion")} {demonymplural} | " +
+                                $"{(populationdbl / 1000.0 < 1 ? populationdbl : populationdbl / 1000.0).ToString(new CultureInfo("en-US"))} {(populationdbl / 1000.0 < 1 ? "million" : "billion")} {demonymplural} | " +
                                 $"Founded {founded} | " +
                                 $"Last active {lastActivity}");
                             builder.AddField("Region",
@@ -85,7 +88,7 @@ namespace NationStatesAPIBot.Commands.Stats
                             await ReplyAsync(embed: builder.Build());
                         }
                     }
-                }
+                //}
             }
             catch (Exception ex)
             {

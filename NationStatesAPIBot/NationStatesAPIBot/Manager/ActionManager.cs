@@ -284,7 +284,7 @@ namespace NationStatesAPIBot.Managers
                     if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
 
                     int argPos = 0;
-                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos) || PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User))) return;
+                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos)) && PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User)) return;
 
 
                     string userId = context.User.Id.ToString();
