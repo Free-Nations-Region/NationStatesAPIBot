@@ -322,7 +322,7 @@ namespace NationStatesAPIBot
         /// </summary>
         /// <param name="text"></param>
         /// <returns>Formated string convert back to name</returns>
-        private static string FromID(string text)
+        internal static string FromID(string text)
         {
             return text?.Trim().ToLower().Replace('_', ' ');
         }

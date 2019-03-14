@@ -12,8 +12,8 @@ namespace NationStatesAPIBot.Commands.Stats
     public class BasicNationStats : ModuleBase<SocketCommandContext>
     {
         //TODO: Make CultureInfo configurable
-        //TODO: Make Seperator configurable
-        [Command("nation", false), Summary("Returns Basic Stats about a specific nation")]
+        //TODO: Make Prefix configurable
+        [Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
             try
