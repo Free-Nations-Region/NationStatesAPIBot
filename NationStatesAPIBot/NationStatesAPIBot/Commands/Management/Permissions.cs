@@ -14,7 +14,7 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("checkUser"), Summary("Returns Permission of specified User")]
         public async Task DoCheckUser(string id)
         {
-            if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
+            if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
             {
                 using (var dbContext = new BotDbContext())
                 {
@@ -52,7 +52,7 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
         public async Task DoCheckPerm(long id)
         {
-            if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
+            if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
             {
                 using (var dbContext = new BotDbContext())
                 {
@@ -78,33 +78,6 @@ namespace NationStatesAPIBot.Commands.Management
                         {
                             await channel.SendMessageAsync("No users found.");
                         }
-                    }
-                }
-            }
-            else
-            {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
-            }
-        }
-
-        [Command("addUser"), Summary("Adds a User to the database")]
-        public async Task DoAddUser(string id)
-        {
-            if (Context.User.Id.ToString() == ActionManager.BotAdminDiscordUserId)
-            {
-                using (var dbContext = new BotDbContext())
-                {
-                    var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);
-                    if (user == null)
-                    {
-                        await ActionManager.AddUserToDbAsync(id);
-                        var channel = await Context.User.GetOrCreateDMChannelAsync();
-                        await channel.SendMessageAsync("User not found. -> User added");
-                    }
-                    else
-                    {
-                        var channel = await Context.User.GetOrCreateDMChannelAsync();
-                        await channel.SendMessageAsync("Already exists.");
                     }
                 }
             }

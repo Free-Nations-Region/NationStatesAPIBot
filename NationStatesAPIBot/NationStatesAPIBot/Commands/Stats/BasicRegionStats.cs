@@ -17,7 +17,7 @@ namespace NationStatesAPIBot.Commands.Stats
             try
             {
                 string regionName = string.Join(" ", args);
-                await ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "BasicNationStats", $"BasicNationStats for {regionName} requested.");
+                await ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "BasicRegionStats", $"BasicRegionStats for {regionName} requested.");
                 var request = ActionManager.NationStatesApiController.CreateApiRequest($"region={NationStatesApiController.ToID(regionName)}&q=name+numnations+founded+power+founder+delegate+flag+tags");
                 XmlDocument regionStats = new XmlDocument();
                 Random _rnd = new Random();
