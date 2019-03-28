@@ -42,11 +42,6 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 # Roadmap
 
-## Version 2.5
-
-- Small Improvements to BasicStats  
-- Get Nations who endorsed a nation (endorsed by) (/ne)
-
 ## Version 2.6
 
 - Recruitable Nations (/rn) returns a list of nations who would receive recruitment telegrams out of pending list
