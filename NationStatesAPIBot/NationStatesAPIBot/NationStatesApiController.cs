@@ -459,14 +459,6 @@ namespace NationStatesAPIBot
                         var newnations = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "pending");
                         await ActionManager.NationStatesApiController.AddToPending(newnations);
                     }
-                    if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNationsFromRegion, true))
-                    {
-                        string regionName = "the rejected realms";
-                        var result = await ActionManager.NationStatesApiController.RequestNationsFromRegionAsync(regionName, true);
-                        var joined = ActionManager.NationStatesApiController.MatchNationsAgainstKnownNations(result, "member", regionName);
-                        var syncResult = await ActionManager.NationStatesApiController.SyncRegionMembersWithDatabase(result, regionName);
-                        await ActionManager.NationStatesApiController.AddToPending(joined);
-                    }
                 }
                 catch (Exception ex)
                 {
