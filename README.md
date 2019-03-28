@@ -48,7 +48,10 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 - Get Nations who endorsed a nation (endorsed by)
 
-- Get Nations that were endorsed by a nation (endorsed) (currently in question)  
+## Version 2.6
+
+- Recruitable Nations (/rn) returns a list of nations who would receive recruitment telegrams out of pending list
+
 
 ## Version 3
 
@@ -58,7 +61,9 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 - Huge Refactoring to Configuration, Logging, Testability, API call systematics, using cache first approach with help of dumps, etc.  
 
-- Active Recruitable Nations (/arn) returns a list of nations who would receive recruitment telegrams
+- Get Nations that were endorsed by a nation (endorsed) (on cache only)
+
+- Add List of active nations for a possibly (/arn) Active recruitable nations (in question)
 
 ## Later
 
@@ -68,7 +73,11 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
 
+- Activity Points for verified nations on NationStates activity and discord activity
+
 - BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started
+
+- Stats for manual recruitment results
 
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 
