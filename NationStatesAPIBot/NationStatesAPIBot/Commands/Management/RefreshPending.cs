@@ -1,5 +1,9 @@
-﻿using NationStatesAPIBot.Managers;
+﻿using Discord;
+using Discord.Commands;
+using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
+using System;
+using System.Threading.Tasks;
 
 namespace NationStatesAPIBot.Commands.Management
 {
