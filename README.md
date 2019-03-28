@@ -62,7 +62,7 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 ## Later
 
-- BasicStats, ExtendedStats, CustomStats about nations and regions
+- CustomStats about nations and regions
 
 - Backing Up Logs of Channels using Discord Chat Exporter
 
@@ -70,7 +70,7 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 - BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started
 
-- Basic Moderator Features (Kick, Ban, Delete Messages, etc.)
+- Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 
 - Games (Werewolf)  
 
