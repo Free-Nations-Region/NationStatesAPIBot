@@ -42,7 +42,25 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 # Roadmap
 
-Next features:
+## Version 2.5
+
+- Small Improvements to BasicStats  
+
+- Get Nations who endorsed a nation (endorsed by)
+
+- Get Nations that were endorsed by a nation (endorsed) (currently in question)  
+
+## Version 3
+
+- Add refounded nations to pending  
+
+- Help Command
+
+- Huge Refactoring to Configuration, Logging, Testability, API call systematics, using cache first approach with help of dumps, etc.  
+
+- Active Recruitable Nations (/arn) returns a list of nations who would receive recruitment telegrams
+
+## Later
 
 - BasicStats, ExtendedStats, CustomStats about nations and regions
 
