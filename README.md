@@ -7,7 +7,7 @@ It can send automatically recruitment telegrams via the NationStates API.
 It will check if the recipient would receive the telegram before actually sending it, if not it will be skipped. Which increases the efficency because no telegrams are wasted.
 
 It is intended to provide:
-  - some statistics from NationStates API to discord users (To-Do)
+  - some statistics from NationStates API to discord users
   - verification of nation ownership via the NationStates API (To-Do)
   - backup functionality of discord channel chat logs. (To-Do)
   - basic moderation functionality for authorized users (To-Do)
