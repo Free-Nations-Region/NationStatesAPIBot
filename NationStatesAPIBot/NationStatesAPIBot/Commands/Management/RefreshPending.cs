@@ -11,7 +11,7 @@ namespace NationStatesAPIBot.Commands.Management
     {
         static readonly string actionQueued = $"The action was queued successfully. Please be patient this may take a moment.";
         [Command("refresh"), Summary("Fetches new and rejected nations and adds them to pending")]
-        public async Task DoRefreshPending([Remainder, Summary("The type to be fetched")] string type)
+        public async Task DoRefreshPending()
         {
             try
             {

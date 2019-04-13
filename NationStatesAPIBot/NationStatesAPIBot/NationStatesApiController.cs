@@ -19,8 +19,8 @@ namespace NationStatesAPIBot
         private const string Source = "NationStatesApiController";
         internal DateTime lastAPIRequest;
         internal DateTime lastTelegramSending;
-        internal DateTime lastAutomaticNewNationsRequest = DateTime.Now;
-        internal DateTime lastAutomaticRegionNationsRequest = DateTime.Now;
+        internal DateTime lastAutomaticNewNationsRequest;
+        internal DateTime lastAutomaticRegionNationsRequest;
         internal bool IsRecruiting { get; private set; }
         internal DateTime RecruitmentStarttime { get; private set; }
         /// <summary>

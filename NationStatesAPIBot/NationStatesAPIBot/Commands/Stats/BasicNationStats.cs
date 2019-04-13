@@ -53,8 +53,8 @@ namespace NationStatesAPIBot.Commands.Stats
                         var influenceValue = census[3].ChildNodes[0].InnerText;
                         var endorsementCount = census[4].ChildNodes[0].InnerText;
                         var residency = census[5].ChildNodes[0].InnerText;
-                        var residecyDbl = Convert.ToDouble(residency, System.Globalization.CultureInfo.InvariantCulture);
-                        var residencyYears = (int)(residecyDbl / 365.242199);
+                        var residencyDbl = Convert.ToDouble(residency, System.Globalization.CultureInfo.InvariantCulture);
+                        var residencyYears = (int)(residencyDbl / 365.242199);
 
                         var populationdbl = Convert.ToDouble(population);
 
@@ -69,10 +69,14 @@ namespace NationStatesAPIBot.Commands.Stats
                             $"Founded {founded} | " +
                             $"Last active {lastActivity}");
                         builder.AddField("Region",
-                            $"[{region}]({regionUrl}) | " +
-                            $"Resident since " +
+                            $"[{region}]({regionUrl}) ");
+                        int residencyDays = (int)(residencyDbl % 365.242199);
+                        int residencyIn = 3 - residencyDays; //To-Do: Move Residency Treshold to Config
+                        builder.AddField("Residency", $"Resident since " +
                             $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
-                            $"{(int)(residecyDbl % 365.242199) } days");
+                            $"{residencyDays} { (residencyDays > 1 ? $"days" : "day")}" +
+                            $" | Status: {(region.ToLower() == ActionManager.RegionName.ToLower() ? $"{(residencyDays > 3 ? "Citizen" : $"Resident (citizen in {residencyIn} day{(residencyIn > 1 ? "s" : "")})")}" : "Foreigner")}" 
+                            );
                         builder.AddField(category, $"C: {civilStr} ({civilRights}) | E: {economyStr} ({economy}) | P: {politicalStr} ({politicalFreedom})");
                         var waVoteString = "";
                         if (wa == "WA Member")
@@ -81,15 +85,14 @@ namespace NationStatesAPIBot.Commands.Stats
                             var scVote = nationStats.GetElementsByTagName("SCVOTE")[0].InnerText;
                             if (!string.IsNullOrWhiteSpace(gaVote))
                             {
-                                waVoteString += $"GA Vote: {gaVote}";
+                                waVoteString += $"GA Vote: {gaVote} | ";
                             }
                             if (!string.IsNullOrWhiteSpace(scVote))
                             {
-                                waVoteString += $"SC Vote: {scVote}";
+                                waVoteString += $"SC Vote: {scVote} | ";
                             }
                         }
-
-                        builder.AddField(wa, $"{waVoteString} | {endorsementCount} endorsements | {influenceValue} Influence ({Influence})");
+                        builder.AddField(wa, $"{waVoteString} {endorsementCount} endorsements | {influenceValue} Influence ({Influence})");
                         builder.WithFooter($"NationStatesApiBot {Program.versionString} by drehtisch");
                         builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                         await ReplyAsync(embed: builder.Build());
