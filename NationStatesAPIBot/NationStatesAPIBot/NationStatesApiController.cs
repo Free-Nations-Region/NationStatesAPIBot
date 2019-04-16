@@ -299,12 +299,12 @@ namespace NationStatesAPIBot
             return await SendTelegramAsync(recipient, ActionManager.NationStatesRecruitmentTelegramID, ActionManager.NationStatesRecruitmentTGSecretKey, true, true);
         }
 
-        private static void Log(LogSeverity severity, string source, string message)
+        internal static void Log(LogSeverity severity, string source, string message)
         {
             Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(severity, $"{Source} - {source}", message));
         }
 
-        private static void Log(LogSeverity severity, string message)
+        internal static void Log(LogSeverity severity, string message)
         {
             Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(severity, Source, message));
         }
@@ -364,7 +364,7 @@ namespace NationStatesAPIBot
             }
         }
 
-        private async Task SetNationStatusToSkippedAsync(Nation nation)
+        internal async Task SetNationStatusToSkippedAsync(Nation nation)
         {
             using (var dbContext = new BotDbContext())
             {
@@ -426,16 +426,16 @@ namespace NationStatesAPIBot
 
                         var picked = pendingNations.Take(1);
                         var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                        while (!await CanReceiveRecruitmentTelegram(nation.Name))
-                        {
-                            pendingNations.Remove(nation);
-                            await SetNationStatusToSkippedAsync(nation);
-                            picked = pendingNations.Take(1);
-                            nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                            Log(LogSeverity.Debug, "Recruitment", $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped.");
-                        }
                         if (nation != null)
                         {
+                            while (!await CanReceiveRecruitmentTelegram(nation.Name))
+                            {
+                                pendingNations.Remove(nation);
+                                await SetNationStatusToSkippedAsync(nation);
+                                picked = pendingNations.Take(1);
+                                nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                                Log(LogSeverity.Debug, "Recruitment", $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped.");
+                            }
                             if (await SendRecruitmentTelegramAsync(nation.Name))
                             {
                                 await SetNationStatusToSendAsync(nation);
