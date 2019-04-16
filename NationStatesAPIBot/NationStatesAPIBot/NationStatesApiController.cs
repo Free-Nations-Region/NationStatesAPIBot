@@ -468,7 +468,7 @@ namespace NationStatesAPIBot
             }
         }
 
-        private async Task<bool> CanReceiveRecruitmentTelegram(string nationName)
+        internal async Task<bool> CanReceiveRecruitmentTelegram(string nationName)
         {
             var request = CreateApiRequest($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(ActionManager.RegionName)}&v={ActionManager.API_VERSION}");
             XmlDocument canRecruitXML = new XmlDocument();
@@ -488,7 +488,7 @@ namespace NationStatesAPIBot
             }
         }
 
-        private List<Nation> GetNationsByStatusName(string name)
+        internal List<Nation> GetNationsByStatusName(string name)
         {
             using (var dbContext = new BotDbContext())
             {

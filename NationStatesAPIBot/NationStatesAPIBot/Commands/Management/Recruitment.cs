@@ -1,9 +1,9 @@
 ﻿using Discord.Commands;
+using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot.Commands.Management
@@ -37,6 +37,18 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
             }
+        }
+
+        [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
+        public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
+        {
+            List<Nation> pendingNations = new List<Nation>();
+            if (pendingNations.Count == 0)
+            {
+                pendingNations = ActionManager.NationStatesApiController.GetNationsByStatusName("pending");
+            }
+            var picked = pendingNations.Take(1);
+            var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
         }
     }
 }
