@@ -75,7 +75,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         builder.AddField("Residency", $"Resident since " +
                             $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
                             $"{residencyDays} { (residencyDays > 1 ? $"days" : "day")}" +
-                            $" | Status: {(region.ToLower() == ActionManager.RegionName.ToLower() ? $"{(residencyDays > 3 ? "Citizen" : $"Resident (citizen in {residencyIn} day{(residencyIn > 1 ? "s" : "")})")}" : "Foreigner")}" 
+                            $" | Status: {(region.ToLower() == ActionManager.RegionName.ToLower() ? $"{(residencyDays >= 3 ? "Citizen" : $"Resident (citizen in {residencyIn} day{(residencyIn > 1 ? "s" : "")})")}" : "Foreigner")}" 
                             );
                         builder.AddField(category, $"C: {civilStr} ({civilRights}) | E: {economyStr} ({economy}) | P: {politicalStr} ({politicalFreedom})");
                         var waVoteString = "";
