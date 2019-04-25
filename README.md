@@ -42,27 +42,39 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 # Roadmap
 
-## Version 2.6
-
-- Recruitable Nations (/rn) returns a list of nations who would receive recruitment telegrams out of pending list
-
-
 ## Version 3
-
+  
+### Version 3.0
 - Add refounded nations to pending  
+- Huge Refactoring to Configuration, Logging, Testability, API call systematics
 - Help Command
-- Huge Refactoring to Configuration, Logging, Testability, API call systematics, using cache first approach with help of dumps, etc.  
+
+### Version 3.1
+- Implement Cache First Approach with help of dumps, etc.
 - Get Nations that were endorsed by a nation (endorsed) (on cache only)
-- Add List of active nations for a possibly (/arn) Active recruitable nations (in question)
+
+### Version 3.2
+- Allow nations to have multiple status
+- Introduce Citizenship Management
+
+### Version 3.3
+- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified. e.g. Role "Verified"
+- Connect discord user to nation
+
+## Version 4
+
+### Version 4.0
+- Backing Up Logs of Channels using Discord Chat Exporter
+
+### Version 4.1
+- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
+
+### Version 4.2
+- Stats about success of manual and automatic recruitment
 
 ## Later
-
 - CustomStats about nations and regions
-- Backing Up Logs of Channels using Discord Chat Exporter
-- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified, after specified time.
 - Activity Points for verified nations on NationStates activity and discord activity
-- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started
-- Stats for manual recruitment results  
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
 - Polls  
