@@ -1,11 +1,9 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,54 +46,43 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                if (number <= 120)
+                if (!ActionManager.receivingRecruitableNation)
                 {
-                    await ReplyAsync(actionQueued);
-                    List<Nation> returnNations = new List<Nation>();
-                    List<Nation> pendingNations = new List<Nation>();
-                    if (pendingNations.Count == 0)
+                    if (number <= 120)
                     {
-                        pendingNations = ActionManager.NationStatesApiController.GetNationsByStatusName("pending");
-                    }
-                    while (returnNations.Count < number)
-                    {   
-                        var picked = pendingNations.Take(1);
-                        var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                        if (nation != null)
+                        ActionManager.receivingRecruitableNation = true;
+                        await ReplyAsync(actionQueued);
+                        List<Nation> returnNations = await NationStatesApiController.GetRecruitableNations(number);
+                        foreach (var nation in returnNations)
                         {
-                            while (!await ActionManager.NationStatesApiController.CanReceiveRecruitmentTelegram(nation.Name))
+                            await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "reserved_manual");
+                        }
+                        StringBuilder builder = new StringBuilder();
+                        builder.AppendLine("-----");
+                        for (int i = 1; i <= returnNations.Count; i++)
+                        {
+                            var nation = returnNations[i - 1];
+                            if (i % 8 == 0)
                             {
-                                pendingNations.Remove(nation);
-                                await ActionManager.NationStatesApiController.SetNationStatusToSkippedAsync(nation);
-                                picked = pendingNations.Take(1);
-                                nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                                NationStatesApiController.Log(LogSeverity.Debug, "Recruitment", $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped.");
+                                builder.AppendLine($"{nation.Name}");
+                                builder.AppendLine("-----");
                             }
-                            pendingNations.Remove(nation);
-                            returnNations.Add(nation);
-                            //To-Do: Set Nations to Manual
+                            else
+                            {
+                                builder.Append($"{nation.Name}, ");
+                            }
                         }
+                        await ReplyAsync($"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {number} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}{builder.ToString()}");
                     }
-                    StringBuilder builder = new StringBuilder();
-                    builder.AppendLine("-----");
-                    for (int i = 1; i <= returnNations.Count; i++)
+                    else
                     {
-                        var nation = returnNations[i-1];
-                        if (i % 8 == 0)
-                        {
-                            builder.AppendLine($"{nation.Name}");
-                            builder.AppendLine("-----");
-                        }
-                        else
-                        {
-                            builder.Append($"{nation.Name}, ");
-                        }
+                        await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
                     }
-                    await ReplyAsync($"<@{Context.User.Id}> Your action just finished. Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}{builder.ToString()}");
+                    ActionManager.receivingRecruitableNation = false;
                 }
                 else
                 {
-                    await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
+                    await ReplyAsync($"There is already a /rn command running. Try again later.");
                 }
             }
             else
@@ -103,5 +90,7 @@ namespace NationStatesAPIBot.Commands.Management
                 await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
             }
         }
+
+
     }
 }
