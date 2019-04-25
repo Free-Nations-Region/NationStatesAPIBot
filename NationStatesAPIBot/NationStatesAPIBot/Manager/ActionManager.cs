@@ -76,6 +76,8 @@ namespace NationStatesAPIBot.Managers
         private static readonly string source = "ActionManager";
         internal static DateTime StartUpTime { get; private set; }
         public static bool Running { get; private set; } = false;
+
+        public static bool receivingRecruitableNation { get; set; } = false;
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>

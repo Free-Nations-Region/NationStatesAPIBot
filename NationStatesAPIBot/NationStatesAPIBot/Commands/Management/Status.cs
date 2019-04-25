@@ -46,7 +46,6 @@ namespace NationStatesAPIBot.Commands.Management
                     "-"
                 }
             });
-            //await Context.Channel.SendMessageAsync("", false, builder.Build());
             await ReplyAsync("", false, builder.Build());
         }
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
