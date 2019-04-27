@@ -84,12 +84,12 @@ namespace NationStatesAPIBot.Commands.Management
                                     if (i / 40 == 1)
                                     {
                                         await ReplyAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-                                        builder.Clear();
                                     }
                                     else
                                     {
                                         await ReplyAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                     }
+                                    builder.Clear();
                                     currentReply++;
                                 }
                             }
