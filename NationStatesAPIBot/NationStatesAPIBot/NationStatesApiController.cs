@@ -336,7 +336,7 @@ namespace NationStatesAPIBot
             IsRecruiting = true;
             RecruitmentStarttime = DateTime.UtcNow;
             var lastSend = GetNationsByStatusName("send").Take(1).ToArray();
-            if(lastSend.Length > 0)
+            if (lastSend.Length > 0)
             {
                 lastTelegramSending = lastSend[0].StatusTime;
             }
@@ -419,35 +419,41 @@ namespace NationStatesAPIBot
                         if (pendingNations.Count < 10)
                         {
                             pendingNations = await GetRecruitableNations(10 - pendingNations.Count);
-                            foreach (var nation in pendingNations)
+                            foreach (var pendingNation in pendingNations)
                             {
-                                await SetNationStatusToAsync(nation, "reserved_api");
+                                await SetNationStatusToAsync(pendingNation, "reserved_api");
                             }
                         }
                     }
-                    if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
+                    var picked = pendingNations.Take(1);
+                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                    if (await CanReceiveRecruitmentTelegram(nation.Name))
                     {
-
-                        var picked = pendingNations.Take(1);
-                        var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                        if (nation != null)
+                        if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                         {
-                            if (await SendRecruitmentTelegramAsync(nation.Name))
+                            if (nation != null)
                             {
-                                await SetNationStatusToAsync(nation, "send", "reserved_api");
+                                if (await SendRecruitmentTelegramAsync(nation.Name))
+                                {
+                                    await SetNationStatusToAsync(nation, "send", "reserved_api");
+                                }
+                                else
+                                {
+                                    await SetNationStatusToAsync(nation, "failed", "reserved_api");
+                                    Log(LogSeverity.Error, "Recruitment", $"Telegram to {nation.Name} could not be send.");
+                                }
+                                pendingNations.Remove(nation);
+
                             }
                             else
                             {
-                                await SetNationStatusToAsync(nation, "failed", "reserved_api");
-                                Log(LogSeverity.Error, "Recruitment", $"Telegram to {nation.Name} could not be send.");
+                                Log(LogSeverity.Warning, "Recruitment", "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
                             }
-                            pendingNations.Remove(nation);
-
                         }
-                        else
-                        {
-                            Log(LogSeverity.Warning, "Recruitment", "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
-                        }
+                    }
+                    else
+                    {
+                        await SetNationStatusToAsync(nation, "skipped");
                     }
                     if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))
                     {
