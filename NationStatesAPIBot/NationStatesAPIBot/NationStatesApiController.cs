@@ -454,6 +454,7 @@ namespace NationStatesAPIBot
                     else
                     {
                         await SetNationStatusToAsync(nation, "skipped");
+                        pendingNations.Remove(nation);
                     }
                     if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))
                     {
