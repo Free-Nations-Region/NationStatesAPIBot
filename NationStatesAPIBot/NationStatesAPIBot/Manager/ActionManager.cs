@@ -301,14 +301,6 @@ namespace NationStatesAPIBot.Managers
                 {
                     if (!IsRelevant(message, context.User, ref argPos)) return;
 
-#if DEBUG
-                    if (!IsBotAdmin(context.User.Id.ToString()))
-                    {
-                        await context.Channel.SendMessageAsync(SleepText);
-                        return;
-                    }
-#endif
-
                     string userId = context.User.Id.ToString();
                     //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
                     if (IsBotAdmin(userId) && message.Content == "/sleep")
@@ -329,13 +321,13 @@ namespace NationStatesAPIBot.Managers
                 else
                 {
                     // Reenables the Reactiveness of the bot using /wakeup command.
-                    if (IsBotAdmin(context.User.Id.ToString()) && message.Content == "/wakeup")
+                    if (IsBotAdmin(context.User) && message.Content == "/wakeup")
                     {
                         Reactive = true;
                         await context.Client.SetStatusAsync(UserStatus.Online);
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
                     }
-                    else if (IsRelevant(message, context.User, ref argPos) && context.Client.Status == UserStatus.DoNotDisturb)
+                    else if (IsRelevant(message, context.User, ref argPos) && context.Client.Status == UserStatus.DoNotDisturb && !IsBotAdmin(context.User))
                     {
                         await context.Channel.SendMessageAsync(SleepText);
                         return;
@@ -348,6 +340,10 @@ namespace NationStatesAPIBot.Managers
             }
         }
 
+        public static bool IsBotAdmin(SocketUser user)
+        {
+            return IsBotAdmin(user.Id.ToString());
+        }
         public static bool IsBotAdmin(string userId)
         {
             return userId == BotAdminDiscordUserId;

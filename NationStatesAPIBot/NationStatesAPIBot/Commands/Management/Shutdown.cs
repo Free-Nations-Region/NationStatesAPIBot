@@ -13,7 +13,7 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("shutdown"), Summary("Shuts down the bot")]
         public async Task DoShutdown()
         {
-            if(ActionManager.IsBotAdmin(Context.User.Id.ToString()))
+            if(ActionManager.IsBotAdmin(Context.User))
             {
                 await ReplyAsync("Shutting down. Bye Bye !");
                 await ActionManager.Shutdown();

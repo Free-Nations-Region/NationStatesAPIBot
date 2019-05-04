@@ -11,7 +11,7 @@ namespace NationStatesAPIBot.Managers
     {
         public static bool IsAllowed(PermissionType permissionType, SocketUser user)
         {
-            if (ActionManager.IsBotAdmin(user.Id.ToString()))
+            if (ActionManager.IsBotAdmin(user))
             {
                 return true;
             }
