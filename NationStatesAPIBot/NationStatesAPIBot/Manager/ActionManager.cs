@@ -281,6 +281,12 @@ namespace NationStatesAPIBot.Managers
             await SetClientAction($"Lections of {BOT_ADMIN_TERM}", ActivityType.Listening);
         }
 
+        private static bool IsRelevant(SocketUserMessage msg, SocketUser user)
+        {
+            int argPos = 0;
+            return msg.HasCharPrefix('/', ref argPos) && PermissionManager.IsAllowed(PermissionType.ExecuteCommands, user);
+        }
+
         private static async Task DiscordClient_MessageReceived(SocketMessage arg)
         {
             try
@@ -292,7 +298,7 @@ namespace NationStatesAPIBot.Managers
                     if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
 
                     int argPos = 0;
-                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos)) || !PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User)) return;
+                    if (!IsRelevant(message, context.User)) return;
 
 #if DEBUG
                     if (!IsBotAdmin(context.User.Id.ToString()))
@@ -328,7 +334,7 @@ namespace NationStatesAPIBot.Managers
                         await context.Client.SetStatusAsync(UserStatus.Online);
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
                     }
-                    else if (context.Client.Status == UserStatus.DoNotDisturb)
+                    else if (IsRelevant(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb)
                     {
                         await context.Channel.SendMessageAsync(SleepText);
                         return;
