@@ -17,7 +17,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                ActionManager.NationStatesApiController.StartRecruitingAsync();
+                ActionManager.NationStatesApiController.StartRecruiting();
                 await ReplyAsync("Recruitment Process started.");
             }
             else
@@ -32,7 +32,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
-                ActionManager.NationStatesApiController.StopRecruitingAsync();
+                ActionManager.NationStatesApiController.StopRecruiting();
                 await ReplyAsync("Recruitment Process stopped.");
             }
             else
@@ -126,7 +126,7 @@ namespace NationStatesAPIBot.Commands.Management
                 await ReplyAsync($"Something went wrong :( ");
                 foreach(var nation in returnNations)
                 {
-                    await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "pending", "reserved_manual");
+                    await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "pending");
                 }
             }
             finally

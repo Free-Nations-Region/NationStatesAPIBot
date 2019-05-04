@@ -23,6 +23,7 @@ namespace NationStatesAPIBot.Managers
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 36000000000
         public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
         public const string BOT_ADMIN_TERM = "BotFather"; //Change to something else if you don't like the term
+        private static readonly string SleepText = $"Psst...I'm sleeping.{Environment.NewLine}{Environment.NewLine}Maintenance going on right now. Please be patient. Thank you :)";
         public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue.";
         public static string Configuration { get; private set; } = "Release";
         /// <summary>
@@ -99,10 +100,15 @@ namespace NationStatesAPIBot.Managers
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Shutdown requested.");
             if (NationStatesApiController.IsRecruiting)
             {
-                NationStatesApiController.StopRecruitingAsync();
+                NationStatesApiController.StopRecruiting();
             }
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Going offline.");
+#if !DEBUG
             await discordClient.SetStatusAsync(UserStatus.Offline);
+#else
+            await discordClient.SetStatusAsync(UserStatus.DoNotDisturb);
+#endif
+            await discordClient.LogoutAsync();
             await discordClient.StopAsync();
             LoggerInstance.StopFileLogging();
             Running = false;
@@ -286,14 +292,21 @@ namespace NationStatesAPIBot.Managers
                     if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
 
                     int argPos = 0;
-                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos)) && PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User)) return;
+                    if (!(message.HasCharPrefix('/', ref argPos) || message.HasMentionPrefix(discordClient.CurrentUser, ref argPos)) || !PermissionManager.IsAllowed(PermissionType.ExecuteCommands, context.User)) return;
 
+#if DEBUG
+                    if (!IsBotAdmin(context.User.Id.ToString()))
+                    {
+                        await context.Channel.SendMessageAsync(SleepText);
+                        return;
+                    }
+#endif
 
                     string userId = context.User.Id.ToString();
                     //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
                     if (IsBotAdmin(userId) && message.Content == "/sleep")
                     {
-                        await context.Client.SetStatusAsync(UserStatus.AFK);
+                        await context.Client.SetStatusAsync(UserStatus.DoNotDisturb);
                         await context.Channel.SendMessageAsync("Ok! Going to sleep now. Wake me up later with /wakeup.");
                         Reactive = false;
                     }
@@ -314,6 +327,11 @@ namespace NationStatesAPIBot.Managers
                         Reactive = true;
                         await context.Client.SetStatusAsync(UserStatus.Online);
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
+                    }
+                    else if (context.Client.Status == UserStatus.DoNotDisturb)
+                    {
+                        await context.Channel.SendMessageAsync(SleepText);
+                        return;
                     }
                 }
             }

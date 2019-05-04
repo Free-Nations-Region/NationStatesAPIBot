@@ -330,7 +330,7 @@ namespace NationStatesAPIBot
             return text?.Trim().ToLower().Replace('_', ' ');
         }
 
-        internal void StartRecruitingAsync()
+        internal void StartRecruiting()
         {
             Log(LogSeverity.Info, "Starting Recruitment process.");
             IsRecruiting = true;
@@ -342,7 +342,7 @@ namespace NationStatesAPIBot
             }
             Task.Run(async () => await RecruitAsync());
         }
-        internal void StopRecruitingAsync()
+        internal void StopRecruiting()
         {
             Log(LogSeverity.Info, "Stopping Recruitment process.");
             IsRecruiting = false;
@@ -378,31 +378,24 @@ namespace NationStatesAPIBot
             return returnNations;
         }
 
-        internal async Task SetNationStatusToAsync(Nation nation, string statusName)
-        {
-            await SetNationStatusToAsync(nation, statusName, "pending");
-        }
 
-        internal async Task SetNationStatusToAsync(Nation nation, string statusName, string currentStatus)
+        internal async Task SetNationStatusToAsync(Nation nation, string statusName)
         {
             using (var dbContext = new BotDbContext())
             {
-                var current = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == currentStatus);
-                if (nation.StatusId == current.Id)
+                var current = nation.Status;
+                var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == statusName);
+                if (status == null)
                 {
-                    var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == statusName);
-                    if (status == null)
-                    {
-                        status = new NationStatus() { Name = statusName };
-                        await dbContext.NationStatuses.AddAsync(status);
-                        await dbContext.SaveChangesAsync();
-                    }
-                    nation.Status = status;
-                    nation.StatusId = status.Id;
-                    nation.StatusTime = DateTime.UtcNow;
-                    dbContext.Nations.Update(nation);
+                    status = new NationStatus() { Name = statusName };
+                    await dbContext.NationStatuses.AddAsync(status);
                     await dbContext.SaveChangesAsync();
                 }
+                nation.Status = status;
+                nation.StatusId = status.Id;
+                nation.StatusTime = DateTime.UtcNow;
+                dbContext.Nations.Update(nation);
+                await dbContext.SaveChangesAsync();
             }
         }
 
@@ -425,21 +418,22 @@ namespace NationStatesAPIBot
                             }
                         }
                     }
-                    var picked = pendingNations.Take(1);
-                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (await CanReceiveRecruitmentTelegram(nation.Name))
+
+                    if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                     {
-                        if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.SendRecruitmentTelegram, true))
+                        var picked = pendingNations.Take(1);
+                        var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                        if (await CanReceiveRecruitmentTelegram(nation.Name))
                         {
                             if (nation != null)
                             {
                                 if (await SendRecruitmentTelegramAsync(nation.Name))
                                 {
-                                    await SetNationStatusToAsync(nation, "send", "reserved_api");
+                                    await SetNationStatusToAsync(nation, "send");
                                 }
                                 else
                                 {
-                                    await SetNationStatusToAsync(nation, "failed", "reserved_api");
+                                    await SetNationStatusToAsync(nation, "failed");
                                     Log(LogSeverity.Error, "Recruitment", $"Telegram to {nation.Name} could not be send.");
                                 }
                                 pendingNations.Remove(nation);
@@ -450,11 +444,11 @@ namespace NationStatesAPIBot
                                 Log(LogSeverity.Warning, "Recruitment", "Pending Nations empty can not send telegram: No recipient."); //To-Do: Send alert to recruiters
                             }
                         }
-                    }
-                    else
-                    {
-                        await SetNationStatusToAsync(nation, "skipped");
-                        pendingNations.Remove(nation);
+                        else
+                        {
+                            await SetNationStatusToAsync(nation, "skipped");
+                            pendingNations.Remove(nation);
+                        }
                     }
                     if (ActionManager.IsNationStatesApiActionReady(NationStatesApiRequestType.GetNewNations, true))
                     {
