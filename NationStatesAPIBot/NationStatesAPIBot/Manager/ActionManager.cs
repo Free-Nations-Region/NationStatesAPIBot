@@ -212,7 +212,7 @@ namespace NationStatesAPIBot.Managers
             await discordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
             await discordClient.StartAsync();
         }
-        
+
         private static async Task DiscordClient_UserLeft(SocketGuildUser arg)
         {
             await RemoveUserFromDbAsync(arg.Id.ToString());
@@ -237,7 +237,7 @@ namespace NationStatesAPIBot.Managers
             using (var dbContext = new BotDbContext())
             {
                 var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == userId);
-                if(user != null)
+                if (user != null)
                 {
                     dbContext.Remove(user);
                     await dbContext.SaveChangesAsync();
@@ -281,10 +281,13 @@ namespace NationStatesAPIBot.Managers
             await SetClientAction($"Lections of {BOT_ADMIN_TERM}", ActivityType.Listening);
         }
 
-        private static bool IsRelevant(SocketUserMessage msg, SocketUser user)
+        private static bool IsRelevant(SocketUserMessage msg, SocketUser user, ref int argPos)
         {
-            int argPos = 0;
-            return msg.HasCharPrefix('/', ref argPos) && PermissionManager.IsAllowed(PermissionType.ExecuteCommands, user);
+            var value = !string.IsNullOrWhiteSpace(msg.Content) &&
+                !user.IsBot &&
+                msg.HasCharPrefix('/', ref argPos) &&
+                PermissionManager.IsAllowed(PermissionType.ExecuteCommands, user);
+            return value;
         }
 
         private static async Task DiscordClient_MessageReceived(SocketMessage arg)
@@ -293,12 +296,10 @@ namespace NationStatesAPIBot.Managers
             {
                 var message = arg as SocketUserMessage;
                 var context = new SocketCommandContext(discordClient, message);
+                int argPos = 0;
                 if (Reactive)
                 {
-                    if (string.IsNullOrWhiteSpace(context.Message.Content) || context.User.IsBot) return;
-
-                    int argPos = 0;
-                    if (!IsRelevant(message, context.User)) return;
+                    if (!IsRelevant(message, context.User, ref argPos)) return;
 
 #if DEBUG
                     if (!IsBotAdmin(context.User.Id.ToString()))
@@ -334,7 +335,7 @@ namespace NationStatesAPIBot.Managers
                         await context.Client.SetStatusAsync(UserStatus.Online);
                         await context.Channel.SendMessageAsync("Hey! I'm back.");
                     }
-                    else if (IsRelevant(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb)
+                    else if (IsRelevant(message, context.User, ref argPos) && context.Client.Status == UserStatus.DoNotDisturb)
                     {
                         await context.Channel.SendMessageAsync(SleepText);
                         return;
