@@ -4,6 +4,7 @@ using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -54,7 +55,15 @@ namespace NationStatesAPIBot.Commands.Management
                         if (number <= 120)
                         {
                             ActionManager.receivingRecruitableNation = true;
-                            await ReplyAsync(actionQueued);
+                            var currentRN = new RNStatus
+                            {
+                                IssuedBy = Context.User.Username,
+                                FinalCount = number,
+                                StartedAt = DateTimeOffset.UtcNow,
+                                AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
+                            };
+                            await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
+                            ActionManager.RNStatus = currentRN;
                             returnNations = await NationStatesApiController.GetRecruitableNations(number);
                             foreach (var nation in returnNations)
                             {
@@ -124,7 +133,7 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
                 await ReplyAsync($"Something went wrong :( ");
-                foreach(var nation in returnNations)
+                foreach (var nation in returnNations)
                 {
                     await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "pending");
                 }
@@ -132,9 +141,36 @@ namespace NationStatesAPIBot.Commands.Management
             finally
             {
                 ActionManager.receivingRecruitableNation = false;
+                ActionManager.RNStatus = null;
             }
         }
 
-
+        [Command("rns"), Summary("Returns the status of an /rn command")]
+        public async Task DoGetRNStatus()
+        {
+            try
+            {
+                if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+                {
+                    if(ActionManager.RNStatus != null)
+                    {
+                        await ReplyAsync(ActionManager.RNStatus.ToString());
+                    }
+                    else
+                    {
+                        await ReplyAsync("No /rn command currently running.");
+                    }
+                }
+                else
+                {
+                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                }
+            }
+            catch (Exception ex)
+            {
+                NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
+                await ReplyAsync($"Something went wrong :( ");
+            }
+        }
     }
 }

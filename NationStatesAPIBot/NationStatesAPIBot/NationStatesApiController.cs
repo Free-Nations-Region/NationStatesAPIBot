@@ -372,6 +372,10 @@ namespace NationStatesAPIBot
                     }
                     pendingNations.Remove(nation);
                     returnNations.Add(nation);
+                    if(ActionManager.RNStatus != null)
+                    {
+                        ActionManager.RNStatus.CurrentCount++;
+                    }
                 }
             }
 

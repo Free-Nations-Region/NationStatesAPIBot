@@ -71,7 +71,7 @@ namespace NationStatesAPIBot.Managers
         /// </summary>
         internal static string RegionName { get; private set; }
         private static bool Reactive = true;
-        private static DiscordSocketClient discordClient { get; set; }
+        private static DiscordSocketClient DiscordClient { get; set; }
         private static CommandService commands;
         private static IServiceProvider services;
         private static readonly string source = "ActionManager";
@@ -79,6 +79,7 @@ namespace NationStatesAPIBot.Managers
         public static bool Running { get; private set; } = false;
 
         public static bool receivingRecruitableNation { get; set; } = false;
+        internal static RNStatus RNStatus = null;
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
@@ -104,12 +105,12 @@ namespace NationStatesAPIBot.Managers
             }
             await LoggerInstance.LogAsync(LogSeverity.Info, source, "Going offline.");
 #if !DEBUG
-            await discordClient.SetStatusAsync(UserStatus.Offline);
+            await DiscordClient.SetStatusAsync(UserStatus.Offline);
 #else
-            await discordClient.SetStatusAsync(UserStatus.DoNotDisturb);
+            await DiscordClient.SetStatusAsync(UserStatus.DoNotDisturb);
 #endif
-            await discordClient.LogoutAsync();
-            await discordClient.StopAsync();
+            await DiscordClient.LogoutAsync();
+            await DiscordClient.StopAsync();
             LoggerInstance.StopFileLogging();
             Running = false;
             Console.ResetColor();
@@ -187,7 +188,7 @@ namespace NationStatesAPIBot.Managers
 
         private static async Task SetupDiscordBot()
         {
-            discordClient = new DiscordSocketClient(new DiscordSocketConfig
+            DiscordClient = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LoggerInstance.SeverityThreshold
             });
@@ -202,15 +203,15 @@ namespace NationStatesAPIBot.Managers
 
             services = new ServiceCollection()
                 .BuildServiceProvider();
-            discordClient.Connected += DiscordClient_Connected;
-            discordClient.Disconnected += DiscordClient_Disconnected;
-            discordClient.MessageReceived += DiscordClient_MessageReceived;
+            DiscordClient.Connected += DiscordClient_Connected;
+            DiscordClient.Disconnected += DiscordClient_Disconnected;
+            DiscordClient.MessageReceived += DiscordClient_MessageReceived;
             await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
-            discordClient.Ready += DiscordClient_Ready;
-            discordClient.Log += DiscordClient_Log;
-            discordClient.UserLeft += DiscordClient_UserLeft;
-            await discordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
-            await discordClient.StartAsync();
+            DiscordClient.Ready += DiscordClient_Ready;
+            DiscordClient.Log += DiscordClient_Log;
+            DiscordClient.UserLeft += DiscordClient_UserLeft;
+            await DiscordClient.LoginAsync(TokenType.Bot, DiscordBotLoginToken);
+            await DiscordClient.StartAsync();
         }
 
         private static async Task DiscordClient_UserLeft(SocketGuildUser arg)
@@ -287,7 +288,7 @@ namespace NationStatesAPIBot.Managers
                 !user.IsBot &&
                 msg.HasCharPrefix('/', ref argPos) &&
                 PermissionManager.IsAllowed(PermissionType.ExecuteCommands, user);
-            return value;
+            return Configuration == "Debug" ? IsBotAdmin(user) ? true : false : value;
         }
 
         private static async Task DiscordClient_MessageReceived(SocketMessage arg)
@@ -295,7 +296,7 @@ namespace NationStatesAPIBot.Managers
             try
             {
                 var message = arg as SocketUserMessage;
-                var context = new SocketCommandContext(discordClient, message);
+                var context = new SocketCommandContext(DiscordClient, message);
                 int argPos = 0;
                 if (Reactive)
                 {
@@ -366,7 +367,7 @@ namespace NationStatesAPIBot.Managers
         /// <param name="activityType">The discord actionType</param>
         public static async Task SetClientAction(string description, ActivityType activityType)
         {
-            await discordClient.SetGameAsync(description, null, activityType);
+            await DiscordClient.SetGameAsync(description, null, activityType);
         }
         /// <summary>
         /// 
