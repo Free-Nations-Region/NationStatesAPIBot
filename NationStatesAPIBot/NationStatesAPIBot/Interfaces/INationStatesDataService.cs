@@ -1,10 +1,13 @@
-﻿using System;
+﻿using NationStatesAPIBot.Types;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NationStatesAPIBot.Interfaces
 {
-    class INationStatesDataService
+    public interface INationStatesDataService
     {
+        Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction);
     }
 }

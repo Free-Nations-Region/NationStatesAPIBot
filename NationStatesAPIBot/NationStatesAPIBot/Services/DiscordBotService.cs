@@ -17,6 +17,22 @@ namespace NationStatesAPIBot.Services
             _logger = logger;
             _config = config.Value;
         }
+
+        public Task IsRelevantAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task IsRelevantAsync(object message, object user)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ProcessMessage(object message)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task RunAsync()
         {
             _logger.LogInformation($"--- DiscordBotService started ---");
