@@ -80,6 +80,8 @@ namespace NationStatesAPIBot.Managers
 
         public static bool receivingRecruitableNation { get; set; } = false;
         internal static RNStatus RNStatus = null;
+
+        private static readonly Random _rnd = new Random();
         /// <summary>
         /// Intializes the ActionManager and the bot during StartUp
         /// </summary>
@@ -130,6 +132,7 @@ namespace NationStatesAPIBot.Managers
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManagePermissions", Description = "Determines if a User or Role is allowed to read, grant and revoke permissions to Users and Roles." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRoles", Description = "Determines if a User or Role is allowed to read, assign and remove Roles from Users." });
                     await dbContext.Permissions.AddAsync(new Permission() { Name = "ManageRecruiting", Description = "Determines if a User or Role is allowed to start or stop the recruitment process." });
+                    await dbContext.Permissions.AddAsync(new Permission() { Name = "GenerateOVCCodes", Description = "Determines if a User or Role is allowed to generate Ownership Verification Codes." });
                     await dbContext.SaveChangesAsync();
                 }
                 if (dbContext.Roles.Count() == 0)
@@ -146,6 +149,11 @@ namespace NationStatesAPIBot.Managers
                     await dbContext.SaveChangesAsync();
                 }
             }
+        }
+
+        public static int GetRandomNumber(int max)
+        {
+            return _rnd.Next(max);
         }
 
         private static async Task LoadConfig()
