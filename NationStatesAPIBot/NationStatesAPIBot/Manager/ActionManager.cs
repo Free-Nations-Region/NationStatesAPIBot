@@ -284,6 +284,11 @@ namespace NationStatesAPIBot.Managers
 
         private static bool IsRelevant(SocketUserMessage msg, SocketUser user, ref int argPos)
         {
+            string userId = user.Id.ToString();
+            if (!IsUserInDb(userId).Result)
+            {
+                AddUserToDbAsync(userId, false).Wait();
+            }
             var value = !string.IsNullOrWhiteSpace(msg.Content) &&
                 !user.IsBot &&
                 msg.HasCharPrefix('/', ref argPos) &&
@@ -312,10 +317,7 @@ namespace NationStatesAPIBot.Managers
                     }
                     else
                     {
-                        if (!await IsUserInDb(userId))
-                        {
-                            await AddUserToDbAsync(userId, false);
-                        }
+                        
                         var Result = await commands.ExecuteAsync(context, argPos, services);
                     }
                 }
