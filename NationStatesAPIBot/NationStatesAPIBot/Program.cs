@@ -1,5 +1,11 @@
 ﻿using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using NationStatesAPIBot.Interfaces;
 using NationStatesAPIBot.Managers;
+using NationStatesAPIBot.Services;
+using NetEscapades.Extensions.Logging.RollingFile;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,35 +18,53 @@ namespace NationStatesAPIBot
     class Program
     {
         public const string versionString = "v2.6.3";
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            try
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            await serviceProvider.GetService<App>().Run();
+        }
+
+        private static void ConfigureServices(ServiceCollection serviceCollection)
+        {
+            string configurationName = "production";
+#if DEBUG
+            configurationName = "development";
+#endif
+
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile($"appsettings.{configurationName}.json", false, true)
+                .Build();
+            serviceCollection.AddOptions();
+            serviceCollection.Configure<AppSettings>(configuration.GetSection("Configuration"));
+            serviceCollection.AddLogging(loggingBuilder =>
             {
-                Console.CancelKeyPress += Console_CancelKeyPress;
-                Console.Title = $"NationStatesAPIBot {versionString}";
-                Task.Run(async () => await RunAsync()).Wait();
-            }
-            catch (Exception ex)
-            {
-                Task.Run(async () => await ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "Main", ex.ToString())).Wait();
-                Task.Run(() => Console.Out.WriteLineAsync("Press any key to quit.")).Wait();
-                Console.ReadKey();
-            }
+                loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
+                loggingBuilder.SetMinimumLevel(LogLevel.Information);
+                loggingBuilder.AddConsole();
+                loggingBuilder.AddFile(options =>
+                {
+                    options.FileName = "bot-";
+                    options.Extension = "log";
+                    options.RetainedFileCountLimit = null;
+                    options.Periodicity = PeriodicityOptions.Daily;
+                });
+            });
+            // add services
+            serviceCollection.AddTransient<IBotService, DiscordBotService>();
+
+            // add app
+            serviceCollection.AddTransient<App>();
         }
 
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             Console.ResetColor();
             ActionManager.Shutdown().Wait();
-        }
-
-        static async Task RunAsync()
-        {
-            await ActionManager.StartUp();
-            while (ActionManager.Running)
-            {
-                await Task.Delay(10000);
-            }
         }
     }
 }
