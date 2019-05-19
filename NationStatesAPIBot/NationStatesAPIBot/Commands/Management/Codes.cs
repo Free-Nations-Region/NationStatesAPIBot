@@ -10,8 +10,8 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Codes : ModuleBase<SocketCommandContext>
     {
-        [Command("ovc"), Summary("Returns Permission of specified User")]
-        public async Task DoGenerateOVC()
+        [Command("ovc"), Summary("Returns an Ownership Verification Code")]
+        public async Task DoGenerateOVC(string nationName)
         {
             if (PermissionManager.IsAllowed(Types.PermissionType.GenerateOVCCodes, Context.User))
             {
@@ -20,7 +20,7 @@ namespace NationStatesAPIBot.Commands.Management
                     await ReplyAsync("Ownership Verification Codes are confidential. They will be therefore sent via DM.");
                 }
                 var channel = await Context.User.GetOrCreateDMChannelAsync();
-                await channel.SendMessageAsync($"The requested Ownership Verification Code is: {GenerateCode()}");
+                await channel.SendMessageAsync($"The requested Ownership Verification Code for '{nationName}' is: {GenerateCode()}");
             }
             else
             {
