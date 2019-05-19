@@ -17,15 +17,16 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v2.6.3";
+        public const string versionString = "v3.0";
+        public static IServiceProvider ServiceProvider { get; private set; }
         static async Task Main(string[] args)
         {
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
 
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            ServiceProvider = serviceCollection.BuildServiceProvider();
 
-            await serviceProvider.GetService<App>().Run();
+            await ServiceProvider.GetService<App>().Run();
         }
 
         private static void ConfigureServices(ServiceCollection serviceCollection)

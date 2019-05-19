@@ -7,6 +7,11 @@ namespace NationStatesAPIBot
 {
     public class BotDbContext : DbContext
     {
+        AppSettings _config;
+        public BotDbContext(AppSettings appSettings)
+        {
+            _config = appSettings;
+        }
         public DbSet<Nation> Nations { get; set; }
         public DbSet<NationStatus> NationStatuses { get; set; }
         public DbSet<User> Users { get; set; }
@@ -15,32 +20,23 @@ namespace NationStatesAPIBot
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySQL(GetConnectionString());
-        }
-
-        private string GetConnectionString()
-        {
-            if (File.Exists("keys.config"))
+            if (!string.IsNullOrWhiteSpace(_config.DbConnection))
             {
-                var lines = File.ReadAllLines("keys.config").ToList();
-                if (lines.Exists(cl => cl.StartsWith("dbConnection=")))
-                {
-                    var line = lines.FirstOrDefault(cl => cl.StartsWith("dbConnection="));
-                    var dbString = line.Remove(0, "dbConnection=".Length);
-                    return dbString;
-                }
-                else
-                {
-                    throw new InvalidDataException("The 'keys.config' does not contain a dbConnection string");
-                }
+                optionsBuilder.UseMySQL(_config.DbConnection);
             }
             else
             {
-                throw new FileNotFoundException("The 'keys.config' file could not be found.");
+                throw new InvalidDataException("The DbConnection string were empty.");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            GenerateRelations(modelBuilder);
+
+        }
+
+        private void GenerateRelations(ModelBuilder modelBuilder)
         {
             //Many to Many User <-> Permission
             modelBuilder.Entity<UserPermissions>()
