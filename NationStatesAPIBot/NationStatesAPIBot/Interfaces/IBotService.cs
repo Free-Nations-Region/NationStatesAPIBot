@@ -9,7 +9,7 @@ namespace NationStatesAPIBot.Interfaces
     {
         Task RunAsync();
         Task IsRelevantAsync(object message, object user);
-
-        Task ProcessMessage(object message);
+        Task ProcessMessageAsync(object message);
+        bool IsRunning { get; }
     }
 }

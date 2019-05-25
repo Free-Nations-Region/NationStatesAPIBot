@@ -23,6 +23,10 @@ namespace NationStatesAPIBot
             {
                 _logger.LogInformation($"--- App started ---");
                 await _botService.RunAsync();
+                while (_botService.IsRunning)
+                {
+                    await Task.Delay(10000);
+                }
             }
             catch (Exception ex)
             {

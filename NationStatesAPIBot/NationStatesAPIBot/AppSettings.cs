@@ -32,7 +32,7 @@ namespace NationStatesAPIBot
         public string DiscordBotAdminUser { get; set; }
         public string NationStatesRegionName { get; set; }
         public bool EnableCitizenshipOverTime { get; set; }
-        public int RequiredDaysForCitizenship { get; set; }
+        public char SeperatorChar { get; set; }
 
     }
 }

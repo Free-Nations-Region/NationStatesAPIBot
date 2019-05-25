@@ -8,6 +8,11 @@ namespace NationStatesAPIBot
     public class BotDbContext : DbContext
     {
         AppSettings _config;
+
+        public BotDbContext() : this(new AppSettings())
+        {
+            // Temporary to avoid compiler errors on old code. During refactoring.
+        }
         public BotDbContext(AppSettings appSettings)
         {
             _config = appSettings;
