@@ -50,7 +50,7 @@ namespace NationStatesAPIBot.Services
             var socketMsg = message as SocketUserMessage;
             if (socketMsg != null)
             {
-                var context = new SocketCommandContext(DiscordClient, socketMsg);
+                //_ = new SocketCommandContext(DiscordClient, socketMsg);                
                 _logger.LogDebug($"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
             }
             return Task.CompletedTask;
@@ -79,7 +79,6 @@ namespace NationStatesAPIBot.Services
             DiscordClient.Connected += DiscordClient_Connected;
             DiscordClient.Disconnected += DiscordClient_Disconnected;
             DiscordClient.MessageReceived += DiscordClient_MessageReceived;
-            DiscordClient.MessageDeleted += DiscordClient_MessageDeleted;
             DiscordClient.Log += DiscordClient_Log;
             DiscordClient.LoggedIn += DiscordClient_LoggedIn;
             DiscordClient.LoggedOut += DiscordClient_LoggedOut;
@@ -127,33 +126,25 @@ namespace NationStatesAPIBot.Services
 
         private Task DiscordClient_Log(LogMessage arg)
         {
-            string message = $"Source: {arg.Source} Message: {arg.Message}";
+            string message = $"[{arg.Source}] {arg.Message}";
             switch (arg.Severity)
             {
                 case LogSeverity.Critical:
-                    _logger.LogCritical(message);
+                    _logger.LogCritical(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()),message);
                     break;
                 case LogSeverity.Error:
-                    _logger.LogError(message);
+                    _logger.LogError(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
                     break;
                 case LogSeverity.Warning:
-                    _logger.LogWarning(message);
+                    _logger.LogWarning(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()),message);
                     break;
                 case LogSeverity.Info:
-                    _logger.LogInformation(message);
+                    _logger.LogInformation(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
                     break;
                 default:
-                    _logger.LogDebug($"Severity: {arg.Severity.ToString()} {message}");
+                    _logger.LogDebug(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), $"Severity: {arg.Severity.ToString()} {message}");
                     break;
             }
-            return Task.CompletedTask;
-        }
-
-        private Task DiscordClient_MessageDeleted(Cacheable<IMessage, ulong> arg1, ISocketMessageChannel arg2)
-        {
-            var IMessage = arg1.Value;
-            var authorname = $"Id: {IMessage.Author.Id} Name: {IMessage.Author.Username}{IMessage.Author.Discriminator}";
-            _logger.LogWarning($"--- MESSAGE DELETED --- Author: {{{authorname}}} Message: {IMessage.Content}");
             return Task.CompletedTask;
         }
 

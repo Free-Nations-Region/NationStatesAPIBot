@@ -4,8 +4,8 @@ using System.Text;
 
 namespace NationStatesAPIBot.Types
 {
-    public class LoggingEvents
+    public enum LoggingEvents
     {
-
+        DiscordLogEvent = 1000,
     }
 }
