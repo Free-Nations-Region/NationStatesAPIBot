@@ -8,8 +8,9 @@ namespace NationStatesAPIBot.Interfaces
     public interface IBotService
     {
         Task RunAsync();
-        Task IsRelevantAsync(object message, object user);
+        Task<bool> IsRelevantAsync(object message, object user);
         Task ProcessMessageAsync(object message);
         bool IsRunning { get; }
+        Task ShutdownAsync();
     }
 }

@@ -25,10 +25,9 @@ namespace NationStatesAPIBot
             ConfigureServices(serviceCollection);
 
             ServiceProvider = serviceCollection.BuildServiceProvider();
-
+            Console.CancelKeyPress += Console_CancelKeyPress;
             await ServiceProvider.GetService<App>().Run();
         }
-
         private static void ConfigureServices(ServiceCollection serviceCollection)
         {
             string configurationName = "production";
@@ -62,10 +61,10 @@ namespace NationStatesAPIBot
             serviceCollection.AddTransient<App>();
         }
 
-        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             Console.ResetColor();
-            ActionManager.Shutdown().Wait();
+            await ServiceProvider.GetService<IBotService>().ShutdownAsync();
         }
     }
 }

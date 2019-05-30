@@ -35,25 +35,28 @@ namespace NationStatesAPIBot.Services
             _config = config.Value;
         }
 
-        public Task IsRelevantAsync()
+        public async Task<bool> IsRelevantAsync(object message, object user)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task IsRelevantAsync(object message, object user)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ProcessMessageAsync(object message)
-        {
-            var socketMsg = message as SocketUserMessage;
-            if (socketMsg != null)
+            if (message is SocketUserMessage socketMsg)
             {
-                //_ = new SocketCommandContext(DiscordClient, socketMsg);                
-                _logger.LogDebug($"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
+                var context = new SocketCommandContext(DiscordClient, socketMsg);
+                if (socketMsg.HasCharPrefix(_config.SeperatorChar, 0))
+                    return context.Channel.Id == 580124705722466318; //only temporary
             }
-            return Task.CompletedTask;
+            return false;
+        }
+
+        public async Task ProcessMessageAsync(object message)
+        {
+            if (message is SocketUserMessage socketMsg)
+            {
+                var context = new SocketCommandContext(DiscordClient, socketMsg);
+                _logger.LogDebug($"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
+                if (await IsRelevantAsync(message, context.User))
+                {
+                    await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
+                }
+            }
         }
 
         public async Task RunAsync()
@@ -71,7 +74,7 @@ namespace NationStatesAPIBot.Services
             await DiscordClient.LoginAsync(TokenType.Bot, _config.DiscordBotLoginToken);
             await DiscordClient.StartAsync();
             IsRunning = true;
-        
+
         }
 
         private void SetUpDiscordEvents()
@@ -130,13 +133,13 @@ namespace NationStatesAPIBot.Services
             switch (arg.Severity)
             {
                 case LogSeverity.Critical:
-                    _logger.LogCritical(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()),message);
+                    _logger.LogCritical(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
                     break;
                 case LogSeverity.Error:
                     _logger.LogError(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
                     break;
                 case LogSeverity.Warning:
-                    _logger.LogWarning(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()),message);
+                    _logger.LogWarning(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
                     break;
                 case LogSeverity.Info:
                     _logger.LogInformation(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
@@ -163,6 +166,14 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogInformation("--- Connected to Discord ---");
             return Task.CompletedTask;
+        }
+
+        public async Task ShutdownAsync()
+        {
+            await DiscordClient.LogoutAsync();
+            await DiscordClient.StopAsync();
+            IsRunning = false;
+            Environment.Exit(0);
         }
     }
 }
