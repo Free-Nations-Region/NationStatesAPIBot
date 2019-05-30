@@ -71,7 +71,6 @@ namespace NationStatesAPIBot.Commands.Stats
                         builder.AddField("Region",
                             $"[{region}]({regionUrl}) ");
                         int residencyDays = (int)(residencyDbl % 365.242199);
-                        int residencyIn = 3 - residencyDays; //To-Do: Move Residency Treshold to Config
                         builder.AddField("Residency", $"Resident since " +
                             $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
                             $"{residencyDays} { (residencyDays > 1 ? $"days" : "day")}"  
