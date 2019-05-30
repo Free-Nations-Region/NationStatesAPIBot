@@ -15,7 +15,7 @@ namespace NationStatesAPIBot.Commands.Stats
     {
         //TODO: Make CultureInfo configurable
         //TODO: Make Prefix configurable
-        [Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
+        //[Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
             try

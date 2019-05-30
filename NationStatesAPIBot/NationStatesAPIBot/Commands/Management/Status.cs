@@ -9,7 +9,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Status : ModuleBase<SocketCommandContext>
     {
-        [Command("status"), Summary("Returns some status information.")]
+        //[Command("status"), Summary("Returns some status information.")]
         public async Task GetStatus()
         {
             var builder = new EmbedBuilder();

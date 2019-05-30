@@ -10,7 +10,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Codes : ModuleBase<SocketCommandContext>
     {
-        [Command("ovc"), Summary("Returns Permission of specified User")]
+        //[Command("ovc"), Summary("Returns Permission of specified User")]
         public async Task DoGenerateOVC()
         {
             if (PermissionManager.IsAllowed(Types.PermissionType.GenerateOVCCodes, Context.User))

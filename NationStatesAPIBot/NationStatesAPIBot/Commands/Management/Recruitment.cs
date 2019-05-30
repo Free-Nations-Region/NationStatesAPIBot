@@ -13,22 +13,22 @@ namespace NationStatesAPIBot.Commands.Management
     public class Recruitment : ModuleBase<SocketCommandContext>
     {
         static readonly string actionQueued = $"Your action was queued successfully. Please be patient this may take a moment.";
-        [Command("startRecruitment"), Summary("Starts the recruitment process")]
+        //[Command("startRecruitment"), Summary("Starts the recruitment process")]
         public async Task DoStartRecruitment()
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
             {
                 ActionManager.NationStatesApiController.StartRecruiting();
-                await ReplyAsync("Recruitment Process started.");
+                //await ReplyAsync("Recruitment Process started.");
             }
             else
             {
                 //TODO: Move permission denied into isAllowed
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                //await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
             }
         }
 
-        [Command("stopRecruitment"), Summary("Stops the recruitment process")]
+        //[Command("stopRecruitment"), Summary("Stops the recruitment process")]
         public async Task DoStopRecruitment()
         {
             if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
@@ -42,7 +42,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
+        //[Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
         public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
         {
             List<Nation> returnNations = new List<Nation>();
@@ -145,7 +145,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        [Command("rns"), Summary("Returns the status of an /rn command")]
+        //[Command("rns"), Summary("Returns the status of an /rn command")]
         public async Task DoGetRNStatus()
         {
             try

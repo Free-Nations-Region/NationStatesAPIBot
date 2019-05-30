@@ -10,7 +10,7 @@ namespace NationStatesAPIBot.Commands.Management
     public class RefreshPending : ModuleBase<SocketCommandContext>
     {
         static readonly string actionQueued = $"The action was queued successfully. Please be patient this may take a moment.";
-        [Command("refresh"), Summary("Fetches new and rejected nations and adds them to pending")]
+        //[Command("refresh"), Summary("Fetches new and rejected nations and adds them to pending")]
         public async Task DoRefreshPending()
         {
             try

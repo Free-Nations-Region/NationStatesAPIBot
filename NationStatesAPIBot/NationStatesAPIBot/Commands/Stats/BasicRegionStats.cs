@@ -11,7 +11,7 @@ namespace NationStatesAPIBot.Commands.Stats
 {
     public class BasicRegionStats : ModuleBase<SocketCommandContext>
     {
-        [Command("region", false), Alias("r"), Summary("Returns Basic Stats about a specific nation")]
+        //[Command("region", false), Alias("r"), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
             try

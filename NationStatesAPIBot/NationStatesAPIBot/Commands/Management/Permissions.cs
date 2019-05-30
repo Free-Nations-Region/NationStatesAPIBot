@@ -11,7 +11,7 @@ namespace NationStatesAPIBot.Commands.Management
 
     public class PermissionCommands : ModuleBase<SocketCommandContext>
     {
-        [Command("checkUser"), Summary("Returns Permission of specified User")]
+        //[Command("checkUser"), Summary("Returns Permission of specified User")]
         public async Task DoCheckUser(string id)
         {
             if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
@@ -49,7 +49,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
+        //[Command("checkPerm"), Summary("Returns all Users who have specified permission")]
         public async Task DoCheckPerm(long id)
         {
             if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
@@ -87,7 +87,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        [Command("grantPermission"), Summary("Adds a User to the database")]
+        //[Command("grantPermission"), Summary("Adds a User to the database")]
         public async Task DoGrantPermission(string id, int permissionId)
         {
             if (Context.IsPrivate)
