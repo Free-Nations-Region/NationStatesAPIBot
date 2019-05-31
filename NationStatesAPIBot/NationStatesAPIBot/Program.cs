@@ -11,7 +11,7 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v2.6.3";
+        public const string versionString = "v2.6.4";
         static void Main(string[] args)
         {
             try

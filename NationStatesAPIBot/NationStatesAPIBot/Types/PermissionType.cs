@@ -11,5 +11,6 @@ namespace NationStatesAPIBot.Types
         ManagePermissions = 3,
         ManageRoles = 4,
         ManageRecruitment = 5,
+        GenerateOVCCodes = 6
     }
 }
