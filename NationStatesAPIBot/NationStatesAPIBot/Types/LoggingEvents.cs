@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace NationStatesAPIBot.Types
 {
     public enum LoggingEvents
     {
-        DiscordLogEvent = 1000,
+        //Everything below 10000 is reserved for random log event ids
+        DiscordLogEvent = 10000,
     }
 }

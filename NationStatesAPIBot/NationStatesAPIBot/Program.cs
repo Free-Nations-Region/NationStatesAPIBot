@@ -56,7 +56,7 @@ namespace NationStatesAPIBot
             });
             // add services
             serviceCollection.AddSingleton<IBotService, DiscordBotService>();
-
+            serviceCollection.AddSingleton<BaseApiService, NationStatesApiService>();
             // add app
             serviceCollection.AddTransient<App>();
         }

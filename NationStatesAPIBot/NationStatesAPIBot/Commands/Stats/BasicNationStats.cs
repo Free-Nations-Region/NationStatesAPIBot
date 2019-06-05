@@ -53,7 +53,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         var influenceValue = census[3].ChildNodes[0].InnerText;
                         var endorsementCount = census[4].ChildNodes[0].InnerText;
                         var residency = census[5].ChildNodes[0].InnerText;
-                        var residencyDbl = Convert.ToDouble(residency, System.Globalization.CultureInfo.InvariantCulture);
+                        var residencyDbl = Convert.ToDouble(residency, CultureInfo.InvariantCulture);
                         var residencyYears = (int)(residencyDbl / 365.242199);
 
                         var populationdbl = Convert.ToDouble(population);

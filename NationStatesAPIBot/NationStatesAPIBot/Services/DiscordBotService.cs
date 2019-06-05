@@ -40,7 +40,8 @@ namespace NationStatesAPIBot.Services
             if (message is SocketUserMessage socketMsg)
             {
                 var context = new SocketCommandContext(DiscordClient, socketMsg);
-                if (socketMsg.HasCharPrefix(_config.SeperatorChar, 0))
+                var arg = 0;
+                if (socketMsg.HasCharPrefix(_config.SeperatorChar, ref arg))
                     return context.Channel.Id == 580124705722466318; //only temporary
             }
             return false;

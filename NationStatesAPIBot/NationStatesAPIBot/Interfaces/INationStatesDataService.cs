@@ -8,6 +8,6 @@ namespace NationStatesAPIBot.Interfaces
 {
     public interface INationStatesDataService
     {
-        Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction);
+
     }
 }
