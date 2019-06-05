@@ -12,10 +12,11 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Shutdown : ModuleBase<SocketCommandContext>
     {
-        //[Command("shutdown"), Summary("Shuts down the bot")]
+        [Command("shutdown"), Summary("Shuts down the bot")]
         public async Task DoShutdown()
         {
-            if(ActionManager.IsBotAdmin(Context.User))
+            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
+            if (await permManager.IsBotAdminAsync(Context.User))
             {
                 await ReplyAsync("Shutting down. Bye Bye !");
                 await Program.ServiceProvider.GetService<IBotService>().ShutdownAsync();

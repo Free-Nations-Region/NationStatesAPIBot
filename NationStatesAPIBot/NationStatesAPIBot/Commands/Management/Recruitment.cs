@@ -16,30 +16,30 @@ namespace NationStatesAPIBot.Commands.Management
         //[Command("startRecruitment"), Summary("Starts the recruitment process")]
         public async Task DoStartRecruitment()
         {
-            if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
-            {
-                ActionManager.NationStatesApiController.StartRecruiting();
-                //await ReplyAsync("Recruitment Process started.");
-            }
-            else
-            {
-                //TODO: Move permission denied into isAllowed
-                //await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
-            }
+            //if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+            //{
+            //    ActionManager.NationStatesApiController.StartRecruiting();
+            //    //await ReplyAsync("Recruitment Process started.");
+            //}
+            //else
+            //{
+            //    //TODO: Move permission denied into isAllowed
+            //    //await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+            //}
         }
 
         //[Command("stopRecruitment"), Summary("Stops the recruitment process")]
         public async Task DoStopRecruitment()
         {
-            if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
-            {
-                ActionManager.NationStatesApiController.StopRecruiting();
-                await ReplyAsync("Recruitment Process stopped.");
-            }
-            else
-            {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
-            }
+            //if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+            //{
+            //    ActionManager.NationStatesApiController.StopRecruiting();
+            //    await ReplyAsync("Recruitment Process stopped.");
+            //}
+            //else
+            //{
+            //    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+            //}
         }
 
         //[Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
@@ -48,7 +48,7 @@ namespace NationStatesAPIBot.Commands.Management
             List<Nation> returnNations = new List<Nation>();
             try
             {
-                if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+                if (/*PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User)*/ true)
                 {
                     if (!ActionManager.receivingRecruitableNation)
                     {
@@ -150,7 +150,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             try
             {
-                if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+                if (/*PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User)*/ true)
                 {
                     if(ActionManager.RNStatus != null)
                     {

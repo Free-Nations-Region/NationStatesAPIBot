@@ -13,23 +13,23 @@ namespace NationStatesAPIBot.Commands.Management
         //[Command("refresh"), Summary("Fetches new and rejected nations and adds them to pending")]
         public async Task DoRefreshPending()
         {
-            try
-            {
-                if (PermissionManager.IsAllowed(PermissionType.AccessPending, Context.User))
-                {
-                    await ReplyAsync(actionQueued);
-                    var result = await HandleNew();
-                    await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to database. {result} Nations added to pending."); //To-Do: Send embeded
-                }
-                else
-                {
-                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
-                }
-            }
-            catch (Exception ex)
-            {
-                await ActionManager.LoggerInstance.LogAsync(LogSeverity.Error, "RefreshPending", ex.ToString());
-            }
+            //try
+            //{
+            //    if (PermissionManager.IsAllowed(PermissionType.AccessPending, Context.User))
+            //    {
+            //        await ReplyAsync(actionQueued);
+            //        var result = await HandleNew();
+            //        await ReplyAsync($"<@{Context.User.Id}> You action just finished. Database was synced. {result} Nations added to database. {result} Nations added to pending."); //To-Do: Send embeded
+            //    }
+            //    else
+            //    {
+            //        await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    await ActionManager.LoggerInstance.LogAsync(LogSeverity.Error, "RefreshPending", ex.ToString());
+            //}
         }
 
         private async Task<int> HandleNew()

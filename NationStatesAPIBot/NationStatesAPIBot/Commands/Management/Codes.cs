@@ -1,10 +1,12 @@
 ﻿using Discord.Commands;
+using NationStatesAPIBot.Interfaces;
 using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -13,7 +15,8 @@ namespace NationStatesAPIBot.Commands.Management
         //[Command("ovc"), Summary("Returns Permission of specified User")]
         public async Task DoGenerateOVC()
         {
-            if (PermissionManager.IsAllowed(Types.PermissionType.GenerateOVCCodes, Context.User))
+            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
+            if (await permManager.IsAllowedAsync(Types.PermissionType.GenerateOVCCodes, Context.User))
             {
                 if (!Context.IsPrivate)
                 {
