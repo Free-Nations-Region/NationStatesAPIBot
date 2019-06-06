@@ -19,6 +19,7 @@ namespace NationStatesAPIBot
     {
         public const string versionString = "v3.0";
         public static IServiceProvider ServiceProvider { get; private set; }
+        public static DateTime StartTime { get; private set; }
         static async Task Main(string[] args)
         {
             var serviceCollection = new ServiceCollection();
@@ -26,6 +27,7 @@ namespace NationStatesAPIBot
 
             ServiceProvider = serviceCollection.BuildServiceProvider();
             Console.CancelKeyPress += Console_CancelKeyPress;
+            StartTime = DateTime.UtcNow;
             await ServiceProvider.GetService<App>().Run();
         }
         private static void ConfigureServices(ServiceCollection serviceCollection)

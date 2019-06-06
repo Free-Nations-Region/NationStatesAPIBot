@@ -112,7 +112,7 @@ namespace NationStatesAPIBot.Managers
 
         public Task<bool> IsBotAdminAsync(SocketUser user)
         {
-            return Task.FromResult(_config.DiscordBotAdminUser == user.Id.ToString());
+            return Task.FromResult(_config.DiscordBotAdminUser == user.Id);
         }
     }
 }

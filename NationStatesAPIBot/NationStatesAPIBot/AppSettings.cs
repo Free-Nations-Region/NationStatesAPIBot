@@ -22,7 +22,7 @@ namespace NationStatesAPIBot
         public string Contact { get; set; }
         public string DbConnection { get; set; }
         public string DiscordBotLoginToken { get; set; }
-        public string DiscordBotAdminUser { get; set; }
+        public ulong DiscordBotAdminUser { get; set; }
         public string NationStatesRegionName { get; set; }
         public char SeperatorChar { get; set; }
 
