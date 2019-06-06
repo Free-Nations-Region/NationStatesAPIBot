@@ -23,6 +23,8 @@ namespace NationStatesAPIBot.Services
 
         public DateTime LastAPIRequest { get => lastAPIRequest; private set => lastAPIRequest = value; }
         public DateTime LastTelegramSending { get => lastTelegramSending; set => lastTelegramSending = value; }
+
+
         public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; set => lastAutomaticNewNationsRequest = value; }
         public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; set => lastAutomaticRegionNationsRequest = value; }
 
@@ -50,10 +52,17 @@ namespace NationStatesAPIBot.Services
                 return Task.FromResult(false);
             }
         }
+        public async Task<XmlDocument> GetRegionStatsAsync(string regionName, EventId eventId)
+        {
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
+            await WaitForAction(NationStatesApiRequestType.GetRegionStats);
+            var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+power+founder+delegate+flag+tags");
+            return await ExecuteRequestWithXmlResult(url, eventId);
+        }
 
         public async Task<XmlDocument> GetNationStatsAsync(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, "Waiting for NationStats-Request"));
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
             return await ExecuteRequestWithXmlResult(url, eventId);

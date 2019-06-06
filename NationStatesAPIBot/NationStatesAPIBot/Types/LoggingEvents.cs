@@ -8,6 +8,7 @@ namespace NationStatesAPIBot.Types
         DiscordLogEvent = 10000,
         UserMessage = 10100,
         PermissionDenied = 10200,
-        GetNationStats = 10300
+        GetNationStats = 10300,
+        GetRegionStats = 10400
     }
 }

@@ -6,8 +6,6 @@
         GetNationsFromRegion,
         GetNationStats,
         GetRegionStats,
-        GetGlobalStats,
-        SendTelegram,
         SendRecruitmentTelegram,
         WouldReceiveRecruitmentTelegram
     }

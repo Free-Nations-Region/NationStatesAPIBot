@@ -17,13 +17,11 @@ namespace NationStatesAPIBot.Commands.Stats
 {
     public class BasicNationStats : ModuleBase<SocketCommandContext>
     {
-        private readonly AppSettings _config;
         private readonly ILogger<BasicNationStats> _logger;
         private readonly NationStatesApiService dataService;
         private readonly Random _rnd = new Random();
-        public BasicNationStats(ILogger<BasicNationStats> logger, IOptions<AppSettings> config, NationStatesApiService apiService)
+        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService)
         {
-            _config = config.Value;
             _logger = logger;
             dataService = apiService;
         }
@@ -119,57 +117,57 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        [Command("nationsendorsed", false), Alias("ne"), Summary("Returns all nations who endorsed a nation")]
+        //[Command("nationsendorsed", false), Alias("ne"), Summary("Returns all nations who endorsed a nation")]
         public async Task GetEndorsements(params string[] args)
         {
-            try
-            {
-                string nationName = string.Join(" ", args);
-                await ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "BasicNationStats", $"BasicNationStats for {nationName} requested.");
-                var request = ActionManager.NationStatesApiController.CreateApiRequest($"nation={NationStatesApiController.ToID(nationName)}&q=endorsements");
-                XmlDocument nationStats = new XmlDocument();
-                Random _rnd = new Random();
-                using (var stream = await ActionManager.NationStatesApiController.ExecuteRequestAsync(request, NationStatesApiRequestType.GetNationStats))
-                {
-                    if (stream != null)
-                    {
-                        nationStats.Load(stream);
-                        var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
-                        var builder = new EmbedBuilder();
-                        builder.WithTitle($"{nationName} was endorsed by:");
-                        if (!string.IsNullOrWhiteSpace(endorsements))
-                        {
-                            var nations = endorsements.Split(",").ToList();
-                            StringBuilder sBuilder = new StringBuilder();
-                            foreach (string name in nations)
-                            {
-                                sBuilder.Append(NationStatesApiController.FromID(name) + " ; ");
-                            }
-                            builder.WithDescription(sBuilder.ToString());
-                        }
-                        else
-                        {
-                            builder.WithDescription("No one so far. Sorry :(");
-                        }
-                        builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
-                        builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
-                        await ReplyAsync(embed: builder.Build());
-                    }
-                    else
-                    {
-                        await ActionManager.LoggerInstance.LogAsync(LogSeverity.Warning, "BasicNationStats", "Tried executing request. Return stream were null. Check if an error occurred");
-                        var builder = new EmbedBuilder();
-                        builder.WithTitle($"Something went wrong.");
-                        builder.WithDescription("Probably no such nation.");
-                        await ReplyAsync(embed: builder.Build());
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                await ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "BasicNationStats", ex.ToString() + ex.StackTrace);
-                await ReplyAsync("Something went wrong. Sorry :(");
-            }
+            //try
+            //{
+            //    string nationName = string.Join(" ", args);
+            //    await ActionManager.LoggerInstance.LogAsync(LogSeverity.Info, "BasicNationStats", $"BasicNationStats for {nationName} requested.");
+            //    var request = ActionManager.NationStatesApiController.CreateApiRequest($"nation={NationStatesApiController.ToID(nationName)}&q=endorsements");
+            //    XmlDocument nationStats = new XmlDocument();
+            //    Random _rnd = new Random();
+            //    using (var stream = await ActionManager.NationStatesApiController.ExecuteRequestAsync(request, NationStatesApiRequestType.GetNationStats))
+            //    {
+            //        if (stream != null)
+            //        {
+            //            nationStats.Load(stream);
+            //            var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
+            //            var builder = new EmbedBuilder();
+            //            builder.WithTitle($"{nationName} was endorsed by:");
+            //            if (!string.IsNullOrWhiteSpace(endorsements))
+            //            {
+            //                var nations = endorsements.Split(",").ToList();
+            //                StringBuilder sBuilder = new StringBuilder();
+            //                foreach (string name in nations)
+            //                {
+            //                    sBuilder.Append(NationStatesApiController.FromID(name) + " ; ");
+            //                }
+            //                builder.WithDescription(sBuilder.ToString());
+            //            }
+            //            else
+            //            {
+            //                builder.WithDescription("No one so far. Sorry :(");
+            //            }
+            //            builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+            //            builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+            //            await ReplyAsync(embed: builder.Build());
+            //        }
+            //        else
+            //        {
+            //            await ActionManager.LoggerInstance.LogAsync(LogSeverity.Warning, "BasicNationStats", "Tried executing request. Return stream were null. Check if an error occurred");
+            //            var builder = new EmbedBuilder();
+            //            builder.WithTitle($"Something went wrong.");
+            //            builder.WithDescription("Probably no such nation.");
+            //            await ReplyAsync(embed: builder.Build());
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    await ActionManager.LoggerInstance.LogAsync(LogSeverity.Critical, "BasicNationStats", ex.ToString() + ex.StackTrace);
+            //    await ReplyAsync("Something went wrong. Sorry :(");
+            //}
         }
     }
 }
