@@ -25,27 +25,31 @@ namespace NationStatesAPIBot.Managers
         {
             throw new NotImplementedException();
         }
+
         public Task AddRoleAsync(string roleDescription, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
+
         public Task RemoveRoleAsync(Role role, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
+
         public Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
+
         public Task AddPermissionToRoleAsync(Role role, Permission permission, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
+
         public Task RevokePermissionFromRoleAsync(Role role, Permission permission, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
-
 
         public async Task<IEnumerable<Permission>> GetAllPermissionsToAUserAsync(string discordUserId, BotDbContext dbContext)
         {
@@ -94,8 +98,14 @@ namespace NationStatesAPIBot.Managers
                 using (var dbContext = new BotDbContext())
                 {
                     var perms = await GetAllPermissionsToAUserAsync(user.Id.ToString(), dbContext);
-                    return perms.Select(p => p.Id).Contains((long)permissionType);
+                    var result = perms.Select(p => p.Id).Contains((long)permissionType);
+                    if (!result)
+                    {
+                        _logger.LogInformation($"Permission: '{permissionType.ToString()}' denied for user with id '{user.Id}'");
+                    }
+                    return result;
                 }
+                
             }
         }
 
@@ -103,7 +113,5 @@ namespace NationStatesAPIBot.Managers
         {
             return Task.FromResult(_config.DiscordBotAdminUser == user.Id.ToString());
         }
-
-
     }
 }

@@ -27,7 +27,7 @@ namespace NationStatesAPIBot.Interfaces
         protected async Task<HttpResponseMessage> ExecuteGetRequest(string url, EventId? eventId)
         {
             bool releaseId = false;
-            var logId = eventId != null ? (EventId)eventId : LogEventIdGenerator.GetRandomLogEventId(); ;
+            var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId(); ;
             if (eventId == null)
             {
                 releaseId = true;
@@ -47,7 +47,7 @@ namespace NationStatesAPIBot.Interfaces
             {
                 if (releaseId)
                 {
-                    LogEventIdGenerator.ReleaseEventId(logId);
+                    LogEventIdProvider.ReleaseEventId(logId);
                 }
             }
         }
@@ -77,7 +77,7 @@ namespace NationStatesAPIBot.Interfaces
 
         public async Task<GZipStream> GetNationStatesDumpStream(NationStatesDumpType type)
         {
-            var eventId = LogEventIdGenerator.GetRandomLogEventId();
+            var eventId = LogEventIdProvider.GetRandomLogEventId();
             try
             {
 
@@ -101,7 +101,7 @@ namespace NationStatesAPIBot.Interfaces
             }
             finally
             {
-                LogEventIdGenerator.ReleaseEventId(eventId);
+                LogEventIdProvider.ReleaseEventId(eventId);
             }
         }
     }

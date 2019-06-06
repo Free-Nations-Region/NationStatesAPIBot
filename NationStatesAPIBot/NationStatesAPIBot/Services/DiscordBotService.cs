@@ -131,22 +131,23 @@ namespace NationStatesAPIBot.Services
         private Task DiscordClient_Log(LogMessage arg)
         {
             string message = $"[{arg.Source}] {arg.Message}";
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.DiscordLogEvent);
             switch (arg.Severity)
             {
                 case LogSeverity.Critical:
-                    _logger.LogCritical(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
+                    _logger.LogCritical(id, message);
                     break;
                 case LogSeverity.Error:
-                    _logger.LogError(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
+                    _logger.LogError(id, message);
                     break;
                 case LogSeverity.Warning:
-                    _logger.LogWarning(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
+                    _logger.LogWarning(id, message);
                     break;
                 case LogSeverity.Info:
-                    _logger.LogInformation(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), message);
+                    _logger.LogInformation(id, message);
                     break;
                 default:
-                    _logger.LogDebug(new EventId((int)LoggingEvents.DiscordLogEvent, LoggingEvents.DiscordLogEvent.ToString()), $"Severity: {arg.Severity.ToString()} {message}");
+                    _logger.LogDebug(id, $"Severity: {arg.Severity.ToString()} {message}");
                     break;
             }
             return Task.CompletedTask;

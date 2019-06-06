@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
 
 namespace NationStatesAPIBot
 {
-    public static class LogEventIdGenerator
+    public static class LogEventIdProvider
     {
        static Random _rnd = new Random();
         static HashSet<int> UsedLogEventIds = new HashSet<int>();
@@ -25,6 +26,11 @@ namespace NationStatesAPIBot
             {
                 UsedLogEventIds.Remove(eventId.Id);
             }
+        }
+
+        public static EventId GetEventIdByType(LoggingEvent loggingEvent)
+        {
+            return new EventId((int)loggingEvent, loggingEvent.ToString());
         }
     }
 }
