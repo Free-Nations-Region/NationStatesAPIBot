@@ -68,6 +68,22 @@ namespace NationStatesAPIBot.Services
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 
+        public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)
+        {
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
+            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname");
+            return await ExecuteRequestWithXmlResult(url, eventId);
+        }
+
+        public async Task<XmlDocument> GetDelegateString(string nationName, EventId eventId)
+        {
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
+            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname+influence+census;mode=score;scale=65+66");
+            return await ExecuteRequestWithXmlResult(url, eventId);
+        }
+
         public async Task WaitForAction(NationStatesApiRequestType requestType)
         {
             while (!await IsNationStatesApiActionReadyAsync(requestType, false))

@@ -43,7 +43,7 @@ namespace NationStatesAPIBot.Services
                     client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
                     client.DefaultRequestHeaders.Add("User-Agent", $"(contact { _config.Contact};)");
                     var response = await client.GetAsync(url);
-                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {response.StatusCode}: {response.ReasonPhrase}"));
+                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
                     return response;
                 }
             }
