@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace NationStatesAPIBot.Services
 {
@@ -45,8 +46,26 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
+                _logger.LogWarning($"Unrecognized ApiRequestType '{type.ToString()}'");
                 return Task.FromResult(false);
             }
         }
+
+        public async Task<XmlDocument> GetNationStatsAsync(string nationName, EventId eventId)
+        {
+            _logger.LogDebug(eventId, "Waiting for NationStats-Request");
+            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
+            return await ExecuteRequestWithXmlResult(url, eventId);
+        }
+
+        public async Task WaitForAction(NationStatesApiRequestType requestType)
+        {
+            while (!await IsNationStatesApiActionReadyAsync(requestType, false))
+            {
+                await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
+            }
+        }
+
     }
 }

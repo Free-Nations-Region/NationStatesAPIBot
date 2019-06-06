@@ -118,13 +118,13 @@ namespace NationStatesAPIBot.Services
 
         private Task DiscordClient_LoggedOut()
         {
-            _logger.LogWarning("--- Bot logged out ---");
+            _logger.LogInformation("--- Bot logged out ---");
             return Task.CompletedTask;
         }
 
         private Task DiscordClient_LoggedIn()
         {
-            _logger.LogWarning("--- Bot logged in ---");
+            _logger.LogInformation("--- Bot logged in ---");
             return Task.CompletedTask;
         }
 

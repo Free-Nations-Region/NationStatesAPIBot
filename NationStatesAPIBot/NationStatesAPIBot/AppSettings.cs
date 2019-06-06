@@ -16,13 +16,6 @@ namespace NationStatesAPIBot
         public const string BOT_ADMIN_TERM = "BotFather"; //Change to something else if you don't like the term
         public static readonly string SLEEPTEXT = $"Psst...I'm sleeping.{Environment.NewLine}{Environment.NewLine}Maintenance going on right now. Please be patient. Thank you :)";
         public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue.";
-        public string NATIONSTATES_API_USERAGENT
-        {
-            get
-            {
-                return $"NationStatesAPIBot (https://github.com/drehtisch/NationStatesAPIBot) {VERSION} contact: {Contact}";
-            }
-        }
         public string ClientKey { get; set; }
         public string TelegramId { get; set; }
         public string TelegramSecretKey { get; set; }
@@ -31,7 +24,6 @@ namespace NationStatesAPIBot
         public string DiscordBotLoginToken { get; set; }
         public string DiscordBotAdminUser { get; set; }
         public string NationStatesRegionName { get; set; }
-        public bool EnableCitizenshipOverTime { get; set; }
         public char SeperatorChar { get; set; }
 
     }
