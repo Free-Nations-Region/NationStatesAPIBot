@@ -17,7 +17,6 @@ namespace NationStatesAPIBot
 {
     class Program
     {
-        public const string versionString = "v3.0";
         public static IServiceProvider ServiceProvider { get; private set; }
         public static DateTime StartTime { get; private set; }
         static async Task Main(string[] args)

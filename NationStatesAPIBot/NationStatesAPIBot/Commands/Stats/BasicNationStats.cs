@@ -100,7 +100,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         }
                     }
                     builder.AddField(wa, $"{waVoteString} {endorsementCount} endorsements | {influenceValue} Influence ({Influence})");
-                    builder.WithFooter($"NationStatesApiBot {Program.versionString} by drehtisch");
+                    builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                     await ReplyAsync(embed: builder.Build());
                 }
@@ -151,7 +151,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         {
                             builder.WithDescription("No one so far. Sorry :(");
                         }
-                        builder.WithFooter($"NationStatesApiBot {Program.versionString} by drehtisch");
+                        builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                         builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                         await ReplyAsync(embed: builder.Build());
                     }

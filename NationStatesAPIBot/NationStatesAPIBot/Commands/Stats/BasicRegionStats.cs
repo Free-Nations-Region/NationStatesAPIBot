@@ -51,7 +51,7 @@ namespace NationStatesAPIBot.Commands.Stats
                             $"[{numnations} nations]({regionUrl}/page=list_nations) | {founded} | Power: {power}");
                         builder.AddField("Founder", $"[{await GetFullNationName(founder)}](https://www.nationstates.net/nation={NationStatesApiController.ToID(founder)})");
                         builder.AddField("Delegate", await GetDelegateNationString(wadelegate));
-                        builder.WithFooter($"NationStatesApiBot {Program.versionString} by drehtisch");
+                        builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                         builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                         await ReplyAsync(embed: builder.Build());
                     }
