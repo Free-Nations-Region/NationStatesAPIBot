@@ -101,11 +101,12 @@ namespace NationStatesAPIBot.Managers
                     var result = perms.Select(p => p.Id).Contains((long)permissionType);
                     if (!result)
                     {
-                        _logger.LogInformation($"Permission: '{permissionType.ToString()}' denied for user with id '{user.Id}'");
+                        var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.PermissionDenied);
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Permission: '{permissionType.ToString()}' denied for user with id '{user.Id}'"));
                     }
                     return result;
                 }
-                
+
             }
         }
 

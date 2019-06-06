@@ -53,7 +53,7 @@ namespace NationStatesAPIBot.Services
 
         public async Task<XmlDocument> GetNationStatsAsync(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, "Waiting for NationStats-Request");
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, "Waiting for NationStats-Request"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
             return await ExecuteRequestWithXmlResult(url, eventId);

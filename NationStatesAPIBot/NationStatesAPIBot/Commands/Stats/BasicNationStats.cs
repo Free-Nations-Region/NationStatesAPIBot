@@ -114,7 +114,7 @@ namespace NationStatesAPIBot.Commands.Stats
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(id, ex, "A critical error occured.");
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id,"A critical error occured."));
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }

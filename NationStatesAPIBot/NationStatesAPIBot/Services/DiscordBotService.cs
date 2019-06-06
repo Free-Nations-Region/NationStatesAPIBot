@@ -52,7 +52,8 @@ namespace NationStatesAPIBot.Services
             if (message is SocketUserMessage socketMsg)
             {
                 var context = new SocketCommandContext(DiscordClient, socketMsg);
-                _logger.LogDebug($"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
                 if (await IsRelevantAsync(message, context.User))
                 {
                     await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
@@ -130,8 +131,8 @@ namespace NationStatesAPIBot.Services
 
         private Task DiscordClient_Log(LogMessage arg)
         {
-            string message = $"[{arg.Source}] {arg.Message}";
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.DiscordLogEvent);
+            string message = LogMessageBuilder.Build(id, $"[{arg.Source}] {arg.Message}");
             switch (arg.Severity)
             {
                 case LogSeverity.Critical:

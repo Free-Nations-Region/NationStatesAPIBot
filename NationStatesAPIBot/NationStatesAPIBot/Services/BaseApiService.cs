@@ -39,18 +39,13 @@ namespace NationStatesAPIBot.Services
             {
                 using (var client = new HttpClient())
                 {
-                    _logger.LogDebug(logId, $"Executing Request to {url}");
+                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing Request to {url}"));
                     client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
                     client.DefaultRequestHeaders.Add("User-Agent", $"(contact { _config.Contact};)");
                     var response = await client.GetAsync(url);
-                    _logger.LogDebug(logId, $"Request finished with response: {response.StatusCode}: {response.ReasonPhrase}");
+                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {response.StatusCode}: {response.ReasonPhrase}"));
                     return response;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(logId, ex, "A error occured.");
-                return null;
             }
             finally
             {
