@@ -65,8 +65,8 @@ namespace NationStatesAPIBot.Commands.Stats
 
                     var populationdbl = Convert.ToDouble(population);
 
-                    var nationUrl = $"https://www.nationstates.net/nation={NationStatesApiController.ToID(nationName)}";
-                    var regionUrl = $"https://www.nationstates.net/region={NationStatesApiController.ToID(region)}";
+                    var nationUrl = $"https://www.nationstates.net/nation={BaseApiService.ToID(nationName)}";
+                    var regionUrl = $"https://www.nationstates.net/region={BaseApiService.ToID(region)}";
 
                     var builder = new EmbedBuilder();
                     builder.WithThumbnailUrl(flagUrl);

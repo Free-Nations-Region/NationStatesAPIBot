@@ -22,7 +22,7 @@ namespace NationStatesAPIBot.Commands.Stats
             dataService = apiService;
         }
 
-        //[Command("region", false), Alias("r"), Summary("Returns Basic Stats about a specific nation")]
+        [Command("region", false), Alias("r"), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRegionStats);
@@ -44,10 +44,10 @@ namespace NationStatesAPIBot.Commands.Stats
                     var tagList = "";
                     for (int i = 0; i < tags.Count; i++)
                     {
-                        tagList += NationStatesApiController.FromID(tags.Item(i).InnerText) + ", ";
+                        tagList += BaseApiService.FromID(tags.Item(i).InnerText) + ", ";
                     }
                     tagList = tagList.Remove(tagList.Length - 2);
-                    var regionUrl = $"https://www.nationstates.net/region={NationStatesApiController.ToID(regionName)}";
+                    var regionUrl = $"https://www.nationstates.net/region={BaseApiService.ToID(regionName)}";
 
 
 
@@ -56,7 +56,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     builder.WithTitle($"BasicStats for Region");
                     builder.WithDescription($"**[{name}]({regionUrl})** {Environment.NewLine}" +
                         $"[{numnations} nations]({regionUrl}/page=list_nations) | {founded} | Power: {power}");
-                    builder.AddField("Founder", $"[{await GetFullNationName(founder, id)}](https://www.nationstates.net/nation={NationStatesApiController.ToID(founder)})");
+                    builder.AddField("Founder", $"[{await GetFullNationName(founder, id)}](https://www.nationstates.net/nation={BaseApiService.ToID(founder)})");
                     builder.AddField("Delegate", await GetDelegateNationString(wadelegate, id));
                     builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
@@ -93,7 +93,7 @@ namespace NationStatesAPIBot.Commands.Stats
             var census = nationStats.GetElementsByTagName("CENSUS")[0].ChildNodes;
             var influenceValue = census[0].ChildNodes[0].InnerText;
             var endorsements = census[1].ChildNodes[0].InnerText;
-            return $"[{fullName}](https://www.nationstates.net/nation={NationStatesApiController.ToID(name)}) | {endorsements} endorsements | {influenceValue} influence ({influence})";
+            return $"[{fullName}](https://www.nationstates.net/nation={BaseApiService.ToID(name)}) | {endorsements} endorsements | {influenceValue} influence ({influence})";
         }
     }
 }

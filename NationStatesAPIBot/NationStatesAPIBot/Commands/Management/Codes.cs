@@ -12,7 +12,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Codes : ModuleBase<SocketCommandContext>
     {
-        [Command("ovc"), Summary("Returns an Ownership Verification Code")]
+        //[Command("ovc"), Summary("Returns an Ownership Verification Code")]
         public async Task DoGenerateOVC(string nationName)
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
@@ -34,9 +34,10 @@ namespace NationStatesAPIBot.Commands.Management
         public string GenerateCode()
         {
             StringBuilder resultBuilder = new StringBuilder();
+            var _rnd = new Random();
             for (int i = 1; i < 16; i++)
             {
-                var val = ActionManager.GetRandomNumber(36);
+                var val = _rnd.Next(36);
                 resultBuilder.Append(Base36.Encode(val).ToUpper());
                 if (i % 5 == 0 && i != 15)
                 {

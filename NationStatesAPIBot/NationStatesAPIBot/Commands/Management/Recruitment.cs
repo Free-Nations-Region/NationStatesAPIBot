@@ -168,7 +168,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
             catch (Exception ex)
             {
-                NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
+                //NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
                 await ReplyAsync($"Something went wrong :( ");
             }
         }
