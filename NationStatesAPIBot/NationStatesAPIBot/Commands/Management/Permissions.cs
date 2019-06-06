@@ -48,7 +48,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
@@ -87,7 +87,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
@@ -132,7 +132,7 @@ namespace NationStatesAPIBot.Commands.Management
                 }
                 else
                 {
-                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
                 }
             }
             else
