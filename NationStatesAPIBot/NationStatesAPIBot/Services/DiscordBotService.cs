@@ -53,7 +53,7 @@ namespace NationStatesAPIBot.Services
             {
                 var context = new SocketCommandContext(DiscordClient, socketMsg);
                 var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
-                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}");
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
                 if (await IsRelevantAsync(message, context.User))
                 {
                     await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
