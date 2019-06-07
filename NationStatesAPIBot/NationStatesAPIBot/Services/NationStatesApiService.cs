@@ -28,7 +28,7 @@ namespace NationStatesAPIBot.Services
         public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; set => lastAutomaticNewNationsRequest = value; }
         public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; set => lastAutomaticRegionNationsRequest = value; }
 
-        public Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
+        private Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
         {
             if (type == NationStatesApiRequestType.GetNationsFromRegion)
             {
@@ -50,6 +50,13 @@ namespace NationStatesAPIBot.Services
             {
                 _logger.LogWarning($"Unrecognized ApiRequestType '{type.ToString()}'");
                 return Task.FromResult(false);
+            }
+        }
+        public async Task WaitForAction(NationStatesApiRequestType requestType)
+        {
+            while (!await IsNationStatesApiActionReadyAsync(requestType, false))
+            {
+                await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
             }
         }
         public async Task<XmlDocument> GetRegionStatsAsync(string regionName, EventId eventId)
@@ -84,13 +91,12 @@ namespace NationStatesAPIBot.Services
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 
-        public async Task WaitForAction(NationStatesApiRequestType requestType)
+        public async Task<XmlDocument> GetEndorsements(string nationName, EventId eventId)
         {
-            while (!await IsNationStatesApiActionReadyAsync(requestType, false))
-            {
-                await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
-            }
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetEndorsements-Request: {nationName}"));
+            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=endorsements");
+            return await ExecuteRequestWithXmlResult(url, eventId);
         }
-
     }
 }
