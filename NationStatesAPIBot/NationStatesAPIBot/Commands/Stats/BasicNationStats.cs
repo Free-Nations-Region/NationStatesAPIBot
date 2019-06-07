@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Commands;
-using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
 using System;
 using System.Globalization;
@@ -8,10 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace NationStatesAPIBot.Commands.Stats
 {

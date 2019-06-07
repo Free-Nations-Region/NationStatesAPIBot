@@ -56,8 +56,6 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-
-
         protected async Task<Stream> ExecuteRequestWithStreamResult(string url, EventId? eventId)
         {
             var response = await ExecuteGetRequest(url, eventId);

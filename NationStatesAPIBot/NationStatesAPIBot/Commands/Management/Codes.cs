@@ -12,7 +12,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Codes : ModuleBase<SocketCommandContext>
     {
-        //[Command("ovc"), Summary("Returns an Ownership Verification Code")]
+        [Command("ovc"), Summary("Returns an Ownership Verification Code")]
         public async Task DoGenerateOVC(string nationName)
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
