@@ -68,7 +68,7 @@ Release periods are **NOT** guaranteed and may change without notice.
 - Introduce Citizenship Management
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
 
-## Version 3.4 (Planned for Early/Mid October)
+### Version 3.4 (Planned for Early/Mid October)
 - Introduce Basic RP Economy & Finance System
 
 ## Version 4
