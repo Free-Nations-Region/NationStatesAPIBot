@@ -13,11 +13,17 @@ namespace NationStatesAPIBot.Commands.Management
 
     public class PermissionCommands : ModuleBase<SocketCommandContext>
     {
+        readonly IPermissionManager _permManager;
+
+        public PermissionCommands(IPermissionManager permManager)
+        {
+            _permManager = permManager ?? throw new ArgumentNullException(nameof(permManager));
+        }
+
         [Command("checkUser"), Summary("Returns Permission of specified User")]
         public async Task DoCheckUser(string id)
         {
-            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
-            if (await permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
+            if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
                 using (var dbContext = new BotDbContext())
                 {
@@ -30,7 +36,7 @@ namespace NationStatesAPIBot.Commands.Management
                     else
                     {
                         string permissions = "Permissions: ";
-                        var perms = await permManager.GetAllPermissionsToAUserAsync(id, dbContext);
+                        var perms = await _permManager.GetAllPermissionsToAUserAsync(id, dbContext);
                         if (perms.Count() > 0)
                         {
                             foreach (var perm in perms)
@@ -55,8 +61,7 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
         public async Task DoCheckPerm(long id)
         {
-            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
-            if (await permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
+            if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
                 using (var dbContext = new BotDbContext())
                 {
@@ -94,11 +99,10 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("grantPermission"), Summary("Adds a User to the database")]
         public async Task DoGrantPermission(string id, int permissionId)
         {
-            //TODO: revise that block as it isn't optimal e.g. duplicate commands are unnecessary
+            //TODO: revise that block as it isn't optimal e.g. duplicate command usage is unnecessary
             if (Context.IsPrivate)
             {
-                var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
-                if (await permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
+                if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
                 {
                     using (var dbContext = new BotDbContext())
                     {
