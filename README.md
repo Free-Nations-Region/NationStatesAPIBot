@@ -60,7 +60,7 @@ Release periods are **NOT** guaranteed and may change without notice.
 - Get Nations that were endorsed by a nation (endorsed) (on cache only)
 
 ### Version 3.2 (Planned for Early August)
-- UpdateTime Command for R/D
+- UpdateTime Command for R/D  
 (- Generate Spreadsheet for R/D)?
 
 ### Version 3.3 (Planned for Early/Mid September)
