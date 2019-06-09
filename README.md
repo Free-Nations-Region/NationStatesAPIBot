@@ -42,24 +42,33 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 # Roadmap
 
+** !! IMPORTANT NOTICE !! **
+The features are **NOT** guaranteed to ship with the specified version. Feature order may change without notice.
+Release periods are **NOT** guaranteed and may change without notice. 
+---
 ## Version 3
   
-### Version 3.0
-- Add refounded nations to pending  
+### Version 3.0 (Planned for Mid June)
 - Huge Refactoring to Configuration, Logging, Testability, API call systematics
-- Help Command
+- Maintain Existing Functionallities 
 
-### Version 3.1
+### Version 3.1 (Planned for Mid July)
+- Help Command
 - Implement Cache First Approach with help of dumps, etc.
+- Add refounded nations to pending  
 - Get Nations that were endorsed by a nation (endorsed) (on cache only)
 
-### Version 3.2
+### Version 3.2 (Planned for Early August)
+- UpdateTime Command for R/D
+(- Generate Spreadsheet for R/D)?
+
+### Version 3.3 (Planned for Early/Mid September)
 - Allow nations to have multiple status
 - Introduce Citizenship Management
+- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
 
-### Version 3.3
-- Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and automatic role asignment, if verified. e.g. Role "Verified"
-- Connect discord user to nation
+## Version 3.4 (Planned for Early/Mid October)
+- Introduce Basic RP Economy & Finance System
 
 ## Version 4
 
@@ -74,7 +83,7 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 ## Later
 - CustomStats about nations and regions
-- Activity Points for verified nations on NationStates activity and discord activity
+- Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
 - Polls  
