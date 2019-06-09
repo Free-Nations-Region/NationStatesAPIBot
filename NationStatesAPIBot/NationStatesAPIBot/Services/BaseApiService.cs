@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NationStatesAPIBot.Interfaces;
+using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;

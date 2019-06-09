@@ -1,4 +1,4 @@
-﻿namespace NationStatesAPIBot.Interfaces
+﻿namespace NationStatesAPIBot.Types
 {
     public enum NationStatesDumpType
     {
