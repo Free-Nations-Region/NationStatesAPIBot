@@ -42,9 +42,10 @@ You need to have a copy of "keys.config" in the directory where you execute `dot
 
 # Roadmap
 
-** !! IMPORTANT NOTICE !! **
-The features are **NOT** guaranteed to ship with the specified version. Feature order may change without notice.
+**!! IMPORTANT NOTICE !!**  
+The features are **NOT** guaranteed to ship with the specified version. Feature order may change without notice.  
 Release periods are **NOT** guaranteed and may change without notice. 
+
 ---
 ## Version 3
   
