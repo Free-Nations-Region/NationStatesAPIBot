@@ -9,6 +9,8 @@ namespace NationStatesAPIBot.Types
         UserMessage = 10100,
         PermissionDenied = 10200,
         GetNationStats = 10300,
-        GetRegionStats = 10400
+        GetRegionStats = 10400,
+        RNCommand = 10500,
+        RNSCommand = 10550,
     }
 }

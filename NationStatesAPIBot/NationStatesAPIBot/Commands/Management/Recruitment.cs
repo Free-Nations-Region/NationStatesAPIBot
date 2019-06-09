@@ -59,6 +59,7 @@ namespace NationStatesAPIBot.Commands.Management
         //[Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
         public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
         {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
             List<Nation> returnNations = new List<Nation>();
             try
             {
@@ -144,8 +145,8 @@ namespace NationStatesAPIBot.Commands.Management
             }
             catch (Exception ex)
             {
-                NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
-                _logger.LogCritical("An critical error occured.",ex)
+
+                _logger.LogCritical(id, LogMessageBuilder.Build(id, "An critical error occured"), ex);
                 await ReplyAsync($"Something went wrong :( ");
                 foreach (var nation in returnNations)
                 {
@@ -154,34 +155,28 @@ namespace NationStatesAPIBot.Commands.Management
             }
             finally
             {
-                _recruitmentService.StopReceiveRecruitableNations()
+                _recruitmentService.StopReceiveRecruitableNations();
             }
         }
 
-        //[Command("rns"), Summary("Returns the status of an /rn command")]
+        [Command("rns"), Summary("Returns the status of an /rn command")]
         public async Task DoGetRNStatus()
         {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNSCommand);
             try
             {
-                //if (/*PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User)*/ true)
-                //{
-                //    if(ActionManager.RNStatus != null)
-                //    {
-                //        await ReplyAsync(ActionManager.RNStatus.ToString());
-                //    }
-                //    else
-                //    {
-                //        await ReplyAsync("No /rn command currently running.");
-                //    }
-                //}
-                //else
-                //{
-                //    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
-                //}
+                if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
+                {
+                    await ReplyAsync(_recruitmentService.GetRNStatus());
+                }
+                else
+                {
+                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                }
             }
             catch (Exception ex)
             {
-                //NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
+                _logger.LogCritical(id, LogMessageBuilder.Build(id, "An critical error occured"), ex);
                 await ReplyAsync($"Something went wrong :( ");
             }
         }
