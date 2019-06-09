@@ -74,7 +74,7 @@ namespace NationStatesAPIBot.Services
 
         protected string BuildApiRequestUrl(string parameters)
         {
-            return $"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}";
+            return $"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}&v={ActionManager.API_VERSION}";
         }
 
         public async Task<GZipStream> GetNationStatesDumpStream(NationStatesDumpType type)

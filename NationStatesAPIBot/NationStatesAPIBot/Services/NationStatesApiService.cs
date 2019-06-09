@@ -59,6 +59,16 @@ namespace NationStatesAPIBot.Services
                 await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
             }
         }
+
+        public async Task<XmlDocument> WouldReceiveTelegramAsync(string nationName)
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
+            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
+            await WaitForAction(NationStatesApiRequestType.WouldReceiveRecruitmentTelegram);
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(_config.NationStatesRegionName)}");
+            return await ExecuteRequestWithXmlResult(url, id);
+        }
+
         public async Task<XmlDocument> GetRegionStatsAsync(string regionName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
@@ -73,6 +83,11 @@ namespace NationStatesAPIBot.Services
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
             return await ExecuteRequestWithXmlResult(url, eventId);
+        }
+
+        public Task<bool> SendRecruitmentTelegramAsync(string name)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)

@@ -56,7 +56,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
-        //[Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
+        [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
         public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
