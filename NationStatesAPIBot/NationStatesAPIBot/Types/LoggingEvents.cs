@@ -14,5 +14,6 @@ namespace NationStatesAPIBot.Types
         RNSCommand = 10550,
         APIRecruitment = 11000,
         WouldReceiveTelegram = 11100,
+        SendRecruitmentTelegram = 12000,
     }
 }

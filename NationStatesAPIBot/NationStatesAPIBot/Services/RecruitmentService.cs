@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Commands.Management;
 using NationStatesAPIBot.Entities;
+using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Types;
 
 namespace NationStatesAPIBot.Services
@@ -42,8 +43,9 @@ namespace NationStatesAPIBot.Services
         public void StartRecruitment()
         {
             IsRecruiting = true;
+            Task.Run(async () => await GetNewNationsAsync());
             Task.Run(async () => await RecruitAsync());
-            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
+            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));    
         }
 
         public void StopRecruitment()
@@ -63,20 +65,19 @@ namespace NationStatesAPIBot.Services
             IsReceivingRecruitableNation = false;
         }
 
-        public async Task<List<Nation>> GetRecruitableNations(int number)
+        public async Task<List<Nation>> GetRecruitableNationsAsync(int number)
         {
             throw new NotImplementedException();
         }
 
-        public async Task SetNationStatusToAsync(Nation nation, string statusName)
+        private async Task<bool> DoesNationFitCriteriaAsync(Nation nation)
         {
             throw new NotImplementedException();
         }
 
-
-        private async Task<bool> WouldReceiveTelegram(string nationName)
+        public async Task<bool> WouldReceiveTelegram(string nationName)
         {
-            XmlDocument result = await _apiService.WouldReceiveTelegramAsync(nationName);
+            XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName);
             if (result != null)
             {
                 XmlNodeList canRecruitNodeList = result.GetElementsByTagName("TGCANRECRUIT");
@@ -88,7 +89,7 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async void GetNewNationsAsync()
+        private async Task GetNewNationsAsync()
         {
             throw new NotImplementedException();
         }
@@ -102,13 +103,13 @@ namespace NationStatesAPIBot.Services
                 {
                     if (pendingNations.Count == 0)
                     {
-                        pendingNations = GetNationsByStatusName("reserved_api");
+                        pendingNations = NationManager.GetNationsByStatusName("reserved_api");
                         if (pendingNations.Count < 10)
                         {
-                            pendingNations = await GetRecruitableNations(10 - pendingNations.Count);
+                            pendingNations = await GetRecruitableNationsAsync(10 - pendingNations.Count);
                             foreach (var pendingNation in pendingNations)
                             {
-                                await SetNationStatusToAsync(pendingNation, "reserved_api");
+                                await NationManager.SetNationStatusToAsync(pendingNation, "reserved_api");
                             }
                         }
                     }
@@ -116,24 +117,26 @@ namespace NationStatesAPIBot.Services
                     var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                     if (nation != null)
                     {
-                        if (await WouldReceiveTelegram(nation.Name))
+                        if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                         {
-                            if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
+                            if (await WouldReceiveTelegram(nation.Name))
                             {
-                                await SetNationStatusToAsync(nation, "send");
+                                if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
+                                {
+                                    await NationManager.SetNationStatusToAsync(nation, "send");
+                                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Telegram to {nation.Name} queued successfully."));
+                                }
+                                else
+                                {
+                                    await NationManager.SetNationStatusToAsync(nation, "failed");
+                                }
+                                pendingNations.Remove(nation);
                             }
                             else
                             {
-                                await SetNationStatusToAsync(nation, "failed");
-                                _logger.LogWarning(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Telegram to {nation.Name} could not be send."));
+                                await NationManager.SetNationStatusToAsync(nation, "skipped");
+                                pendingNations.Remove(nation);
                             }
-                            pendingNations.Remove(nation);
-
-                        }
-                        else
-                        {
-                            await SetNationStatusToAsync(nation, "skipped");
-                            pendingNations.Remove(nation);
                         }
                     }
                 }
@@ -145,11 +148,6 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task SendTelegramAsync()
-        {
-            throw new NotImplementedException();
-        }
-
         internal string GetRNStatus()
         {
             if (IsReceivingRecruitableNation)
@@ -159,14 +157,6 @@ namespace NationStatesAPIBot.Services
             else
             {
                 return "No /rn command currently running.";
-            }
-        }
-
-        private List<Nation> GetNationsByStatusName(string name)
-        {
-            using (var dbContext = new BotDbContext())
-            {
-                return dbContext.Nations.Where(n => n.Status.Name == name).OrderByDescending(n => n.StatusTime).ToList();
             }
         }
     }

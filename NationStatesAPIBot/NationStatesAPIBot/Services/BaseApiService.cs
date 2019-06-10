@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Xml;
 
 namespace NationStatesAPIBot.Services
@@ -74,7 +75,7 @@ namespace NationStatesAPIBot.Services
 
         protected string BuildApiRequestUrl(string parameters)
         {
-            return $"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}&v={ActionManager.API_VERSION}";
+            return HttpUtility.UrlEncode($"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}&v={AppSettings.API_VERSION}");
         }
 
         public async Task<GZipStream> GetNationStatesDumpStream(NationStatesDumpType type)

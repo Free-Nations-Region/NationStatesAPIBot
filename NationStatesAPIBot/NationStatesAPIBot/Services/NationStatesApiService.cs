@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Interfaces;
+using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Xml;
 
 namespace NationStatesAPIBot.Services
@@ -22,13 +25,13 @@ namespace NationStatesAPIBot.Services
         public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
 
         public DateTime LastAPIRequest { get => lastAPIRequest; private set => lastAPIRequest = value; }
-        public DateTime LastTelegramSending { get => lastTelegramSending; set => lastTelegramSending = value; }
+        public DateTime LastTelegramSending { get => lastTelegramSending; private set => lastTelegramSending = value; }
 
 
-        public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; set => lastAutomaticNewNationsRequest = value; }
-        public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; set => lastAutomaticRegionNationsRequest = value; }
+        public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; private set => lastAutomaticNewNationsRequest = value; }
+        public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; private set => lastAutomaticRegionNationsRequest = value; }
 
-        private Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
+        public Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
         {
             if (type == NationStatesApiRequestType.GetNationsFromRegion)
             {
@@ -60,7 +63,7 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<XmlDocument> WouldReceiveTelegramAsync(string nationName)
+        public async Task<XmlDocument> GetWouldReceiveTelegramAsync(string nationName)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
             _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
@@ -85,9 +88,37 @@ namespace NationStatesAPIBot.Services
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 
-        public Task<bool> SendRecruitmentTelegramAsync(string name)
+        public async Task<bool> SendRecruitmentTelegramAsync(string nationName)
         {
-            throw new NotImplementedException();
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.SendRecruitmentTelegram);
+            var lastSend = NationManager.GetNationsByStatusName("send").Take(1).ToArray();
+            if (lastSend.Length > 0 && lastTelegramSending == DateTime.UnixEpoch)
+            {
+                lastTelegramSending = lastSend[0].StatusTime;
+            }
+            try
+            {
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for SendRecruitmentTelegram-Request: {nationName}"));
+                await WaitForAction(NationStatesApiRequestType.SendRecruitmentTelegram);
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Sending Telegram to {nationName}."));
+                var url = BuildApiRequestUrl($"a=sendTG" +
+                    $"&client={_config.ClientKey}" +
+                    $"&tgid={_config.TelegramId}" +
+                    $"&key={_config.TelegramSecretKey}" +
+                    $"&to={ToID(nationName)}");
+                var response = await ExecuteGetRequest(url, id);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                }
+                return response.IsSuccessStatusCode;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(id, LogMessageBuilder.Build(id, $"An error occured."), ex);
+                return false;
+            }
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)
