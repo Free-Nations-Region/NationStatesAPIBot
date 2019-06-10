@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Logging;
 using NationStatesAPIBot.Services;
+using NationStatesAPIBot.Manager;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -34,7 +35,7 @@ namespace NationStatesAPIBot.Commands.Management
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
                 _recruitmentService.StartRecruitment();
-                await ReplyAsync("Not ready yet - Recruitment Process started.");
+                await ReplyAsync("Recruitment Process started.");
             }
             else
             {
@@ -48,7 +49,7 @@ namespace NationStatesAPIBot.Commands.Management
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
                 _recruitmentService.StopRecruitment();
-                await ReplyAsync("Not ready yet - Recruitment Process stopped.");
+                await ReplyAsync("Recruitment Process stopped.");
             }
             else
             {
@@ -65,7 +66,7 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
                 {
-                    if (!_recruitmentService.IsReceivingRecruitableNation)
+                    if (!_recruitmentService.IsReceivingRecruitableNations)
                     {
                         if (number <= 120)
                         {
@@ -81,7 +82,7 @@ namespace NationStatesAPIBot.Commands.Management
                             returnNations = await _recruitmentService.GetRecruitableNationsAsync(number);
                             foreach (var nation in returnNations)
                             {
-                                await _recruitmentService.SetNationStatusToAsync(nation, "reserved_manual");
+                                await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
                             }
                             StringBuilder builder = new StringBuilder();
                             builder.AppendLine("-----");
@@ -150,7 +151,7 @@ namespace NationStatesAPIBot.Commands.Management
                 await ReplyAsync($"Something went wrong :( ");
                 foreach (var nation in returnNations)
                 {
-                    await _recruitmentService.SetNationStatusToAsync(nation, "pending");
+                    await NationManager.SetNationStatusToAsync(nation, "pending");
                 }
             }
             finally

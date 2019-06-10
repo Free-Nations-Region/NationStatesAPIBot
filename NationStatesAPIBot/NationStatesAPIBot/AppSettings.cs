@@ -25,6 +25,6 @@ namespace NationStatesAPIBot
         public ulong DiscordBotAdminUser { get; set; }
         public string NationStatesRegionName { get; set; }
         public char SeperatorChar { get; set; }
-
+        public bool CriteriaCheckOnNations { get; set; }
     }
 }

@@ -51,7 +51,7 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning($"Unrecognized ApiRequestType '{type.ToString()}'");
+                _logger.LogCritical($"Unrecognized ApiRequestType '{type.ToString()}'");
                 return Task.FromResult(false);
             }
         }
@@ -119,6 +119,16 @@ namespace NationStatesAPIBot.Services
                 _logger.LogError(id, LogMessageBuilder.Build(id, $"An error occured."), ex);
                 return false;
             }
+        }
+
+        public async Task<List<string>> GetNewNationsAsync(EventId eventId)
+        {
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetNewNations-Request"));
+            await WaitForAction(NationStatesApiRequestType.GetNewNations);
+            var url = BuildApiRequestUrl("q=newnations");
+            XmlDocument newNationsXML = await ExecuteRequestWithXmlResult(url, eventId);
+            XmlNodeList newNationsXMLNodes = newNationsXML.GetElementsByTagName("NEWNATIONS");
+            return newNationsXMLNodes[0].InnerText.Split(',').ToList().Select(nation => ToID(nation)).ToList();
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)

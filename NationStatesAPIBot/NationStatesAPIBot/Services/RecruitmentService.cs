@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
@@ -17,27 +18,20 @@ namespace NationStatesAPIBot.Services
     {
         private readonly ILogger<RecruitmentService> _logger;
 
-
         private RNStatus currentRNStatus;
-        private EventId defaulEventId;
-        private AppSettings _appSettings;
-        private NationStatesApiService _apiService;
-        public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings)
-        {
-            _logger = logger;
-            _appSettings = appSettings.Value;
-            defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
-        }
+        private readonly EventId defaulEventId;
+        private readonly AppSettings _config;
+        private readonly NationStatesApiService _apiService;
 
         public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, NationStatesApiService apiService)
         {
             _logger = logger;
-            _appSettings = appSettings.Value;
+            _config = appSettings.Value;
             _apiService = apiService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
         }
 
-        public bool IsReceivingRecruitableNation { get; internal set; }
+        public bool IsReceivingRecruitableNations { get; internal set; }
         public bool IsRecruiting { get; private set; }
 
         public void StartRecruitment()
@@ -45,7 +39,7 @@ namespace NationStatesAPIBot.Services
             IsRecruiting = true;
             Task.Run(async () => await GetNewNationsAsync());
             Task.Run(async () => await RecruitAsync());
-            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));    
+            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
         }
 
         public void StopRecruitment()
@@ -57,22 +51,71 @@ namespace NationStatesAPIBot.Services
         public void StartReceiveRecruitableNations(RNStatus currentRN)
         {
             currentRNStatus = currentRN;
-            IsReceivingRecruitableNation = true;
+            IsReceivingRecruitableNations = true;
         }
         public void StopReceiveRecruitableNations()
         {
             currentRNStatus = null;
-            IsReceivingRecruitableNation = false;
+            IsReceivingRecruitableNations = false;
         }
 
         public async Task<List<Nation>> GetRecruitableNationsAsync(int number)
         {
-            throw new NotImplementedException();
+            List<Nation> returnNations = new List<Nation>();
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRecruitableNations);
+            try
+            {
+                List<Nation> pendingNations = new List<Nation>();
+                if (pendingNations.Count == 0)
+                {
+                    pendingNations = NationManager.GetNationsByStatusName("pending");
+                }
+                while (returnNations.Count < number)
+                {
+                    var picked = pendingNations.Take(1);
+                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                    if (nation != null)
+                    {
+                        while (!await DoesNationFitCriteriaAsync(nation))
+                        {
+                            await NationManager.SetNationStatusToAsync(nation, "skipped");
+                        }
+                        while (!await WouldReceiveTelegram(nation.Name))
+                        {
+                            pendingNations.Remove(nation);
+                            await NationManager.SetNationStatusToAsync(nation, "skipped");
+                            picked = pendingNations.Take(1);
+                            nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped."));
+                        }
+                        pendingNations.Remove(nation);
+                        returnNations.Add(nation);
+                        if (IsReceivingRecruitableNations)
+                        {
+                            currentRNStatus.CurrentCount++;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(id, LogMessageBuilder.Build(id, "An error occured."), ex);
+            }
+            return returnNations;
+
         }
 
         private async Task<bool> DoesNationFitCriteriaAsync(Nation nation)
         {
-            throw new NotImplementedException();
+            if (_config.CriteriaCheckOnNations)
+            {
+                string pattern = @"(^[0-9]*?|[0-9]*?$)";
+                return await Task.FromResult(Regex.IsMatch(nation.Name, pattern));
+            }
+            else
+            {
+                return await Task.FromResult(true);
+            }
         }
 
         public async Task<bool> WouldReceiveTelegram(string nationName)
@@ -91,7 +134,22 @@ namespace NationStatesAPIBot.Services
 
         private async Task GetNewNationsAsync()
         {
-            throw new NotImplementedException();
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNewNations);
+            while (IsRecruiting)
+            {
+                try
+                {
+                    await _apiService.WaitForAction(NationStatesApiRequestType.GetNewNations);
+                    var result = await _apiService.GetNewNationsAsync(id);
+                    var counter = await NationManager.AddUnknownNationsAsPendingAsync(result);
+                    _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(id, LogMessageBuilder.Build(id, "An error occured."), ex);
+                }
+                await Task.Delay(300000);
+            }
         }
 
         private async Task RecruitAsync()
@@ -150,7 +208,7 @@ namespace NationStatesAPIBot.Services
 
         internal string GetRNStatus()
         {
-            if (IsReceivingRecruitableNation)
+            if (IsReceivingRecruitableNations)
             {
                 return currentRNStatus.ToString();
             }
