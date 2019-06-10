@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -14,10 +15,13 @@ namespace NationStatesAPIBot.Commands.Management
     public class PermissionCommands : ModuleBase<SocketCommandContext>
     {
         readonly IPermissionManager _permManager;
+        readonly AppSettings _config;
 
-        public PermissionCommands(IPermissionManager permManager)
+        public PermissionCommands(IPermissionManager permManager, IOptions<AppSettings> config)
         {
             _permManager = permManager ?? throw new ArgumentNullException(nameof(permManager));
+            _config = config.Value;
+
         }
 
         [Command("checkUser"), Summary("Returns Permission of specified User")]
@@ -25,7 +29,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
-                using (var dbContext = new BotDbContext())
+                using (var dbContext = new BotDbContext(_config))
                 {
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
                     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == Context.User.Id.ToString());
@@ -63,7 +67,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
-                using (var dbContext = new BotDbContext())
+                using (var dbContext = new BotDbContext(_config))
                 {
                     var perm = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == id);
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
@@ -104,7 +108,7 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
                 {
-                    using (var dbContext = new BotDbContext())
+                    using (var dbContext = new BotDbContext(_config))
                     {
                         var channel = await Context.User.GetOrCreateDMChannelAsync();
                         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);

@@ -15,8 +15,7 @@ using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
 using System.IO;
 using System.Linq;
-
-
+using NationStatesAPIBot.Manager;
 
 namespace NationStatesAPIBot.Services
 {
@@ -42,9 +41,9 @@ namespace NationStatesAPIBot.Services
                 var context = new SocketCommandContext(DiscordClient, socketMsg);
                 var arg = 0;
                 if (socketMsg.HasCharPrefix(_config.SeperatorChar, ref arg))
-                    return context.Channel.Id == 580124705722466318; //only temporary
+                    return await Task.FromResult(context.Channel.Id == 580124705722466318); //only temporary
             }
-            return false;
+            return await Task.FromResult(false);
         }
 
         public async Task ProcessMessageAsync(object message)
@@ -64,6 +63,7 @@ namespace NationStatesAPIBot.Services
         public async Task RunAsync()
         {
             _logger.LogInformation($"--- DiscordBotService started ---");
+            NationManager.Initialize(_config);
             DiscordClient = new DiscordSocketClient();
             commandService = new CommandService(new CommandServiceConfig
             {

@@ -95,7 +95,7 @@ namespace NationStatesAPIBot.Managers
             }
             else
             {
-                using (var dbContext = new BotDbContext())
+                using (var dbContext = new BotDbContext(_config))
                 {
                     var perms = await GetAllPermissionsToAUserAsync(user.Id.ToString(), dbContext);
                     var result = perms.Select(p => p.Id).Contains((long)permissionType);

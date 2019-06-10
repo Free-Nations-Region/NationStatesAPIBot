@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Services;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -57,6 +58,11 @@ namespace NationStatesAPIBot.Commands.Management
                 {
                     Name = "Uptime",
                     Value = $"{uptime.Days} Days {uptime.Hours} Hours {uptime.Minutes} Minutes"
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "Recruitment",
+                    Value = RecruitmentService.IsRecruiting?"Running":"Not Running"
                 },
             });
             await ReplyAsync("", false, builder.Build());

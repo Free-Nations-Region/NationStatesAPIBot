@@ -57,7 +57,7 @@ namespace NationStatesAPIBot.Services
         }
         public async Task WaitForAction(NationStatesApiRequestType requestType)
         {
-            while (!await IsNationStatesApiActionReadyAsync(requestType, false))
+            while (!await IsNationStatesApiActionReadyAsync(requestType, true))
             {
                 await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
             }
@@ -92,7 +92,7 @@ namespace NationStatesAPIBot.Services
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.SendRecruitmentTelegram);
             var lastSend = NationManager.GetNationsByStatusName("send").Take(1).ToArray();
-            if (lastSend.Length > 0 && lastTelegramSending == DateTime.UnixEpoch)
+            if (lastSend.Length > 0 && !(lastTelegramSending.Year < DateTime.UtcNow.Year))
             {
                 lastTelegramSending = lastSend[0].StatusTime;
             }
@@ -107,6 +107,7 @@ namespace NationStatesAPIBot.Services
                     $"&key={_config.TelegramSecretKey}" +
                     $"&to={ToID(nationName)}");
                 var response = await ExecuteGetRequest(url, id);
+                lastTelegramSending = DateTime.UtcNow;
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));
@@ -127,6 +128,7 @@ namespace NationStatesAPIBot.Services
             await WaitForAction(NationStatesApiRequestType.GetNewNations);
             var url = BuildApiRequestUrl("q=newnations");
             XmlDocument newNationsXML = await ExecuteRequestWithXmlResult(url, eventId);
+            lastAutomaticNewNationsRequest = DateTime.UtcNow;
             XmlNodeList newNationsXMLNodes = newNationsXML.GetElementsByTagName("NEWNATIONS");
             return newNationsXMLNodes[0].InnerText.Split(',').ToList().Select(nation => ToID(nation)).ToList();
         }

@@ -32,7 +32,7 @@ namespace NationStatesAPIBot.Services
         }
 
         public bool IsReceivingRecruitableNations { get; internal set; }
-        public bool IsRecruiting { get; private set; }
+        public static bool IsRecruiting { get; private set; }
 
         public void StartRecruitment()
         {
