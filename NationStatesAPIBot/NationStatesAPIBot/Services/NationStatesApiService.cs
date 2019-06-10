@@ -117,7 +117,7 @@ namespace NationStatesAPIBot.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(id, LogMessageBuilder.Build(id, $"An error occured."), ex);
+                _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"An error occured."));
                 return false;
             }
         }

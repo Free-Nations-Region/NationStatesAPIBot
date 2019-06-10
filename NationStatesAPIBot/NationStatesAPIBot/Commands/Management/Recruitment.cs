@@ -147,7 +147,7 @@ namespace NationStatesAPIBot.Commands.Management
             catch (Exception ex)
             {
 
-                _logger.LogCritical(id, LogMessageBuilder.Build(id, "An critical error occured"), ex);
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
                 foreach (var nation in returnNations)
                 {
@@ -177,7 +177,7 @@ namespace NationStatesAPIBot.Commands.Management
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(id, LogMessageBuilder.Build(id, "An critical error occured"), ex);
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
             }
         }

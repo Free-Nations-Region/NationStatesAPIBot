@@ -99,7 +99,7 @@ namespace NationStatesAPIBot.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(id, LogMessageBuilder.Build(id, "An error occured."), ex);
+                _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
             }
             return returnNations;
 
@@ -144,9 +144,9 @@ namespace NationStatesAPIBot.Services
                     var counter = await NationManager.AddUnknownNationsAsPendingAsync(result);
                     _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    _logger.LogError(id, LogMessageBuilder.Build(id, "An error occured."), ex);
+                    _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
                 }
                 await Task.Delay(300000);
             }
@@ -200,7 +200,7 @@ namespace NationStatesAPIBot.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(defaulEventId, LogMessageBuilder.Build(defaulEventId, "An error occured."), ex);
+                    _logger.LogError(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "An error occured."));
                 }
                 await Task.Delay(10000);
             }
