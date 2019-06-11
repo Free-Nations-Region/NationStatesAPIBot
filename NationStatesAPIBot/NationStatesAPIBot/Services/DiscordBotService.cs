@@ -41,7 +41,7 @@ namespace NationStatesAPIBot.Services
                 var context = new SocketCommandContext(DiscordClient, socketMsg);
                 var arg = 0;
                 if (socketMsg.HasCharPrefix(_config.SeperatorChar, ref arg))
-                    return await Task.FromResult(context.Channel.Id == 580124705722466318); //only temporary
+                    return await Task.FromResult(context.Channel.Id == 580124705722466318 || context.IsPrivate); //only temporary
             }
             return await Task.FromResult(false);
         }

@@ -52,7 +52,7 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Number of Users on this Server:",
-                    Value = Context.Guild.Users.Count
+                    Value = Context.Guild != null ? Context.Guild.Users.Count: 0
                 },
                 new EmbedFieldBuilder()
                 {
@@ -64,7 +64,6 @@ namespace NationStatesAPIBot.Commands.Management
                     Name = "Recruitment",
                     Value = RecruitmentService.IsRecruiting?"Running":"Not Running"
                 },
-            });
             await ReplyAsync("", false, builder.Build());
         }
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
