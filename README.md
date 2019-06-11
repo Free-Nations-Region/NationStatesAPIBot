@@ -54,37 +54,27 @@ Release periods are **NOT** guaranteed and may change without notice.
 - Maintain Existing Functionallities 
 
 ### Version 3.1 (Planned for Mid July)
-- Help Command
 - Implement Cache First Approach with help of dumps, etc.
 - Add refounded nations to pending  
-- Get Nations that were endorsed by a nation (endorsed) (on cache only)
+- Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
 
-### Version 3.2 (Planned for Early August)
-- UpdateTime Command for R/D  
-(- Generate Spreadsheet for R/D)?
+### Version 3.2 (Planned for Mid August)
+- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
+- Stats about success of manual and automatic recruitment
 
-### Version 3.3 (Planned for Early/Mid September)
+## Later (unordered)
+- Introduce Basic RP Economy & Finance System
+- Backing Up Logs of Channels using Discord Chat Exporter
 - Allow nations to have multiple status
 - Introduce Citizenship Management
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
-
-### Version 3.4 (Planned for Early/Mid October)
-- Introduce Basic RP Economy & Finance System
-
-## Version 4
-
-### Version 4.0
-- Backing Up Logs of Channels using Discord Chat Exporter
-
-### Version 4.1
-- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
-
-### Version 4.2
-- Stats about success of manual and automatic recruitment
-
-## Later
+- Help Command
+- Recruitment stats
+- UpdateTime Command for R/D  
+(- Generate Spreadsheet for R/D)?
 - CustomStats about nations and regions
 - Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
-- Polls  
+- Polls
+- RMB <-> Discord Bridge
