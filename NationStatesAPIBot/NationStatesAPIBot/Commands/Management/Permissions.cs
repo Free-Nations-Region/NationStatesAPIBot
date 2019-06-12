@@ -5,18 +5,31 @@ using NationStatesAPIBot.Managers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace NationStatesAPIBot.Commands.Management
 {
 
     public class PermissionCommands : ModuleBase<SocketCommandContext>
     {
+        readonly IPermissionManager _permManager;
+        readonly AppSettings _config;
+
+        public PermissionCommands(IPermissionManager permManager, IOptions<AppSettings> config)
+        {
+            _permManager = permManager ?? throw new ArgumentNullException(nameof(permManager));
+            _config = config.Value;
+
+        }
+
         [Command("checkUser"), Summary("Returns Permission of specified User")]
         public async Task DoCheckUser(string id)
         {
-            if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
+            if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
-                using (var dbContext = new BotDbContext())
+                using (var dbContext = new BotDbContext(_config))
                 {
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
                     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == Context.User.Id.ToString());
@@ -27,7 +40,7 @@ namespace NationStatesAPIBot.Commands.Management
                     else
                     {
                         string permissions = "Permissions: ";
-                        var perms = PermissionManager.GetAllPermissionsToAUser(id, dbContext);
+                        var perms = await _permManager.GetAllPermissionsToAUserAsync(id, dbContext);
                         if (perms.Count() > 0)
                         {
                             foreach (var perm in perms)
@@ -45,16 +58,16 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
         [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
         public async Task DoCheckPerm(long id)
         {
-            if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
+            if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
-                using (var dbContext = new BotDbContext())
+                using (var dbContext = new BotDbContext(_config))
                 {
                     var perm = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == id);
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
@@ -83,18 +96,19 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
         [Command("grantPermission"), Summary("Adds a User to the database")]
         public async Task DoGrantPermission(string id, int permissionId)
         {
+            //TODO: revise that block as it isn't optimal e.g. duplicate command usage is unnecessary
             if (Context.IsPrivate)
             {
-                if (PermissionManager.IsAllowed(Types.PermissionType.ManagePermissions, Context.User))
+                if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
                 {
-                    using (var dbContext = new BotDbContext())
+                    using (var dbContext = new BotDbContext(_config))
                     {
                         var channel = await Context.User.GetOrCreateDMChannelAsync();
                         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == id);
@@ -126,7 +140,7 @@ namespace NationStatesAPIBot.Commands.Management
                 }
                 else
                 {
-                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
                 }
             }
             else

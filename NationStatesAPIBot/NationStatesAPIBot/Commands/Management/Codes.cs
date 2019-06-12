@@ -1,10 +1,12 @@
 ﻿using Discord.Commands;
+using NationStatesAPIBot.Interfaces;
 using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -13,7 +15,8 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("ovc"), Summary("Returns an Ownership Verification Code")]
         public async Task DoGenerateOVC(string nationName)
         {
-            if (PermissionManager.IsAllowed(Types.PermissionType.GenerateOVCCodes, Context.User))
+            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
+            if (await permManager.IsAllowedAsync(Types.PermissionType.GenerateOVCCodes, Context.User))
             {
                 if (!Context.IsPrivate)
                 {
@@ -24,16 +27,17 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
         public string GenerateCode()
         {
             StringBuilder resultBuilder = new StringBuilder();
+            var _rnd = new Random();
             for (int i = 1; i < 16; i++)
             {
-                var val = ActionManager.GetRandomNumber(36);
+                var val = _rnd.Next(36);
                 resultBuilder.Append(Base36.Encode(val).ToUpper());
                 if (i % 5 == 0 && i != 15)
                 {

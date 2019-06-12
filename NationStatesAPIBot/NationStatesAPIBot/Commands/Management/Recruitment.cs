@@ -1,60 +1,75 @@
 ﻿using Discord.Commands;
 using NationStatesAPIBot.Entities;
-using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Interfaces;
+using Microsoft.Extensions.Logging;
+using NationStatesAPIBot.Services;
+using NationStatesAPIBot.Manager;
 
 namespace NationStatesAPIBot.Commands.Management
 {
     public class Recruitment : ModuleBase<SocketCommandContext>
     {
+        readonly IPermissionManager _permManager;
+        readonly ILogger<Recruitment> _logger;
+        readonly RecruitmentService _recruitmentService;
+
         static readonly string actionQueued = $"Your action was queued successfully. Please be patient this may take a moment.";
+
+        public Recruitment(IPermissionManager permissionManager, ILogger<Recruitment> logger, RecruitmentService recruitmentService)
+        {
+            _permManager = permissionManager ?? throw new ArgumentNullException(nameof(permissionManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _recruitmentService = recruitmentService;
+        }
+
         [Command("startRecruitment"), Summary("Starts the recruitment process")]
         public async Task DoStartRecruitment()
         {
-            if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+            if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                ActionManager.NationStatesApiController.StartRecruiting();
+                _recruitmentService.StartRecruitment();
                 await ReplyAsync("Recruitment Process started.");
             }
             else
             {
-                //TODO: Move permission denied into isAllowed
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
         [Command("stopRecruitment"), Summary("Stops the recruitment process")]
         public async Task DoStopRecruitment()
         {
-            if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+            if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                ActionManager.NationStatesApiController.StopRecruiting();
+                _recruitmentService.StopRecruitment();
                 await ReplyAsync("Recruitment Process stopped.");
             }
             else
             {
-                await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
 
         [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
         public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
         {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
             List<Nation> returnNations = new List<Nation>();
             try
             {
-                if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+                if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
                 {
-                    if (!ActionManager.receivingRecruitableNation)
+                    if (!_recruitmentService.IsReceivingRecruitableNations)
                     {
                         if (number <= 120)
                         {
-                            ActionManager.receivingRecruitableNation = true;
                             var currentRN = new RNStatus
                             {
                                 IssuedBy = Context.User.Username,
@@ -62,12 +77,12 @@ namespace NationStatesAPIBot.Commands.Management
                                 StartedAt = DateTimeOffset.UtcNow,
                                 AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
                             };
+                            _recruitmentService.StartReceiveRecruitableNations(currentRN);
                             await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
-                            ActionManager.RNStatus = currentRN;
-                            returnNations = await NationStatesApiController.GetRecruitableNations(number);
+                            returnNations = await _recruitmentService.GetRecruitableNationsAsync(number);
                             foreach (var nation in returnNations)
                             {
-                                await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "reserved_manual");
+                                await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
                             }
                             StringBuilder builder = new StringBuilder();
                             builder.AppendLine("-----");
@@ -126,49 +141,43 @@ namespace NationStatesAPIBot.Commands.Management
                 }
                 else
                 {
-                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
                 }
             }
             catch (Exception ex)
             {
-                NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
+
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
                 foreach (var nation in returnNations)
                 {
-                    await ActionManager.NationStatesApiController.SetNationStatusToAsync(nation, "pending");
+                    await NationManager.SetNationStatusToAsync(nation, "pending");
                 }
             }
             finally
             {
-                ActionManager.receivingRecruitableNation = false;
-                ActionManager.RNStatus = null;
+                _recruitmentService.StopReceiveRecruitableNations();
             }
         }
 
         [Command("rns"), Summary("Returns the status of an /rn command")]
         public async Task DoGetRNStatus()
         {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNSCommand);
             try
             {
-                if (PermissionManager.IsAllowed(PermissionType.ManageRecruitment, Context.User))
+                if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
                 {
-                    if(ActionManager.RNStatus != null)
-                    {
-                        await ReplyAsync(ActionManager.RNStatus.ToString());
-                    }
-                    else
-                    {
-                        await ReplyAsync("No /rn command currently running.");
-                    }
+                    await ReplyAsync(_recruitmentService.GetRNStatus());
                 }
                 else
                 {
-                    await ReplyAsync(ActionManager.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
                 }
             }
             catch (Exception ex)
             {
-                NationStatesApiController.Log(Discord.LogSeverity.Critical, $"An critical error occured: {ex}");
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
             }
         }

@@ -1,51 +1,69 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Services;
 
 namespace NationStatesAPIBot.Commands.Management
 {
     public class Status : ModuleBase<SocketCommandContext>
     {
+        private readonly AppSettings _config;
+        public Status(IOptions<AppSettings> config)
+        {
+            _config = config.Value;
+        }
+
         [Command("status"), Summary("Returns some status information.")]
         public async Task GetStatus()
         {
             var builder = new EmbedBuilder();
             builder.WithTitle("Bot Status");
-            TimeSpan uptime = DateTime.UtcNow.Subtract(ActionManager.StartUpTime);
-            TimeSpan recruitingTime = DateTime.UtcNow.Subtract(ActionManager.NationStatesApiController.RecruitmentStarttime);
+            var configuration = "Production";
+            var adminUser = Context.Client.GetUser(_config.DiscordBotAdminUser);
+            var startTime = Program.StartTime;
+            var uptime = DateTime.UtcNow.Subtract(startTime);
+#if DEBUG
+            configuration = "Development";
+#endif
             builder.WithFields(new List<EmbedFieldBuilder>
             {
                 new EmbedFieldBuilder()
                 {
                     Name = "Version:",
-                    Value = Program.versionString
+                    Value = AppSettings.VERSION
                 },
                 new EmbedFieldBuilder()
                 {
                     Name = "Configuration:",
-                    Value = ActionManager.Configuration
+                    Value = configuration
                 },
                 new EmbedFieldBuilder()
                 {
-                    Name = "Uptime:",
+                    Name = $"{AppSettings.BOT_ADMIN_TERM} (Bot Admin/Developer)",
+                    Value = $"{adminUser.Username}#{adminUser.Discriminator}"
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "Number of Users on this Server:",
+                    Value = Context.Guild != null ? Context.Guild.Users.Count: 0
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "Uptime",
                     Value = $"{uptime.Days} Days {uptime.Hours} Hours {uptime.Minutes} Minutes"
                 },
                 new EmbedFieldBuilder()
                 {
-                    Name = "Recruitment Running:",
-                    Value = ActionManager.NationStatesApiController.IsRecruiting
+                    Name = "Recruitment",
+                    Value = RecruitmentService.IsRecruiting?"Running":"Not Running"
                 },
-                new EmbedFieldBuilder()
-                {
-                    Name = "Recruitment Uptime:",
-                    Value = ActionManager.NationStatesApiController.IsRecruiting?
-                    $"{recruitingTime.Days} Days {recruitingTime.Hours} Hours {recruitingTime.Minutes} Minutes":
-                    "-"
-                }
-            });
             await ReplyAsync("", false, builder.Build());
         }
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]

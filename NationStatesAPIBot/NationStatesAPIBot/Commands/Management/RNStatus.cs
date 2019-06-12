@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-namespace NationStatesAPIBot.Managers
+namespace NationStatesAPIBot.Commands.Management
 {
-    internal class RNStatus
+    public class RNStatus
     {
         internal string IssuedBy { get; set; }
         internal DateTimeOffset StartedAt { get; set; }
