@@ -129,11 +129,14 @@ namespace NationStatesAPIBot.Services
             XmlDocument foundingsXML = await ExecuteRequestWithXmlResult(url, eventId);
             lastAutomaticNewNationsRequest = DateTime.UtcNow;
             XmlNodeList foundingXMLNodes = foundingsXML.GetElementsByTagName("TEXT");
+
             List<string> foundings = new List<string>();
             Regex regex = new Regex("@@(.*?)@@");
-            foreach (var foundingXMLContent in foundingXMLNodes)
+
+            for (int i = 0; i < foundingXMLNodes.Count; i++)
             {
-                foundings.Add(regex.Match(foundingXMLContent.ToString()).Value);
+                var name = regex.Match(foundingXMLNodes.Item(i).InnerText).Value;
+                foundings.Add(name);
             }
             return foundings.Select(nation => ToID(nation)).ToList();
         }
