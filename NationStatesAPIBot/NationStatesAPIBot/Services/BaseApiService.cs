@@ -115,7 +115,7 @@ namespace NationStatesAPIBot.Services
         /// <returns>Formated string</returns>
         internal static string ToID(string text)
         {
-            return text?.Trim().ToLower().Replace(' ', '_');
+            return text?.Trim().ToLower().Replace(' ', '_').Trim('@');
         }
 
         /// <summary>
