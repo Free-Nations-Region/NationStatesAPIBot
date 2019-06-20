@@ -33,6 +33,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger = logger;
             _config = config.Value;
+            _permManager = permissionManager;
         }
 
         public async Task<bool> IsRelevantAsync(object message, object user)
