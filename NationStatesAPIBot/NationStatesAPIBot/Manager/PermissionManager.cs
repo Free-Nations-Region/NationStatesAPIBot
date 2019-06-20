@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MySqlX.XDevAPI.Common;
 
 namespace NationStatesAPIBot.Managers
 {
