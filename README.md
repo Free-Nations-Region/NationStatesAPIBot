@@ -18,28 +18,6 @@ It can probably be used for general purpose as well.
 
 Feel free to contribute!
 
-# Configuration - v2.1+
-
-The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.  
-
-Required:
-
-`clientKey=<your nation states clientKey>`  
-`telegramId=<your nation states recruitment telegramId>`  
-`secretKey=<your nation states telegram secretKey>`  
-`contact=<your nation states nation or an email address or something like that>`  
-`dbConnection=<your mysql database connection string>`  
-`botLoginToken=<your discord bot login token>`  
-`botAdminUser=<discord user id how is main admin on this bot>`  
-`regionName=<name of the region you are recruiting for>`
-  
-Optional:  
-`logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
-See Discord.Net.Core LogSeverity for details
-
-Be sure to have at least dbConnection configured when you run `dotnet ef database update`.  
-You need to have a copy of "keys.config" in the directory where you execute `dotnet ef database update` or `dotnet ef migrations add <name>`
-
 # Roadmap
 
 **!! IMPORTANT NOTICE !!**  
@@ -49,11 +27,11 @@ Release periods are **NOT** guaranteed and may change without notice.
 ---
 ## Version 3
   
-### Version 3.0 (Planned for Mid June)
+### Version 3.0 (Planned for June 20th/21st)
 - Huge Refactoring to Configuration, Logging, Testability, API call systematics
 - Maintain Existing Functionallities 
 
-### Version 3.1 (Planned for Mid July)
+### Version 3.1 (Planned for July 15th)
 - Implement Cache First Approach with help of dumps, etc.
 - Add refounded nations to pending  
 - Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
@@ -61,20 +39,19 @@ Release periods are **NOT** guaranteed and may change without notice.
 ### Version 3.2 (Planned for Mid August)
 - BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
 - Stats about success of manual and automatic recruitment
+- Allow nations to have multiple status
+- Help Command
 
 ## Later (unordered)
 - Introduce Basic RP Economy & Finance System
 - Backing Up Logs of Channels using Discord Chat Exporter
-- Allow nations to have multiple status
 - Introduce Citizenship Management
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
-- Help Command
-- Recruitment stats
 - UpdateTime Command for R/D  
 (- Generate Spreadsheet for R/D)?
-- CustomStats about nations and regions
 - Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
 - Polls
 - RMB <-> Discord Bridge
+- SpamDetect/Report to Moderators (for discord & RMB)

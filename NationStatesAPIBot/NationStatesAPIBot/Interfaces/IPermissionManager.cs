@@ -1,10 +1,7 @@
 ﻿using Discord.WebSocket;
 using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot.Interfaces

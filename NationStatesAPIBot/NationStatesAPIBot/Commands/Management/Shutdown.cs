@@ -1,10 +1,5 @@
 ﻿using Discord.Commands;
 using NationStatesAPIBot.Interfaces;
-using NationStatesAPIBot.Managers;
-using NationStatesAPIBot.Types;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +7,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Shutdown : ModuleBase<SocketCommandContext>
     {
-        [Command("shutdown"), Summary("Shuts down the bot")]
+        [Command("shutdown"), Alias("stop"), Summary("Shuts down the bot")]
         public async Task DoShutdown()
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
