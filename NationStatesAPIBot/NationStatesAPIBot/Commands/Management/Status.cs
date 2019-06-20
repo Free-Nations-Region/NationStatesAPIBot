@@ -48,7 +48,7 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Number of Users on this Server:",
-                    Value = Context.Guild != null ? Context.Guild.Users.Count: 0
+                    Value = Context.Guild != null ? Context.Guild.Users.Count : 0
                 },
                 new EmbedFieldBuilder()
                 {
@@ -58,11 +58,12 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Recruitment",
-                    Value = RecruitmentService.IsRecruiting?"Running":"Not Running"
+                    Value = RecruitmentService.IsRecruiting ? "Running" : "Not Running"
                 }
-            });
-            await ReplyAsync(embed: builder.Build());
+            });    
+            await ReplyAsync("", false, builder.Build());
         }
+                
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
         public async Task DoPing()
         {
