@@ -21,7 +21,7 @@ namespace NationStatesAPIBot.Manager
         {
             using (var context = new BotDbContext(_config))
             {
-                return await context.Users.AnyAsync(u => u.DiscordUserId == userId);
+                return await context.Users.FirstOrDefaultAsync(u => u.DiscordUserId == userId) != null;
             }
         }
         public static async Task AddUserToDbAsync(string userId)
