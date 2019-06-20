@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Options;
 using System;
@@ -60,8 +60,8 @@ namespace NationStatesAPIBot.Commands.Management
                     Name = "Recruitment",
                     Value = RecruitmentService.IsRecruiting ? "Running" : "Not Running"
                 }
-            });    
-            await ReplyAsync("", false, builder.Build());
+            });
+            await ReplyAsync(embed: builder.Build());
         }
                 
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
