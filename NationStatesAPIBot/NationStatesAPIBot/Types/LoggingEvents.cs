@@ -4,6 +4,7 @@
     {
         //Everything below 10000 is reserved for random log event ids
         DiscordLogEvent = 10000,
+        UserDbAction = 10050,
         UserMessage = 10100,
         PermissionDenied = 10200,
         GetNationStats = 10300,
