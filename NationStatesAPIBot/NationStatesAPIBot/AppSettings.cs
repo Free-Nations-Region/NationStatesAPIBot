@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NationStatesAPIBot
 {
@@ -26,5 +24,17 @@ namespace NationStatesAPIBot
         public string NationStatesRegionName { get; set; }
         public char SeperatorChar { get; set; }
         public bool CriteriaCheckOnNations { get; set; }
+
+        public string Configuration
+        {
+            get
+            {
+#if RELEASE
+                return "production";
+#elif DEBUG
+                return "development";
+#endif
+            }
+        }
     }
 }

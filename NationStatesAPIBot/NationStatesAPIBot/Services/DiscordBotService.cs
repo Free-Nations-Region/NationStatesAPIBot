@@ -4,18 +4,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
-using System.IO;
-using System.Linq;
 using NationStatesAPIBot.Manager;
+using NationStatesAPIBot.Managers;
 
 namespace NationStatesAPIBot.Services
 {
@@ -25,23 +19,32 @@ namespace NationStatesAPIBot.Services
         private readonly AppSettings _config;
         private DiscordSocketClient DiscordClient;
         private CommandService commandService;
+        private PermissionManager _permManager;
 
         public bool IsRunning { get; private set; }
 
-        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config)
+        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, PermissionManager permissionManager)
         {
             _logger = logger;
             _config = config.Value;
+            _permManager = permissionManager;
         }
 
         public async Task<bool> IsRelevantAsync(object message, object user)
         {
-            if (message is SocketUserMessage socketMsg)
+            if (message is SocketUserMessage socketMsg && user is SocketUser socketUser)
             {
-                var context = new SocketCommandContext(DiscordClient, socketMsg);
                 var arg = 0;
-                if (socketMsg.HasCharPrefix(_config.SeperatorChar, ref arg))
-                    return await Task.FromResult(context.Channel.Id == 580124705722466318 || context.IsPrivate); //only temporary
+                string userId = socketUser.Id.ToString();
+                if (!UserManager.IsUserInDb(userId).Result)
+                {
+                    await UserManager.AddUserToDbAsync(userId);
+                }
+                var value = !string.IsNullOrWhiteSpace(socketMsg.Content) &&
+                    !socketUser.IsBot &&
+                    socketMsg.HasCharPrefix('/', ref arg) &&
+                    await _permManager.IsAllowedAsync(PermissionType.ExecuteCommands, socketUser);
+                return _config.Configuration == "development" ? await  _permManager.IsBotAdminAsync(socketUser) ? true : false : value;
             }
             return await Task.FromResult(false);
         }
@@ -105,10 +108,10 @@ namespace NationStatesAPIBot.Services
             return Task.CompletedTask;
         }
 
-        private Task DiscordClient_UserBanned(SocketUser arg1, SocketGuild arg2)
+        private async Task DiscordClient_UserBanned(SocketUser arg1, SocketGuild arg2)
         {
             _logger.LogInformation($"User {arg1.Username}{arg1.Discriminator} was banned from the {arg2.Name} server.");
-            return Task.CompletedTask;
+            await UserManager.RemoveUserFromDbAsync(arg1.Id.ToString());
         }
 
         private Task DiscordClient_Ready()

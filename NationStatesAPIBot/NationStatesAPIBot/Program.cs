@@ -1,5 +1,4 @@
-﻿using Discord;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using NationStatesAPIBot.Interfaces;
@@ -7,10 +6,7 @@ using NationStatesAPIBot.Managers;
 using NationStatesAPIBot.Services;
 using NetEscapades.Extensions.Logging.RollingFile;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot

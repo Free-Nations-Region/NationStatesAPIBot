@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NationStatesAPIBot.Entities;
 using System.IO;
-using System.Linq;
 
 namespace NationStatesAPIBot
 {

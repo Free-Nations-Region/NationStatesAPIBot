@@ -1,13 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Services;
 
 namespace NationStatesAPIBot.Commands.Management
