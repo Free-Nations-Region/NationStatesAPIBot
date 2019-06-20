@@ -49,11 +49,11 @@ Release periods are **NOT** guaranteed and may change without notice.
 ---
 ## Version 3
   
-### Version 3.0 (Planned for Mid June)
+### Version 3.0 (Planned for June 20th/21st)
 - Huge Refactoring to Configuration, Logging, Testability, API call systematics
 - Maintain Existing Functionallities 
 
-### Version 3.1 (Planned for Mid July)
+### Version 3.1 (Planned for July 15th)
 - Implement Cache First Approach with help of dumps, etc.
 - Add refounded nations to pending  
 - Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
@@ -61,20 +61,19 @@ Release periods are **NOT** guaranteed and may change without notice.
 ### Version 3.2 (Planned for Mid August)
 - BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
 - Stats about success of manual and automatic recruitment
+- Allow nations to have multiple status
+- Help Command
 
 ## Later (unordered)
 - Introduce Basic RP Economy & Finance System
 - Backing Up Logs of Channels using Discord Chat Exporter
-- Allow nations to have multiple status
 - Introduce Citizenship Management
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
-- Help Command
-- Recruitment stats
 - UpdateTime Command for R/D  
 (- Generate Spreadsheet for R/D)?
-- CustomStats about nations and regions
 - Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
 - Polls
 - RMB <-> Discord Bridge
+- SpamDetect/Report to Moderators (for discord & RMB)
