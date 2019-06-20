@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MySqlX.XDevAPI.Common;
 
 namespace NationStatesAPIBot.Managers
 {
@@ -38,7 +39,14 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            throw new NotImplementedException();
+            return Task.Run(() =>
+            {
+                var user = dbContext.Users.Single(u => u.DiscordUserId == discordUserId);
+                var perm = user.UserPermissions.Find(p => p.Permission.Id == permission.Id);
+                var update = dbContext.Users.Update(user);
+                update.Entity.UserPermissions.Remove(perm);
+                dbContext.SaveChanges();
+            });
         }
 
         public Task AddPermissionToRoleAsync(Role role, Permission permission, BotDbContext dbContext)
