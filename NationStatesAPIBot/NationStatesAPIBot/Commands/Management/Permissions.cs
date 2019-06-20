@@ -1,11 +1,9 @@
 ﻿using Discord.Commands;
 using Microsoft.EntityFrameworkCore;
 using NationStatesAPIBot.Entities;
-using NationStatesAPIBot.Managers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Options;
 

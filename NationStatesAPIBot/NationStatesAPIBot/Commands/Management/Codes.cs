@@ -1,6 +1,5 @@
 ﻿using Discord.Commands;
 using NationStatesAPIBot.Interfaces;
-using NationStatesAPIBot.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace NationStatesAPIBot.Types
+﻿namespace NationStatesAPIBot.Types
 {
     public enum LoggingEvent
     {
