@@ -7,7 +7,7 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Shutdown : ModuleBase<SocketCommandContext>
     {
-        [Command("shutdown"), Summary("Shuts down the bot")]
+        [Command("shutdown"), Alias("stop"), Summary("Shuts down the bot")]
         public async Task DoShutdown()
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
