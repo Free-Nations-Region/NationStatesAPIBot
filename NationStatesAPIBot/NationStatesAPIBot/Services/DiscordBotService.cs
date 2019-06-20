@@ -25,10 +25,11 @@ namespace NationStatesAPIBot.Services
         private readonly AppSettings _config;
         private DiscordSocketClient DiscordClient;
         private CommandService commandService;
+        private IPermissionManager _permManager;
 
         public bool IsRunning { get; private set; }
 
-        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config)
+        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, IPermissionManager permissionManager)
         {
             _logger = logger;
             _config = config.Value;
