@@ -18,28 +18,6 @@ It can probably be used for general purpose as well.
 
 Feel free to contribute!
 
-# Configuration - v2.1+
-
-The order of the lines is irrelevant. Write them into a file named "keys.config" in your execution directory.  
-
-Required:
-
-`clientKey=<your nation states clientKey>`  
-`telegramId=<your nation states recruitment telegramId>`  
-`secretKey=<your nation states telegram secretKey>`  
-`contact=<your nation states nation or an email address or something like that>`  
-`dbConnection=<your mysql database connection string>`  
-`botLoginToken=<your discord bot login token>`  
-`botAdminUser=<discord user id how is main admin on this bot>`  
-`regionName=<name of the region you are recruiting for>`
-  
-Optional:  
-`logLevel=<logLevel 0-5 0 = Critical - 5 = Debug>`
-See Discord.Net.Core LogSeverity for details
-
-Be sure to have at least dbConnection configured when you run `dotnet ef database update`.  
-You need to have a copy of "keys.config" in the directory where you execute `dotnet ef database update` or `dotnet ef migrations add <name>`
-
 # Roadmap
 
 **!! IMPORTANT NOTICE !!**  
