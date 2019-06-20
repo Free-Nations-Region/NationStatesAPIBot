@@ -44,22 +44,29 @@ namespace NationStatesAPIBot.Services
                     !socketUser.IsBot &&
                     socketMsg.HasCharPrefix('/', ref arg) &&
                     await _permManager.IsAllowedAsync(PermissionType.ExecuteCommands, socketUser);
-                return _config.Configuration == "development" ? await  _permManager.IsBotAdminAsync(socketUser) ? true : false : value;
+                return _config.Configuration == "development" ? await _permManager.IsBotAdminAsync(socketUser) ? true : false : value;
             }
             return await Task.FromResult(false);
         }
 
         public async Task ProcessMessageAsync(object message)
         {
-            if (message is SocketUserMessage socketMsg)
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
+            try
             {
-                var context = new SocketCommandContext(DiscordClient, socketMsg);
-                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
-                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
-                if (await IsRelevantAsync(message, context.User))
+                if (message is SocketUserMessage socketMsg)
                 {
-                    await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
+                    var context = new SocketCommandContext(DiscordClient, socketMsg);
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
+                    if (await IsRelevantAsync(message, context.User))
+                    {
+                        await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
             }
         }
 
@@ -67,6 +74,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogInformation($"--- DiscordBotService started ---");
             NationManager.Initialize(_config);
+            UserManager.Initialize(_config);
             DiscordClient = new DiscordSocketClient();
             commandService = new CommandService(new CommandServiceConfig
             {
