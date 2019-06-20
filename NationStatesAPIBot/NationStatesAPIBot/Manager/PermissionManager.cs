@@ -42,7 +42,7 @@ namespace NationStatesAPIBot.Managers
             var perm = user.UserPermissions.Find(p => p.Permission.Id == permission.Id);
             var update = dbContext.Users.Update(user);
             update.Entity.UserPermissions.Remove(perm);
-            return dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
         public Task AddPermissionToRoleAsync(Role role, Permission permission, BotDbContext dbContext)
