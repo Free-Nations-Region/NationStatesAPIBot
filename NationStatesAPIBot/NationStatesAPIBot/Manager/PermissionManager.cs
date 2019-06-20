@@ -38,14 +38,11 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            return Task.Run(() =>
-            {
-                var user = dbContext.Users.Single(u => u.DiscordUserId == discordUserId);
-                var perm = user.UserPermissions.Find(p => p.Permission.Id == permission.Id);
-                var update = dbContext.Users.Update(user);
-                update.Entity.UserPermissions.Remove(perm);
-                dbContext.SaveChanges();
-            });
+            var user = dbContext.Users.Single(u => u.DiscordUserId == discordUserId);
+            var perm = user.UserPermissions.Find(p => p.Permission.Id == permission.Id);
+            var update = dbContext.Users.Update(user);
+            update.Entity.UserPermissions.Remove(perm);
+            return dbContext.SaveChangesAsync();
         }
 
         public Task AddPermissionToRoleAsync(Role role, Permission permission, BotDbContext dbContext)
