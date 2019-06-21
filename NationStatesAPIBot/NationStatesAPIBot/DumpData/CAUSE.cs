@@ -1,4 +1,4 @@
-﻿namespace DumpData
+﻿namespace NationStatesAPIBot.DumpData
 {
     public class CAUSE
     {

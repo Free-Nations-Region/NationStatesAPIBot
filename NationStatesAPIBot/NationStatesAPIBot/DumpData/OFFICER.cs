@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DumpData
+namespace NationStatesAPIBot.DumpData
 {
     public class OFFICER
     {

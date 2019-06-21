@@ -6,24 +6,26 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using DumpData;
+using NationStatesAPIBot.DumpData;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Types;
 
 namespace NationStatesAPIBot.Services
 {
-    class DumpDataService
+    public class DumpDataService
     {
+        private readonly ILogger<DumpDataService> _logger;
         private readonly BaseApiService _apiService;
         private static List<NATION> _nations;
         private static List<REGION> _regions;
         private static Task _updating;
 
-        public DumpDataService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, BaseApiService apiService, CancellationToken cancel)
+        public DumpDataService(ILogger<DumpDataService> logger, BaseApiService apiService, CancellationToken stop)
         {
+            _logger = logger;
             _apiService = apiService;
-            PeriodicUpdate(TimeSpan.FromDays(1), cancel);
+            PeriodicUpdate(TimeSpan.FromDays(1), stop);
         }
         
         private async Task<List<NATION>> GetNationsAsync()
@@ -38,12 +40,12 @@ namespace NationStatesAPIBot.Services
             return _regions;
         }
         
-        public async Task PeriodicUpdate(TimeSpan interval, CancellationToken cancel)
+        public async Task PeriodicUpdate(TimeSpan interval, CancellationToken stop)
         {
             while (true)
             {
                 await Update();
-                await Task.Delay(interval, cancel);
+                await Task.Delay(interval, stop);
             }
         }
 
@@ -58,15 +60,15 @@ namespace NationStatesAPIBot.Services
             });
         }
         
-        private static List<REGION> GetRegionsFromCompressedStream(GZipStream stream)
+        private List<REGION> GetRegionsFromCompressedStream(GZipStream stream)
         {
-            Console.WriteLine("Extracting compressed stream to REGION Collection");
+            _logger.LogInformation("Extracting compressed stream to REGION Collection");
             return ParseRegionsFromCompressedStream(stream);
         }
 
-        private static List<NATION> GetNationsFromCompressedStream(GZipStream stream)
+        private List<NATION> GetNationsFromCompressedStream(GZipStream stream)
         {
-            Console.WriteLine("Extracting compressed stream to NATION Collection");
+            _logger.LogInformation("Extracting compressed stream to NATION Collection");
             return ParseNationsFromCompressedStream(stream);
         }
 
