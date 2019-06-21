@@ -108,7 +108,7 @@ namespace NationStatesAPIBot.Services
         {
             if (_config.CriteriaCheckOnNations)
             {
-                string pattern = @"(^[0-9]*?|[0-9]*?$)";
+                string pattern = @"(^[0-9]+?|[0-9]+?$)";
                 return await Task.FromResult(Regex.IsMatch(nation.Name, pattern));
             }
             else
@@ -127,6 +127,8 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, "Result of GetWouldReceiveTelegramAsync were null"));
                 return false;
             }
         }
