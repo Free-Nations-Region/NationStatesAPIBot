@@ -99,6 +99,7 @@ namespace NationStatesAPIBot.Services
                             currentRNStatus.CurrentCount++;
                         }
                     }
+                    returnNations = returnNations.Distinct().ToList();
                 }
             }
             catch (Exception ex)
@@ -114,7 +115,10 @@ namespace NationStatesAPIBot.Services
             if (_config.CriteriaCheckOnNations)
             {
                 string pattern = @"(^[0-9]+?|[0-9]+?$)";
-                return await Task.FromResult(!Regex.IsMatch(nation.Name, pattern));
+                var name = nation.Name;
+                var res = !Regex.IsMatch(name, pattern);
+
+                return await Task.FromResult(res);
             }
             else
             {
