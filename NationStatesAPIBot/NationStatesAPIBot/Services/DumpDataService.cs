@@ -40,7 +40,8 @@ namespace NationStatesAPIBot.Services
 
         public Task Update()
         {
-            return _updating = Task.Run(async () => {
+            return _updating = new Task(async () =>
+            {
                 _logger.LogInformation("Updating NATION and REGION collections from dumps");
                 var regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
                 var nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
@@ -236,26 +237,34 @@ namespace NationStatesAPIBot.Services
         
         public async Task<NATION> GetNationAsync(string name)
         {
-            await Task.WhenAll(_updating);
+            await WaitForUpdate();
             return GetNationInternal(name);
         }
         
         public async Task<REGION> GetRegionAsync(string name)
         {
-            await Task.WhenAll(_updating);
+            await WaitForUpdate();
             return GetRegionInternal(name);
         }
         
         public async Task<List<NATION>> GetAllNationsAsync()
         {
-            await Task.WhenAll(_updating);
+            await WaitForUpdate();
             return _nations;
         }
         
         public async Task<List<REGION>> GetAllRegionsAsync()
         {
-            await Task.WhenAll(_updating);
+            await WaitForUpdate();
             return _regions;
+        }
+        
+        private async Task WaitForUpdate()
+        {
+            while (_updating.Status != TaskStatus.Created && !_updating.IsCompleted) // While any status implying it has started and is not yet finished
+            {
+                await Task.Delay(1000);
+            }
         }
     }
 }
