@@ -25,19 +25,8 @@ namespace NationStatesAPIBot.Services
         {
             _logger = logger;
             _apiService = apiService;
+            _logger.LogInformation($"--- DumpDataService started ---");
             PeriodicUpdate(TimeSpan.FromDays(1), stop);
-        }
-        
-        private async Task<List<NATION>> GetNationsAsync()
-        {
-            await Task.WhenAll(_updating);
-            return _nations;
-        }
-        
-        private async Task<List<REGION>> GetRegionsAsync()
-        {
-            await Task.WhenAll(_updating);
-            return _regions;
         }
         
         public async Task PeriodicUpdate(TimeSpan interval, CancellationToken stop)
@@ -52,6 +41,7 @@ namespace NationStatesAPIBot.Services
         public Task Update()
         {
             return _updating = Task.Run(async () => {
+                _logger.LogInformation("Updating NATION and REGION collections from dumps");
                 var regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
                 var nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
                 _regions = GetRegionsFromCompressedStream(regionsStream);
@@ -62,13 +52,13 @@ namespace NationStatesAPIBot.Services
         
         private List<REGION> GetRegionsFromCompressedStream(GZipStream stream)
         {
-            _logger.LogInformation("Extracting compressed stream to REGION Collection");
+            _logger.LogDebug("Extracting compressed stream to REGION Collection");
             return ParseRegionsFromCompressedStream(stream);
         }
 
         private List<NATION> GetNationsFromCompressedStream(GZipStream stream)
         {
-            _logger.LogInformation("Extracting compressed stream to NATION Collection");
+            _logger.LogDebug("Extracting compressed stream to NATION Collection");
             return ParseNationsFromCompressedStream(stream);
         }
 
@@ -143,7 +133,7 @@ namespace NationStatesAPIBot.Services
                 WAMEMBER = m.Element("UNSTATUS").Value == "WA Member",
                 ENDORSEMENTS = m.Element("ENDORSEMENTS").Value.Split(";").ToList(),
                 FREEDOM = BuildFreedom(m),
-                REGION = GetRegion(m.Element("REGION").Value),
+                REGION = GetRegionInternal(m.Element("REGION").Value),
                 REGIONNAME = m.Element("REGION").Value,
                 POPULATION = Convert.ToDouble(m.Element("POPULATION").Value),
                 TAX = Convert.ToDouble(m.Element("TAX").Value),
@@ -226,12 +216,12 @@ namespace NationStatesAPIBot.Services
             };
         }
 
-        public static REGION GetRegion(string name)
+        private static REGION GetRegionInternal(string name)
         {
             return _regions.Find(r => r.NAME == name);
         }
         
-        public static NATION GetNation(string name)
+        private static NATION GetNationInternal(string name)
         {
             return _nations.Find(n => n.NAME == name);
         }
@@ -240,8 +230,32 @@ namespace NationStatesAPIBot.Services
         {
             foreach (var region in _regions)
             {
-                region.NATIONNAMES.ForEach(name => region.NATIONS.Add(GetNation(name)));
+                region.NATIONNAMES.ForEach(name => region.NATIONS.Add(GetNationInternal(name)));
             }
+        }
+        
+        public async Task<NATION> GetNationAsync(string name)
+        {
+            await Task.WhenAll(_updating);
+            return GetNationInternal(name);
+        }
+        
+        public async Task<REGION> GetRegionAsync(string name)
+        {
+            await Task.WhenAll(_updating);
+            return GetRegionInternal(name);
+        }
+        
+        public async Task<List<NATION>> GetAllNationsAsync()
+        {
+            await Task.WhenAll(_updating);
+            return _nations;
+        }
+        
+        public async Task<List<REGION>> GetAllRegionsAsync()
+        {
+            await Task.WhenAll(_updating);
+            return _regions;
         }
     }
 }
