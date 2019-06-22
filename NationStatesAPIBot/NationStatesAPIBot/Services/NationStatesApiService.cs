@@ -47,6 +47,17 @@ namespace NationStatesAPIBot.Services
             {
                 return Task.FromResult(DateTime.UtcNow.Ticks - LastAPIRequest.Ticks > API_REQUEST_INTERVAL);
             }
+            else if (type == NationStatesApiRequestType.DownloadDumps)
+            {
+                /*
+                 * Dump update time according to documentation around 22:30 PDT 
+                 * source: https://www.nationstates.net/pages/api#dumps
+                 * Add some tolerance of 30 Minutes to it, if it maybe takes longer sometimes
+                 * And have a time window of 31 Minutes to it gets definitely hit by the 30 Minute interval of WaitForAction
+                 * These times converted to UTC are 6:00 AM and 6:31 AM
+                 */
+                return Task.FromResult(DateTime.UtcNow.TimeOfDay > new TimeSpan(5, 59, 59) && DateTime.UtcNow.TimeOfDay < new TimeSpan(6, 31, 00));
+            }
             else
             {
                 _logger.LogCritical($"Unrecognized ApiRequestType '{type.ToString()}'");
