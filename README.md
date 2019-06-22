@@ -24,7 +24,7 @@ Feel free to contribute!
 The features are **NOT** guaranteed to ship with the specified version -> Feature order may change without notice.  
 Release times are **NOT** guaranteed and may change without notice. 
 
-All Points prefixed with Maybe are not know if there will be implemented with that version yet.
+All Points prefixed with Maybe are not known if they will be implemented with that version yet.
 
 ---
 ## Version 3
