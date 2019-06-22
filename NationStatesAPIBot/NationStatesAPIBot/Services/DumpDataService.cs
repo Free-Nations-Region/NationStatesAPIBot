@@ -196,7 +196,7 @@ namespace NationStatesAPIBot.Services
 
         private HashSet<NATION> GetNationsFromCompressedStream(GZipStream stream)
         {
-            _logger.LogDebug(defaultEventId,GetLogMessage("Extracting compressed stream to NATION Collection"));
+            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting compressed stream to NATION Collection"));
             var result = ParseNationsFromCompressedStream(stream);
             _logger.LogDebug(defaultEventId, GetLogMessage("NATION Collection extracted successfully."));
             return result;
@@ -366,14 +366,22 @@ namespace NationStatesAPIBot.Services
 
         private void AddNationsToRegions()
         {
-            foreach(var nation in _nations)
+            foreach (var nation in _nations)
             {
-                var region = _regions.FirstOrDefault(r => r.NATIONNAMES.Contains(nation.NAME));
-                if(region.NATIONS == null)
+                var region = _regions.FirstOrDefault(r => r.NATIONNAMES.Contains(BaseApiService.ToID(nation.NAME)));
+                if (region != null)
                 {
-                    region.NATIONS = new HashSet<NATION>();
+                    nation.REGION = region;
+                    if (region.NATIONS == null)
+                    {
+                        region.NATIONS = new HashSet<NATION>();
+                    }
+                    region.NATIONS.Add(nation);
                 }
-                region.NATIONS.Add(nation);
+                else
+                {
+                    _logger.LogWarning(defaultEventId, GetLogMessage($"No region for nation {nation.NAME} could be found."));
+                }
             }
         }
 
