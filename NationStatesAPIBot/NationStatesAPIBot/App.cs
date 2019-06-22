@@ -2,6 +2,8 @@
 using NationStatesAPIBot.Interfaces;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NationStatesAPIBot.Services;
 
 namespace NationStatesAPIBot
 {
@@ -21,6 +23,7 @@ namespace NationStatesAPIBot
             {
                 _logger.LogInformation($"--- App started ---");
                 await _botService.RunAsync();
+                Program.ServiceProvider.GetService<DumpDataService>().StartDumpUpdateCycle();
                 while (_botService.IsRunning)
                 {
                     await Task.Delay(10000);

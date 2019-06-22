@@ -94,10 +94,10 @@ namespace NationStatesAPIBot.Services
                 {
                     throw new NotImplementedException($"Retrieval for DumpType {type} not implemented yet.");
                 }
-                using (var stream = await ExecuteRequestWithStreamResult(url, eventId))
-                {
-                    return new GZipStream(stream, CompressionMode.Decompress);
-                }
+                var stream = await ExecuteRequestWithStreamResult(url, eventId);
+                var compressed = new GZipStream(stream,CompressionMode.Decompress);
+                return compressed;
+                
             }
             finally
             {
