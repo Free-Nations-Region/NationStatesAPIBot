@@ -21,37 +21,40 @@ Feel free to contribute!
 # Roadmap
 
 **!! IMPORTANT NOTICE !!**  
-The features are **NOT** guaranteed to ship with the specified version. Feature order may change without notice.  
-Release periods are **NOT** guaranteed and may change without notice. 
+The features are **NOT** guaranteed to ship with the specified version -> Feature order may change without notice.  
+Release times are **NOT** guaranteed and may change without notice. 
+
+All Points prefixed with Maybe are not know if there will be implemented with that version yet.
 
 ---
 ## Version 3
-  
-### Version 3.0 (Planned for June 20th/21st)
-- Huge Refactoring to Configuration, Logging, Testability, API call systematics
-- Maintain Existing Functionallities 
 
 ### Version 3.1 (Planned for July 15th)
 - Implement Cache First Approach with help of dumps, etc.
 - Add refounded nations to pending  
 - Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
+- Stats about success of manual and automatic recruitment -> - (send, skipped, failed, pending count) for total from dump and db  
+- Maybe (- Polls)
 
-### Version 3.2 (Planned for Mid August)
-- BasicStats about the recruitment process (send, skipped, failed, pending count) for total and since the recruitment process was last started and in general from database
-- Stats about success of manual and automatic recruitment
+### Version 3.2 (Planned for Mid/Late August)
 - Allow nations to have multiple status
 - Help Command
+- Polls  
+- Maybe (- CleanUp of nation pool on regular basis)  
+- Maybe (- Introduce Basic RP Economy & Finance System)  
+
+### Version 3.3 (Planned for Late September)
+- Introduce Basic RP Economy & Finance System
+- Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
+- SpamDetect/Report to Moderators (for discord & RMB)
+- Maybe (- RMB <-> Discord Bridge)
 
 ## Later (unordered)
-- Introduce Basic RP Economy & Finance System
 - Backing Up Logs of Channels using Discord Chat Exporter
 - Introduce Citizenship Management
 - Verify Nation ownership using Nation States Verification API: https://www.nationstates.net/pages/api.html#verification and possibly automatic role asignment, if verified. e.g. Role "Verified"
 - UpdateTime Command for R/D  
 (- Generate Spreadsheet for R/D)?
-- Activity Points for verified nations on NationStates activity and discord activity -> Extensive RP Economy Features
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
-- Polls
 - RMB <-> Discord Bridge
-- SpamDetect/Report to Moderators (for discord & RMB)
