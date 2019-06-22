@@ -34,17 +34,18 @@ namespace NationStatesAPIBot.Services
         {
             if (message is SocketUserMessage socketMsg && user is SocketUser socketUser)
             {
-                var arg = 0;
                 string userId = socketUser.Id.ToString();
                 if (!UserManager.IsUserInDb(userId).Result)
                 {
                     await UserManager.AddUserToDbAsync(userId);
                 }
                 var value = !string.IsNullOrWhiteSpace(socketMsg.Content) &&
-                    !socketUser.IsBot &&
-                    socketMsg.HasCharPrefix('/', ref arg) &&
+                    !socketUser.IsBot && 
+                    socketMsg.Content.StartsWith(_config.SeperatorChar) &&
                     await _permManager.IsAllowedAsync(PermissionType.ExecuteCommands, socketUser);
-                return _config.Configuration == "development" ? await _permManager.IsBotAdminAsync(socketUser) ? true : false : value;
+                return _config.Configuration == "development" ?
+                    await _permManager.IsBotAdminAsync(socketUser) && value 
+                    : value;
             }
             return await Task.FromResult(false);
         }
@@ -106,7 +107,7 @@ namespace NationStatesAPIBot.Services
 
         private Task DiscordClient_UserLeft(SocketGuildUser arg)
         {
-            _logger.LogInformation($"User {arg.Username}{arg.Discriminator} left the server.");
+            _logger.LogInformation($"User {arg.Username}#{arg.Discriminator} left the server.");
             return Task.CompletedTask;
         }
 

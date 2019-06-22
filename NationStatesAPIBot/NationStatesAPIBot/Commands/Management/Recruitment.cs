@@ -77,6 +77,7 @@ namespace NationStatesAPIBot.Commands.Management
                             };
                             _recruitmentService.StartReceiveRecruitableNations(currentRN);
                             await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
+                            _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
                             returnNations = await _recruitmentService.GetRecruitableNationsAsync(number);
                             foreach (var nation in returnNations)
                             {
