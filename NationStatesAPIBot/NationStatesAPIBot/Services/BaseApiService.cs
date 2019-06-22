@@ -83,10 +83,12 @@ namespace NationStatesAPIBot.Services
                 if (type == NationStatesDumpType.Nations)
                 {
                     url += "nations.xml.gz";
+                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Nation dump requested"));
                 }
                 else if (type == NationStatesDumpType.Regions)
                 {
                     url += "regions.xml.gz";
+                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Region dump requested"));
                 }
                 else
                 {
