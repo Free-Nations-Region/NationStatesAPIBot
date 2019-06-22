@@ -6,7 +6,6 @@ namespace NationStatesAPIBot.DumpData
 {
     public class NATION
     {
-        public IEnumerable<XElement> Nodes { get; set; }
         public string NAME { get; set; }
         public string TYPE { get; set; }
         public string FULLNAME { get; set; }
@@ -42,6 +41,87 @@ namespace NationStatesAPIBot.DumpData
         public int DISPATCHES { get; set; }
         public List<WABADGE> WABADGES { get; set; }
         public string CARDCATEGORY { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is NATION nation &&
+                   NAME == nation.NAME &&
+                   TYPE == nation.TYPE &&
+                   FULLNAME == nation.FULLNAME &&
+                   MOTTO == nation.MOTTO &&
+                   CATEGORY == nation.CATEGORY &&
+                   WAMEMBER == nation.WAMEMBER &&
+                   EqualityComparer<List<string>>.Default.Equals(ENDORSEMENTS, nation.ENDORSEMENTS) &&
+                   EqualityComparer<FREEDOM>.Default.Equals(FREEDOM, nation.FREEDOM) &&
+                   EqualityComparer<REGION>.Default.Equals(REGION, nation.REGION) &&
+                   REGIONNAME == nation.REGIONNAME &&
+                   POPULATION == nation.POPULATION &&
+                   TAX == nation.TAX &&
+                   ANIMAL == nation.ANIMAL &&
+                   CURRENCY == nation.CURRENCY &&
+                   DEMONYM == nation.DEMONYM &&
+                   DEMONYM2 == nation.DEMONYM2 &&
+                   DEMONYM2PLURAL == nation.DEMONYM2PLURAL &&
+                   FLAG == nation.FLAG &&
+                   MAJORINDUSTRY == nation.MAJORINDUSTRY &&
+                   GOVTPRIORITY == nation.GOVTPRIORITY &&
+                   EqualityComparer<GOVT>.Default.Equals(GOVT, nation.GOVT) &&
+                   FOUNDED == nation.FOUNDED &&
+                   FIRSTLOGIN.Equals(nation.FIRSTLOGIN) &&
+                   LASTLOGIN.Equals(nation.LASTLOGIN) &&
+                   LASTACTIVITY == nation.LASTACTIVITY &&
+                   INFLUENCE == nation.INFLUENCE &&
+                   PUBLICSECTOR == nation.PUBLICSECTOR &&
+                   EqualityComparer<DEATHS>.Default.Equals(DEATHS, nation.DEATHS) &&
+                   LEADER == nation.LEADER &&
+                   CAPITAL == nation.CAPITAL &&
+                   RELIGION == nation.RELIGION &&
+                   FACTBOOKS == nation.FACTBOOKS &&
+                   DISPATCHES == nation.DISPATCHES &&
+                   EqualityComparer<List<WABADGE>>.Default.Equals(WABADGES, nation.WABADGES) &&
+                   CARDCATEGORY == nation.CARDCATEGORY;
+        }
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(NAME);
+            hash.Add(TYPE);
+            hash.Add(FULLNAME);
+            hash.Add(MOTTO);
+            hash.Add(CATEGORY);
+            hash.Add(WAMEMBER);
+            hash.Add(ENDORSEMENTS);
+            hash.Add(FREEDOM);
+            hash.Add(REGION);
+            hash.Add(REGIONNAME);
+            hash.Add(POPULATION);
+            hash.Add(TAX);
+            hash.Add(ANIMAL);
+            hash.Add(CURRENCY);
+            hash.Add(DEMONYM);
+            hash.Add(DEMONYM2);
+            hash.Add(DEMONYM2PLURAL);
+            hash.Add(FLAG);
+            hash.Add(MAJORINDUSTRY);
+            hash.Add(GOVTPRIORITY);
+            hash.Add(GOVT);
+            hash.Add(FOUNDED);
+            hash.Add(FIRSTLOGIN);
+            hash.Add(LASTLOGIN);
+            hash.Add(LASTACTIVITY);
+            hash.Add(INFLUENCE);
+            hash.Add(PUBLICSECTOR);
+            hash.Add(DEATHS);
+            hash.Add(LEADER);
+            hash.Add(CAPITAL);
+            hash.Add(RELIGION);
+            hash.Add(FACTBOOKS);
+            hash.Add(DISPATCHES);
+            hash.Add(WABADGES);
+            hash.Add(CARDCATEGORY);
+            return hash.ToHashCode();
+        }
     }
 
 
