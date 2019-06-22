@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Types;
 using System.IO;
+using System.Diagnostics;
 
 namespace NationStatesAPIBot.Services
 {
@@ -72,7 +73,7 @@ namespace NationStatesAPIBot.Services
             {
                 var fileInfoRegions = new FileInfo(regionFileName);
                 var fileInfoNations = new FileInfo(nationFileName);
-                var outdated = fileInfoNations.CreationTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.CreationTimeUtc != DateTime.UtcNow.Date;
+                var outdated = fileInfoNations.CreationTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.CreationTimeUtc.Date != DateTime.UtcNow.Date;
                 if (outdated)
                 {
                     _logger.LogDebug("Local DumpData found but outdated");
@@ -105,10 +106,11 @@ namespace NationStatesAPIBot.Services
                     if (!tokenSource.Token.IsCancellationRequested)
                     {
                         IsUpdating = true;
-                        _logger.LogInformation("--- Updating NATION and REGION collections from dumps ---");
+                        _logger.LogInformation(defaultEventId, GetLogMessage("--- Updating NATION and REGION collections from dumps ---"));
                         await DowloadAndReadDumpsAsync();
                     }
                 }
+                _logger.LogInformation(defaultEventId, GetLogMessage("--- Dump Data Update Finished ---"));
             }
             catch (Exception ex)
             {
@@ -140,69 +142,118 @@ namespace NationStatesAPIBot.Services
 
         private void LoadDumpsFromStream(GZipStream regionsStream, GZipStream nationsStream)
         {
-            _regions = GetRegionsFromCompressedStream(regionsStream);
-            _nations = GetNationsFromCompressedStream(nationsStream);
-            AddNationsToRegions();
+            Stopwatch stopWatch = Stopwatch.StartNew();
+            _regions = GetRegionsFromStream(regionsStream);
+            stopWatch.Stop();
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Parsing regions took {stopWatch.Elapsed} to complete."));
+            stopWatch.Restart();
+            _nations = GetNationsFromStream(nationsStream);
+            stopWatch.Stop();
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Parsing nations took {stopWatch.Elapsed} to complete."));
             DataAvailable = true;
         }
 
         private void ReadDumpsFromLocalFileSystem()
         {
-            GZipStream regionStream;
-            GZipStream nationStream;
-            using (var fs = new FileStream(regionFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            GZipStream regionStream = null;
+            GZipStream nationStream = null;
+            FileStream fsr = null;
+            FileStream fsn = null;
+            try
             {
-                regionStream = new GZipStream(fs, CompressionMode.Decompress);
+                Stopwatch stopWatch = Stopwatch.StartNew();
+                fsr = new FileStream(regionFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                regionStream = new GZipStream(fsr, CompressionMode.Decompress);
+
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Reading region dump from local cache took {stopWatch.Elapsed} to complete."));
+                stopWatch.Restart();
+                fsn = new FileStream(nationFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                nationStream = new GZipStream(fsn, CompressionMode.Decompress);
+
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                var fileInfoNations = new FileInfo(nationFileName);
+                lastDumpUpdateTime = fileInfoNations.CreationTimeUtc;
+                LoadDumpsFromStream(regionStream, nationStream);
             }
-            using (var fs = new FileStream(nationFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            finally
             {
-                nationStream = new GZipStream(fs, CompressionMode.Decompress);
+                fsr?.Close();
+                fsn?.Close();
+                nationStream?.Close();
+                regionStream?.Close();
+                fsr.Close();
+                fsn.Close();
+                nationStream?.Dispose();
+                regionStream?.Dispose();
             }
-            var fileInfoNations = new FileInfo(nationFileName);
-            lastDumpUpdateTime = fileInfoNations.CreationTimeUtc;
-            LoadDumpsFromStream(regionStream, nationStream);
         }
 
         private async Task DowloadAndReadDumpsAsync()
         {
-            var regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
-            var nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
-            LoadDumpsFromStream(regionsStream, nationsStream);
-            lastDumpUpdateTime = DateTime.UtcNow;
-            await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
-            await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Regions, regionsStream);
-            nationsStream.Dispose();
-            regionsStream.Dispose();
+            GZipStream regionsStream = null;
+            GZipStream nationsStream = null;
+            try
+            {
+                Stopwatch stopWatch = Stopwatch.StartNew();
+                regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Download region dump as stream took {stopWatch.Elapsed} to complete."));
+                stopWatch.Restart();
+                nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Download nation dump as stream took {stopWatch.Elapsed} to complete."));
+                stopWatch.Restart();
+                await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Regions, regionsStream);
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing region dump to local cache took {stopWatch.Elapsed} to complete."));
+                stopWatch.Restart();
+                await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
+                stopWatch.Stop();
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                ReadDumpsFromLocalFileSystem();
+            }
+            finally
+            {
+                nationsStream?.Close();
+                regionsStream?.Close();
+                nationsStream?.Dispose();
+                regionsStream?.Dispose();
+            }
         }
 
-        private async Task WriteDumpToLocalFileSystemAsync(NationStatesDumpType dumpType, GZipStream compressedStream)
+        private async Task WriteDumpToLocalFileSystemAsync(NationStatesDumpType dumpType, Stream stream)
         {
             if (!(dumpType == NationStatesDumpType.Nations || dumpType == NationStatesDumpType.Regions))
                 throw new ArgumentException("Unknown DumpType");
             string fileName = dumpType == NationStatesDumpType.Nations ? nationFileName : regionFileName;
-            using (var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
-                await compressedStream.CopyToAsync(fs);
+                using (var newCompressed = new GZipStream(fs, CompressionMode.Compress))
+                {
+                    await stream.CopyToAsync(newCompressed);
+                }
             }
         }
 
-        private HashSet<REGION> GetRegionsFromCompressedStream(GZipStream stream)
+        private HashSet<REGION> GetRegionsFromStream(Stream stream)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting compressed stream to REGION Collection"));
-            var result = ParseRegionsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting stream to REGION Collection"));
+            var result = ParseRegionsFromStream(stream);
             _logger.LogDebug(defaultEventId, GetLogMessage("REGION Collection extracted successfully."));
             return result;
         }
 
-        private HashSet<NATION> GetNationsFromCompressedStream(GZipStream stream)
+        private HashSet<NATION> GetNationsFromStream(Stream stream)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting compressed stream to NATION Collection"));
-            var result = ParseNationsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting stream to NATION Collection"));
+            var result = ParseNationsFromStream(stream);
             _logger.LogDebug(defaultEventId, GetLogMessage("NATION Collection extracted successfully."));
             return result;
         }
 
-        private HashSet<REGION> ParseRegionsFromCompressedStream(GZipStream stream)
+        private HashSet<REGION> ParseRegionsFromStream(Stream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
             return xml.Descendants("REGION").Select(m =>
@@ -239,7 +290,7 @@ namespace NationStatesAPIBot.Services
             }).ToList();
         }
 
-        private HashSet<NATION> ParseNationsFromCompressedStream(GZipStream stream)
+        private HashSet<NATION> ParseNationsFromStream(Stream stream)
         {
             HashSet<NATION> nations = new HashSet<NATION>();
 
@@ -362,27 +413,6 @@ namespace NationStatesAPIBot.Services
         private NATION GetNationInternal(string name)
         {
             return _nations.FirstOrDefault(n => n.NAME == name);
-        }
-
-        private void AddNationsToRegions()
-        {
-            foreach (var nation in _nations)
-            {
-                var region = _regions.FirstOrDefault(r => r.NATIONNAMES.Contains(BaseApiService.ToID(nation.NAME)));
-                if (region != null)
-                {
-                    nation.REGION = region;
-                    if (region.NATIONS == null)
-                    {
-                        region.NATIONS = new HashSet<NATION>();
-                    }
-                    region.NATIONS.Add(nation);
-                }
-                else
-                {
-                    _logger.LogWarning(defaultEventId, GetLogMessage($"No region for nation {nation.NAME} could be found."));
-                }
-            }
         }
 
         public async Task<NATION> GetNationAsync(string name)
