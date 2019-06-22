@@ -5,6 +5,7 @@ using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -54,9 +55,26 @@ namespace NationStatesAPIBot.Services
         }
         public async Task WaitForAction(NationStatesApiRequestType requestType)
         {
+            await WaitForAction(requestType, TimeSpan.FromTicks(API_REQUEST_INTERVAL));
+        }
+
+        public async Task WaitForAction(NationStatesApiRequestType requestType, TimeSpan interval)
+        {
             while (!await IsNationStatesApiActionReadyAsync(requestType, true))
             {
-                await Task.Delay((int)TimeSpan.FromTicks(API_REQUEST_INTERVAL).TotalMilliseconds);
+                await Task.Delay((int)interval.TotalMilliseconds);
+            }
+        }
+
+        public async Task WaitForAction(NationStatesApiRequestType requestType, TimeSpan interval, CancellationToken cancellationToken)
+        {
+            while (!await IsNationStatesApiActionReadyAsync(requestType, true))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                await Task.Delay((int)interval.TotalMilliseconds, cancellationToken);
             }
         }
 
