@@ -54,9 +54,9 @@ namespace NationStatesAPIBot.Services
                  * source: https://www.nationstates.net/pages/api#dumps
                  * Add some tolerance of 30 Minutes to it, if it maybe takes longer sometimes
                  * And have a time window of 31 Minutes to it gets definitely hit by the 30 Minute interval of WaitForAction
-                 * These times converted to UTC are 6:00 AM and 6:31 AM
+                 * These times converted to UTC are 6:00 AM and 6:31 AM + 1 hour for possibly daylight saving time issues
                  */
-                return Task.FromResult(DateTime.UtcNow.TimeOfDay > new TimeSpan(5, 59, 59) && DateTime.UtcNow.TimeOfDay < new TimeSpan(6, 31, 00));
+                return Task.FromResult(DateTime.UtcNow.TimeOfDay > new TimeSpan(6, 59, 59) && DateTime.UtcNow.TimeOfDay < new TimeSpan(7, 31, 00));
             }
             else
             {

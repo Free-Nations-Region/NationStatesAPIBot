@@ -14,7 +14,25 @@ namespace NationStatesAPIBot.DumpData
         public bool WAMEMBER { get; set; }
         public List<string> ENDORSEMENTS { get; set; }
         public FREEDOM FREEDOM { get; set; }
-        public REGION REGION { get; set; }
+        private REGION region;
+        public REGION REGION {
+            get
+            {
+                return region;
+            }
+            set
+            {
+                region = value;
+                if(region != null)
+                {
+                    if(region.NATIONS == null)
+                    {
+                        region.NATIONS = new HashSet<NATION>();
+                    }
+                    region.NATIONS.Add(this);
+                }
+            }
+        }
         public string REGIONNAME { get; set; }
         public double POPULATION { get; set; }
         public double TAX { get; set; }
