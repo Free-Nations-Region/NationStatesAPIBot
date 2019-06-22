@@ -18,21 +18,20 @@ namespace NationStatesAPIBot.Services
     {
         private readonly ILogger<DumpDataService> _logger;
         private readonly NationStatesApiService _apiService;
-        private List<NATION> _nations;
-        private List<REGION> _regions;
+        private HashSet<NATION> _nations;
+        private HashSet<REGION> _regions;
         private bool isDumpUpdateCycleRunning = false;
         private CancellationTokenSource tokenSource = new CancellationTokenSource();
         private DateTime lastDumpUpdateTime = DateTime.UnixEpoch;
         private string regionFileName = "regions-dump-latest.xml.gz";
         private string nationFileName = "nations-dump-latest.xml.gz";
         private EventId defaultEventId;
-        public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService, CancellationToken stop)
+        public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService)
         {
             _logger = logger;
             _apiService = apiService;
             defaultEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.DumpDataServiceAction);
             _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
-            StartDumpUpdateCycle();
         }
 
         public bool IsUpdating { get; private set; } = false;
@@ -172,11 +171,13 @@ namespace NationStatesAPIBot.Services
             lastDumpUpdateTime = DateTime.UtcNow;
             await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
             await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Regions, regionsStream);
+            nationsStream.Dispose();
+            regionsStream.Dispose();
         }
 
         private async Task WriteDumpToLocalFileSystemAsync(NationStatesDumpType dumpType, GZipStream compressedStream)
         {
-            if (dumpType != NationStatesDumpType.Nations || dumpType != NationStatesDumpType.Regions)
+            if (!(dumpType == NationStatesDumpType.Nations || dumpType == NationStatesDumpType.Regions))
                 throw new ArgumentException("Unknown DumpType");
             string fileName = dumpType == NationStatesDumpType.Nations ? nationFileName : regionFileName;
             using (var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -185,29 +186,32 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private List<REGION> GetRegionsFromCompressedStream(GZipStream stream)
+        private HashSet<REGION> GetRegionsFromCompressedStream(GZipStream stream)
         {
-            _logger.LogDebug("Extracting compressed stream to REGION Collection");
-            return ParseRegionsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting compressed stream to REGION Collection"));
+            var result = ParseRegionsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId, GetLogMessage("REGION Collection extracted successfully."));
+            return result;
         }
 
-        private List<NATION> GetNationsFromCompressedStream(GZipStream stream)
+        private HashSet<NATION> GetNationsFromCompressedStream(GZipStream stream)
         {
-            _logger.LogDebug("Extracting compressed stream to NATION Collection");
-            return ParseNationsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId,GetLogMessage("Extracting compressed stream to NATION Collection"));
+            var result = ParseNationsFromCompressedStream(stream);
+            _logger.LogDebug(defaultEventId, GetLogMessage("NATION Collection extracted successfully."));
+            return result;
         }
 
-        private List<REGION> ParseRegionsFromCompressedStream(GZipStream stream)
+        private HashSet<REGION> ParseRegionsFromCompressedStream(GZipStream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
             return xml.Descendants("REGION").Select(m =>
 
                 new REGION
                 {
-                    Nodes = m.Elements(),
                     NAME = m.Element("NAME").Value,
                     NUMNATIONS = (int)m.Element("NUMNATIONS"),
-                    NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToList(),
+                    NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToHashSet(),
                     DELEGATE = m.Element("DELEGATE").Value,
                     DELEGATEVOTES = (int)m.Element("DELEGATEVOTES"),
                     DELEGATEAUTH = m.Element("DELEGATEAUTH").Value,
@@ -219,7 +223,7 @@ namespace NationStatesAPIBot.Services
                     OFFICERS = BuildOfficers(m),
                     EMBASSIES = m.Element("EMBASSIES").Descendants("EMBASSY").Select(e => e.Value).ToList(),
                     WABADGES = BuildWABadges(m)
-                }).ToList();
+                }).ToHashSet();
         }
 
         private List<OFFICER> BuildOfficers(XElement m)
@@ -235,9 +239,9 @@ namespace NationStatesAPIBot.Services
             }).ToList();
         }
 
-        private List<NATION> ParseNationsFromCompressedStream(GZipStream stream)
+        private HashSet<NATION> ParseNationsFromCompressedStream(GZipStream stream)
         {
-            List<NATION> nations = new List<NATION>();
+            HashSet<NATION> nations = new HashSet<NATION>();
 
             XmlReader reader = XmlReader.Create(stream);
             reader.ReadToDescendant("NATIONS");
@@ -259,7 +263,6 @@ namespace NationStatesAPIBot.Services
         {
             return new NATION
             {
-                Nodes = m.Elements(),
                 NAME = m.Element("NAME").Value,
                 TYPE = m.Element("TYPE").Value,
                 FULLNAME = m.Element("FULLNAME").Value,
@@ -353,19 +356,24 @@ namespace NationStatesAPIBot.Services
 
         private REGION GetRegionInternal(string name)
         {
-            return _regions.Find(r => r.NAME == name);
+            return _regions.FirstOrDefault(r => r.NAME == name);
         }
 
         private NATION GetNationInternal(string name)
         {
-            return _nations.Find(n => n.NAME == name);
+            return _nations.FirstOrDefault(n => n.NAME == name);
         }
 
         private void AddNationsToRegions()
         {
-            foreach (var region in _regions)
+            foreach(var nation in _nations)
             {
-                region.NATIONNAMES.ForEach(name => region.NATIONS.Add(GetNationInternal(name)));
+                var region = _regions.FirstOrDefault(r => r.NATIONNAMES.Contains(nation.NAME));
+                if(region.NATIONS == null)
+                {
+                    region.NATIONS = new HashSet<NATION>();
+                }
+                region.NATIONS.Add(nation);
             }
         }
 
@@ -387,7 +395,7 @@ namespace NationStatesAPIBot.Services
         {
             if (DataAvailable && !IsUpdating)
                 return;
-            if(IsUpdating)
+            if (IsUpdating)
             {
                 while (IsUpdating && !tokenSource.Token.IsCancellationRequested)
                 {
@@ -395,7 +403,7 @@ namespace NationStatesAPIBot.Services
                 }
                 tokenSource.Token.ThrowIfCancellationRequested();
             }
-            else if(!DataAvailable)
+            else if (!DataAvailable)
             {
                 throw new DataUnavailableException("No data available that could be accessed.");
             }
