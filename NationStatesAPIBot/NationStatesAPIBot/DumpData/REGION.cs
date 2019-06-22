@@ -8,8 +8,8 @@ namespace NationStatesAPIBot.DumpData
     {
         public string NAME { get; set; }
         public int NUMNATIONS { get; set; }
-        public List<string> NATIONNAMES { get; set; }
-        public List<NATION> NATIONS { get; set; }
+        public HashSet<string> NATIONNAMES { get; set; }
+        public HashSet<NATION> NATIONS { get; set; }
         public string DELEGATE { get; set; }
         public int DELEGATEVOTES { get; set; }
         public string DELEGATEAUTH { get; set; }
@@ -27,8 +27,8 @@ namespace NationStatesAPIBot.DumpData
             return obj is REGION region &&
                    NAME == region.NAME &&
                    NUMNATIONS == region.NUMNATIONS &&
-                   EqualityComparer<List<string>>.Default.Equals(NATIONNAMES, region.NATIONNAMES) &&
-                   EqualityComparer<List<NATION>>.Default.Equals(NATIONS, region.NATIONS) &&
+                   EqualityComparer<HashSet<string>>.Default.Equals(NATIONNAMES, region.NATIONNAMES) &&
+                   EqualityComparer<HashSet<NATION>>.Default.Equals(NATIONS, region.NATIONS) &&
                    DELEGATE == region.DELEGATE &&
                    DELEGATEVOTES == region.DELEGATEVOTES &&
                    DELEGATEAUTH == region.DELEGATEAUTH &&
