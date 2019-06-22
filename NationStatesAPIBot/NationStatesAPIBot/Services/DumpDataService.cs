@@ -10,47 +10,181 @@ using NationStatesAPIBot.DumpData;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Types;
+using System.IO;
 
 namespace NationStatesAPIBot.Services
 {
     public class DumpDataService
     {
         private readonly ILogger<DumpDataService> _logger;
-        private readonly BaseApiService _apiService;
-        private static List<NATION> _nations;
-        private static List<REGION> _regions;
-        private static Task _updating;
-
-        public DumpDataService(ILogger<DumpDataService> logger, BaseApiService apiService, CancellationToken stop)
+        private readonly NationStatesApiService _apiService;
+        private List<NATION> _nations;
+        private List<REGION> _regions;
+        private bool isDumpUpdateCycleRunning = false;
+        private CancellationTokenSource tokenSource = new CancellationTokenSource();
+        private DateTime lastDumpUpdateTime = DateTime.UnixEpoch;
+        private string regionFileName = "regions-dump-latest.xml.gz";
+        private string nationFileName = "nations-dump-latest.xml.gz";
+        private EventId defaultEventId;
+        public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService, CancellationToken stop)
         {
             _logger = logger;
             _apiService = apiService;
-            _logger.LogInformation($"--- DumpDataService started ---");
-            PeriodicUpdate(TimeSpan.FromDays(1), stop);
+            defaultEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.DumpDataServiceAction);
+            _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
+            StartDumpUpdateCycle();
         }
-        
-        public async Task PeriodicUpdate(TimeSpan interval, CancellationToken stop)
+
+        public bool IsUpdating { get; private set; } = false;
+
+        public bool DataAvailable { get; private set; } = false;
+
+        private string GetLogMessage(string message)
         {
-            while (true)
+            return LogMessageBuilder.Build(defaultEventId, message);
+        }
+
+        public void StartDumpUpdateCycle()
+        {
+            isDumpUpdateCycleRunning = true;
+            Task.Run(async () => await UpdateCycle());
+        }
+
+        public void StopDumpUpdateCycle()
+        {
+            isDumpUpdateCycleRunning = false;
+            tokenSource.Cancel();
+        }
+
+        private async Task UpdateCycle()
+        {
+            _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been started ---"));
+            while (isDumpUpdateCycleRunning)
             {
-                await Update();
-                await Task.Delay(interval, stop);
+                await UpdateData();
+            }
+            _logger.LogWarning(defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been stopped ---"));
+        }
+
+        private bool IsLocalDataAvailable()
+        {
+            var existence = File.Exists(regionFileName) && File.Exists(nationFileName);
+            if (existence)
+            {
+                var fileInfoRegions = new FileInfo(regionFileName);
+                var fileInfoNations = new FileInfo(nationFileName);
+                var outdated = fileInfoNations.CreationTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.CreationTimeUtc != DateTime.UtcNow.Date;
+                if (outdated)
+                {
+                    _logger.LogDebug("Local DumpData found but outdated");
+                    return false;
+                }
+                else
+                {
+                    _logger.LogDebug("Local DumpData found");
+                    return true;
+                }
+            }
+            else
+            {
+                _logger.LogDebug("No Local DumpData found");
+                return false;
             }
         }
 
-        public Task Update()
+        private async Task UpdateData()
         {
-            return _updating = new Task(async () =>
+            try
             {
-                _logger.LogInformation("Updating NATION and REGION collections from dumps");
-                var regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
-                var nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
-                _regions = GetRegionsFromCompressedStream(regionsStream);
-                _nations = GetNationsFromCompressedStream(nationsStream);
-                AddNationsToRegions();
-            });
+                if (lastDumpUpdateTime == DateTime.UnixEpoch)
+                {
+                    await InitialUpdate();
+                }
+                else
+                {
+                    await _apiService.WaitForAction(NationStatesApiRequestType.DownloadDumps, TimeSpan.FromMinutes(30), tokenSource.Token);
+                    if (!tokenSource.Token.IsCancellationRequested)
+                    {
+                        IsUpdating = true;
+                        _logger.LogInformation("--- Updating NATION and REGION collections from dumps ---");
+                        await DowloadAndReadDumpsAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(defaultEventId, ex, GetLogMessage("A critical error occurred while processing of Dump Update"));
+            }
+            finally
+            {
+                IsUpdating = false;
+            }
         }
-        
+
+        private async Task InitialUpdate()
+        {
+            _logger.LogInformation("--- Updating NATION and REGION collections from dumps ---");
+            IsUpdating = true;
+            DataAvailable = false;
+            _logger.LogDebug(defaultEventId, GetLogMessage("No Dumpdata available"));
+            if (IsLocalDataAvailable())
+            {
+                _logger.LogDebug(defaultEventId, GetLogMessage("Reading Dumps from local Filesystem"));
+                ReadDumpsFromLocalFileSystem();
+            }
+            else
+            {
+                _logger.LogDebug(defaultEventId, GetLogMessage("Downloading and Reading Dumps"));
+                await DowloadAndReadDumpsAsync();
+            }
+        }
+
+        private void LoadDumpsFromStream(GZipStream regionsStream, GZipStream nationsStream)
+        {
+            _regions = GetRegionsFromCompressedStream(regionsStream);
+            _nations = GetNationsFromCompressedStream(nationsStream);
+            AddNationsToRegions();
+            DataAvailable = true;
+        }
+
+        private void ReadDumpsFromLocalFileSystem()
+        {
+            GZipStream regionStream;
+            GZipStream nationStream;
+            using (var fs = new FileStream(regionFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                regionStream = new GZipStream(fs, CompressionMode.Decompress);
+            }
+            using (var fs = new FileStream(nationFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                nationStream = new GZipStream(fs, CompressionMode.Decompress);
+            }
+            var fileInfoNations = new FileInfo(nationFileName);
+            lastDumpUpdateTime = fileInfoNations.CreationTimeUtc;
+            LoadDumpsFromStream(regionStream, nationStream);
+        }
+
+        private async Task DowloadAndReadDumpsAsync()
+        {
+            var regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
+            var nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
+            LoadDumpsFromStream(regionsStream, nationsStream);
+            lastDumpUpdateTime = DateTime.UtcNow;
+            await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
+            await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Regions, regionsStream);
+        }
+
+        private async Task WriteDumpToLocalFileSystemAsync(NationStatesDumpType dumpType, GZipStream compressedStream)
+        {
+            if (dumpType != NationStatesDumpType.Nations || dumpType != NationStatesDumpType.Regions)
+                throw new ArgumentException("Unknown DumpType");
+            string fileName = dumpType == NationStatesDumpType.Nations ? nationFileName : regionFileName;
+            using (var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await compressedStream.CopyToAsync(fs);
+            }
+        }
+
         private List<REGION> GetRegionsFromCompressedStream(GZipStream stream)
         {
             _logger.LogDebug("Extracting compressed stream to REGION Collection");
@@ -63,7 +197,7 @@ namespace NationStatesAPIBot.Services
             return ParseNationsFromCompressedStream(stream);
         }
 
-        private static List<REGION> ParseRegionsFromCompressedStream(GZipStream stream)
+        private List<REGION> ParseRegionsFromCompressedStream(GZipStream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
             return xml.Descendants("REGION").Select(m =>
@@ -88,7 +222,7 @@ namespace NationStatesAPIBot.Services
                 }).ToList();
         }
 
-        private static List<OFFICER> BuildOfficers(XElement m)
+        private List<OFFICER> BuildOfficers(XElement m)
         {
             return m.Element("OFFICERS").Descendants("OFFICER").Select(o => new OFFICER
             {
@@ -101,10 +235,10 @@ namespace NationStatesAPIBot.Services
             }).ToList();
         }
 
-        private static List<NATION> ParseNationsFromCompressedStream(GZipStream stream)
+        private List<NATION> ParseNationsFromCompressedStream(GZipStream stream)
         {
             List<NATION> nations = new List<NATION>();
-    
+
             XmlReader reader = XmlReader.Create(stream);
             reader.ReadToDescendant("NATIONS");
             reader.ReadToDescendant("NATION");
@@ -117,11 +251,11 @@ namespace NationStatesAPIBot.Services
             }
             while (reader.ReadToNextSibling("NATION"));
             reader.Close();
-
+            reader.Dispose();
             return nations;
         }
 
-        private static NATION BuildNation(XElement m)
+        private NATION BuildNation(XElement m)
         {
             return new NATION
             {
@@ -217,53 +351,53 @@ namespace NationStatesAPIBot.Services
             };
         }
 
-        private static REGION GetRegionInternal(string name)
+        private REGION GetRegionInternal(string name)
         {
             return _regions.Find(r => r.NAME == name);
         }
-        
-        private static NATION GetNationInternal(string name)
+
+        private NATION GetNationInternal(string name)
         {
             return _nations.Find(n => n.NAME == name);
         }
-        
-        private static void AddNationsToRegions()
+
+        private void AddNationsToRegions()
         {
             foreach (var region in _regions)
             {
                 region.NATIONNAMES.ForEach(name => region.NATIONS.Add(GetNationInternal(name)));
             }
         }
-        
+
         public async Task<NATION> GetNationAsync(string name)
         {
-            await WaitForUpdate();
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Nation {name} requested."));
+            await WaitForDataAvailabilityAsync();
             return GetNationInternal(name);
         }
-        
+
         public async Task<REGION> GetRegionAsync(string name)
         {
-            await WaitForUpdate();
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Nation {name} requested."));
+            await WaitForDataAvailabilityAsync();
             return GetRegionInternal(name);
         }
-        
-        public async Task<List<NATION>> GetAllNationsAsync()
+
+        private async Task WaitForDataAvailabilityAsync()
         {
-            await WaitForUpdate();
-            return _nations;
-        }
-        
-        public async Task<List<REGION>> GetAllRegionsAsync()
-        {
-            await WaitForUpdate();
-            return _regions;
-        }
-        
-        private async Task WaitForUpdate()
-        {
-            while (_updating.Status != TaskStatus.Created && !_updating.IsCompleted) // While any status implying it has started and is not yet finished
+            if (DataAvailable && !IsUpdating)
+                return;
+            if(IsUpdating)
             {
-                await Task.Delay(1000);
+                while (IsUpdating && !tokenSource.Token.IsCancellationRequested)
+                {
+                    await Task.Delay(1000);
+                }
+                tokenSource.Token.ThrowIfCancellationRequested();
+            }
+            else if(!DataAvailable)
+            {
+                throw new DataUnavailableException("No data available that could be accessed.");
             }
         }
     }
