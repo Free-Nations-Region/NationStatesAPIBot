@@ -30,8 +30,10 @@ All Points prefixed with Maybe are not known if they will be implemented with th
 ## Version 3
 
 ### Version 3.1 (Planned for July 15th)
-- Implement Cache First Approach with help of dumps, etc.
-- Add refounded nations to pending  
+- Implement Cache First Approach with help of dumps, etc. (done)
+- Add refounded nations to pending (done) 
+- Revoke Permission Command (done)
+
 - Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
 - Stats about success of manual and automatic recruitment -> - (send, skipped, failed, pending count) for total from dump and db  
 - Maybe (- Polls)
@@ -58,3 +60,5 @@ All Points prefixed with Maybe are not known if they will be implemented with th
 - Basic Moderator Features (Kick, Ban, Mute, Delete Messages, etc.)
 - Games (Werewolf)  
 - RMB <-> Discord Bridge
+- Assign and Revoke Roles
+- Assign and Revoke Role permissions
