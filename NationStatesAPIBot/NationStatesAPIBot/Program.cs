@@ -54,6 +54,7 @@ namespace NationStatesAPIBot
             // add services
             serviceCollection.AddSingleton<IBotService, DiscordBotService>();
             serviceCollection.AddSingleton<NationStatesApiService, NationStatesApiService>();
+            serviceCollection.AddSingleton<DumpDataService, DumpDataService>();
             serviceCollection.AddSingleton<IPermissionManager, PermissionManager>();
             serviceCollection.AddSingleton<RecruitmentService, RecruitmentService>();
             // add app

@@ -105,19 +105,21 @@ namespace NationStatesAPIBot.Services
                 if (type == NationStatesDumpType.Nations)
                 {
                     url += "nations.xml.gz";
+                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Nation dump requested"));
                 }
                 else if (type == NationStatesDumpType.Regions)
                 {
                     url += "regions.xml.gz";
+                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Region dump requested"));
                 }
                 else
                 {
                     throw new NotImplementedException($"Retrieval for DumpType {type} not implemented yet.");
                 }
-                using (var stream = await ExecuteRequestWithStreamResult(url, eventId))
-                {
-                    return new GZipStream(stream, CompressionMode.Decompress);
-                }
+                var stream = await ExecuteRequestWithStreamResult(url, eventId);
+                var compressed = new GZipStream(stream,CompressionMode.Decompress);
+                return compressed;
+                
             }
             finally
             {

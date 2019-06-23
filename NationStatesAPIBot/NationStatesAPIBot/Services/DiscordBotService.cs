@@ -10,7 +10,7 @@ using Discord;
 using NationStatesAPIBot.Types;
 using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Managers;
-
+using Microsoft.Extensions.DependencyInjection;
 namespace NationStatesAPIBot.Services
 {
     public class DiscordBotService : IBotService
@@ -187,6 +187,8 @@ namespace NationStatesAPIBot.Services
         {
             await DiscordClient.LogoutAsync();
             await DiscordClient.StopAsync();
+            Program.ServiceProvider.GetService<RecruitmentService>().StopRecruitment();
+            Program.ServiceProvider.GetService<DumpDataService>().StopDumpUpdateCycle();
             IsRunning = false;
             Environment.Exit(0);
         }

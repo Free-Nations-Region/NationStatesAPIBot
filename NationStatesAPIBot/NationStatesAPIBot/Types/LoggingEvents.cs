@@ -16,5 +16,6 @@
         WouldReceiveTelegram = 11100,
         GetRecruitableNations = 11200,
         SendRecruitmentTelegram = 12000,
+        DumpDataServiceAction = 13000
     }
 }

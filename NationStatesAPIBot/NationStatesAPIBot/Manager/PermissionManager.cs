@@ -36,7 +36,7 @@ namespace NationStatesAPIBot.Managers
             throw new NotImplementedException();
         }
 
-        public Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
+        public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
             throw new NotImplementedException();
         }
