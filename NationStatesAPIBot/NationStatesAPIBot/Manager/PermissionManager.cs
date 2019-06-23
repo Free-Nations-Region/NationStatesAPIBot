@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace NationStatesAPIBot.Managers
 {
@@ -38,7 +39,7 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            var user = dbContext.Users.FirstOrDefault(u => u.DiscordUserId == discordUserId);
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
             if (user == null)
             {
                 var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
