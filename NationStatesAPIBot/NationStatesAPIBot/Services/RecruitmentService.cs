@@ -74,31 +74,15 @@ namespace NationStatesAPIBot.Services
                 {
                     var picked = pendingNations.Take(1);
                     var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (nation != null)
+                    if (await IsNationRecruitableAsync(nation, id))
                     {
-                        while (!await DoesNationFitCriteriaAsync(nation))
-                        {
-                            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped"));
-                            pendingNations.Remove(nation);
-                            await NationManager.SetNationStatusToAsync(nation, "skipped");
-                            picked = pendingNations.Take(1);
-                            nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                        }
-                        while (!await WouldReceiveTelegram(nation.Name))
-                        {
-                            pendingNations.Remove(nation);
-                            await NationManager.SetNationStatusToAsync(nation, "skipped");
-                            picked = pendingNations.Take(1);
-                            nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Nation: {nation.Name} would not receive this recruitment telegram and is therefore skipped."));
-                        }
-                        pendingNations.Remove(nation);
                         returnNations.Add(nation);
                         if (IsReceivingRecruitableNations)
                         {
                             currentRNStatus.CurrentCount++;
                         }
                     }
+                    pendingNations.Remove(nation);
                     returnNations = returnNations.Distinct().ToList();
                 }
             }
@@ -110,14 +94,27 @@ namespace NationStatesAPIBot.Services
 
         }
 
+        private async Task<bool> IsNationRecruitableAsync(Nation nation, EventId id)
+        {
+            if (nation != null)
+            {
+                if (!await DoesNationFitCriteriaAsync(nation) || !await WouldReceiveTelegram(nation.Name))
+                {
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped"));
+                    await NationManager.SetNationStatusToAsync(nation, "skipped");
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
         private async Task<bool> DoesNationFitCriteriaAsync(Nation nation)
         {
             if (_config.CriteriaCheckOnNations)
             {
-                string pattern = @"(^[0-9]+?|[0-9]+?$)";
-                var name = nation.Name;
-                var res = !Regex.IsMatch(name, pattern);
-
+                var res = !nation.Name.Any(c => char.IsDigit(c));
+                _logger.LogDebug($"{nation.Name} criteria fit: {res}");
                 return await Task.FromResult(res);
             }
             else
@@ -187,7 +184,7 @@ namespace NationStatesAPIBot.Services
                     {
                         if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                         {
-                            if (await WouldReceiveTelegram(nation.Name))
+                            if (await IsNationRecruitableAsync(nation, defaulEventId))
                             {
                                 if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
                                 {
@@ -199,14 +196,8 @@ namespace NationStatesAPIBot.Services
                                     _logger.LogWarning(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
                                     await NationManager.SetNationStatusToAsync(nation, "failed");
                                 }
-                                pendingNations.Remove(nation);
                             }
-                            else
-                            {
-                                _logger.LogDebug(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Nation: {nation.Name} wouldn't receive an recruitment telegram and is therefore skipped."));
-                                await NationManager.SetNationStatusToAsync(nation, "skipped");
-                                pendingNations.Remove(nation);
-                            }
+                            pendingNations.Remove(nation);
                         }
                     }
                 }
