@@ -113,7 +113,7 @@ namespace NationStatesAPIBot.Services
         {
             if (_config.CriteriaCheckOnNations)
             {
-                var res = !nation.Name.Any(c => char.IsDigit(c));
+                var res = !nation.Name.Any(c => char.IsDigit(c)) && !(nation.Name.Count(c => c == nation.Name[0]) == nation.Name.Length);
                 _logger.LogDebug($"{nation.Name} criteria fit: {res}");
                 return await Task.FromResult(res);
             }
