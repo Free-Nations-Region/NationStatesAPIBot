@@ -47,6 +47,12 @@ namespace NationStatesAPIBot.Managers
                 return;
             }
             var perm = user.UserPermissions.FirstOrDefault(p => p.Permission.Id == permission.Id);
+            if (perm == null)
+            {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Revoke Permission: Permission.Id '{permission.Id}' not found in user.UserPermissions"));
+                return;
+            }
             var update = dbContext.Users.Update(user);
             update.Entity.UserPermissions.Remove(perm);
             await dbContext.SaveChangesAsync();
