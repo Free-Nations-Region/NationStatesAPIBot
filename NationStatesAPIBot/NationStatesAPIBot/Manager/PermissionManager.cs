@@ -38,8 +38,14 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            var user = dbContext.Users.Single(u => u.DiscordUserId == discordUserId);
-            var perm = user.UserPermissions.Find(p => p.Permission.Id == permission.Id);
+            var user = dbContext.Users.FirstOrDefault(u => u.DiscordUserId == discordUserId);
+            if (user == null)
+            {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Revoke Permission: DiscordUserId '{discordUserId}' not found in DB"));
+                return;
+            }
+            var perm = user.UserPermissions.FirstOrDefault(p => p.Permission.Id == permission.Id);
             var update = dbContext.Users.Update(user);
             update.Entity.UserPermissions.Remove(perm);
             await dbContext.SaveChangesAsync();
