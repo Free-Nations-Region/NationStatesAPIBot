@@ -73,7 +73,11 @@ namespace NationStatesAPIBot.Services
             {
                 var fileInfoRegions = new FileInfo(regionFileName);
                 var fileInfoNations = new FileInfo(nationFileName);
-                var outdated = fileInfoNations.CreationTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.CreationTimeUtc.Date != DateTime.UtcNow.Date;
+                var outdated = fileInfoNations.LastWriteTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.LastWriteTimeUtc.Date != DateTime.UtcNow.Date;
+                if (DateTime.UtcNow.TimeOfDay < new TimeSpan(7, 0, 0) && outdated)
+                {
+                    outdated = false;
+                }
                 if (outdated)
                 {
                     _logger.LogDebug("Local DumpData found but outdated");
