@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace NationStatesAPIBot.Managers
 {
@@ -38,7 +39,23 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            throw new NotImplementedException();
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
+            if (user == null)
+            {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Revoke Permission: DiscordUserId '{discordUserId}' not found in DB"));
+                return;
+            }
+            var perm = user.UserPermissions.FirstOrDefault(p => p.Permission.Id == permission.Id);
+            if (perm == null)
+            {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Revoke Permission: Permission.Id '{permission.Id}' not found in user.UserPermissions"));
+                return;
+            }
+            var update = dbContext.Users.Update(user);
+            update.Entity.UserPermissions.Remove(perm);
+            await dbContext.SaveChangesAsync();
         }
 
         public Task AddPermissionToRoleAsync(Role role, Permission permission, BotDbContext dbContext)
