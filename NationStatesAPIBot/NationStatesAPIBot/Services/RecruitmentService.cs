@@ -64,6 +64,7 @@ namespace NationStatesAPIBot.Services
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRecruitableNations);
             try
             {
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested"));
                 List<Nation> pendingNations = new List<Nation>();
                 if (pendingNations.Count == 0)
                 {
@@ -77,7 +78,11 @@ namespace NationStatesAPIBot.Services
                     {
                         while (!await DoesNationFitCriteriaAsync(nation))
                         {
+                            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped"));
+                            pendingNations.Remove(nation);
                             await NationManager.SetNationStatusToAsync(nation, "skipped");
+                            picked = pendingNations.Take(1);
+                            nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
                         }
                         while (!await WouldReceiveTelegram(nation.Name))
                         {
@@ -94,6 +99,7 @@ namespace NationStatesAPIBot.Services
                             currentRNStatus.CurrentCount++;
                         }
                     }
+                    returnNations = returnNations.Distinct().ToList();
                 }
             }
             catch (Exception ex)
@@ -108,8 +114,11 @@ namespace NationStatesAPIBot.Services
         {
             if (_config.CriteriaCheckOnNations)
             {
-                string pattern = @"(^[0-9]*?|[0-9]*?$)";
-                return await Task.FromResult(Regex.IsMatch(nation.Name, pattern));
+                string pattern = @"(^[0-9]+?|[0-9]+?$)";
+                var name = nation.Name;
+                var res = !Regex.IsMatch(name, pattern);
+
+                return await Task.FromResult(res);
             }
             else
             {
@@ -127,6 +136,8 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, "Result of GetWouldReceiveTelegramAsync were null"));
                 return false;
             }
         }
@@ -185,12 +196,14 @@ namespace NationStatesAPIBot.Services
                                 }
                                 else
                                 {
+                                    _logger.LogWarning(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
                                     await NationManager.SetNationStatusToAsync(nation, "failed");
                                 }
                                 pendingNations.Remove(nation);
                             }
                             else
                             {
+                                _logger.LogDebug(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Nation: {nation.Name} wouldn't receive an recruitment telegram and is therefore skipped."));
                                 await NationManager.SetNationStatusToAsync(nation, "skipped");
                                 pendingNations.Remove(nation);
                             }

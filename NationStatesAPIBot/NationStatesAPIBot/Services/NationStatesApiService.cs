@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -17,7 +19,7 @@ namespace NationStatesAPIBot.Services
         public const long API_REQUEST_INTERVAL = 6000000; //0,6 s
         public const long SEND_NON_RECRUITMENTTELEGRAM_INTERVAL = 300000000; //30 s
         public const long SEND_RECRUITMENTTELEGRAM_INTERVAL = 1800000000; //3 m 1800000000
-        public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 36000000000
+        public const long REQUEST_NEW_NATIONS_INTERVAL = 72000000000; //2 h 72000000000
         public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
 
         public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
@@ -152,11 +154,20 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetNewNations-Request"));
             await WaitForAction(NationStatesApiRequestType.GetNewNations);
-            var url = BuildApiRequestUrl("q=newnations");
-            XmlDocument newNationsXML = await ExecuteRequestWithXmlResult(url, eventId);
+            var url = BuildApiRequestUrl("q=happenings;filter=founding&limit=200");
+            XmlDocument foundingsXML = await ExecuteRequestWithXmlResult(url, eventId);
             lastAutomaticNewNationsRequest = DateTime.UtcNow;
-            XmlNodeList newNationsXMLNodes = newNationsXML.GetElementsByTagName("NEWNATIONS");
-            return newNationsXMLNodes[0].InnerText.Split(',').ToList().Select(nation => ToID(nation)).ToList();
+            XmlNodeList foundingXMLNodes = foundingsXML.GetElementsByTagName("TEXT");
+
+            List<string> foundings = new List<string>();
+            Regex regex = new Regex("@@(.*?)@@");
+
+            for (int i = 0; i < foundingXMLNodes.Count; i++)
+            {
+                var name = regex.Match(foundingXMLNodes.Item(i).InnerText).Value;
+                foundings.Add(name);
+            }
+            return foundings.Select(nation => ToID(nation)).ToList();
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)

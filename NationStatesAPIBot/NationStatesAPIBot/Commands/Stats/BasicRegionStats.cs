@@ -29,6 +29,7 @@ namespace NationStatesAPIBot.Commands.Stats
             try
             {
                 string regionName = string.Join(" ", args);
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"BasicRegionStats for {regionName} requested."));
                 XmlDocument regionStats = await dataService.GetRegionStatsAsync(regionName, id);
 
                 if (regionStats != null)

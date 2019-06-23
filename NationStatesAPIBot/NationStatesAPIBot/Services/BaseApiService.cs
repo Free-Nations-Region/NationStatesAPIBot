@@ -55,16 +55,38 @@ namespace NationStatesAPIBot.Services
         protected async Task<Stream> ExecuteRequestWithStreamResult(string url, EventId? eventId)
         {
             var response = await ExecuteGetRequest(url, eventId);
-            return await response.Content.ReadAsStreamAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStreamAsync();
+            }
+            else
+            {
+                return null;
+            }
         }
 
-        protected async Task<XmlDocument> ExecuteRequestWithXmlResult(string url, EventId? eventId)
+        protected async Task<XmlDocument> ExecuteRequestWithXmlResult(string url, EventId eventId)
         {
             using (var stream = await ExecuteRequestWithStreamResult(url, eventId))
             {
-                XmlDocument xml = new XmlDocument();
-                xml.Load(stream);
-                return xml;
+                try
+                {
+                    if (stream != null)
+                    {
+                        XmlDocument xml = new XmlDocument();
+                        xml.Load(stream);
+                        return xml;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(eventId, ex, LogMessageBuilder.Build(eventId, $"Some critical error with xml occured.{Environment.NewLine}XML: {await new StreamReader(stream).ReadToEndAsync()}"));
+                    return null;
+                }
             }
         }
 
@@ -112,7 +134,7 @@ namespace NationStatesAPIBot.Services
         /// <returns>Formated string</returns>
         internal static string ToID(string text)
         {
-            return text?.Trim().ToLower().Replace(' ', '_');
+            return text?.Trim().ToLower().Replace(' ', '_').Trim('@');
         }
 
         /// <summary>

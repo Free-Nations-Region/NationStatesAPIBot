@@ -31,6 +31,7 @@ namespace NationStatesAPIBot.Commands.Stats
             try
             {
                 string nationName = string.Join(" ", args);
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"BasicNationStats for {nationName} requested."));
                 XmlDocument nationStats = await dataService.GetNationStatsAsync(nationName, id);
                 if (nationStats != null)
                 {
