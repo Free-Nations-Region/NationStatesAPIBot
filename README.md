@@ -34,7 +34,10 @@ All Points prefixed with Maybe are not known if they will be implemented with th
 - Add refounded nations to pending (done) 
 - Revoke Permission Command (done)
 
+- Get all (in FNR) eligible to voters
+- Generate a List of (EVC like OVC) amount: number of eligible voters
 - Get Nations that were endorsed by a nation (endorsed) (on cache only) (and nne too)
+
 - Stats about success of manual and automatic recruitment -> - (send, skipped, failed, pending count) for total from dump and db  
 - Maybe (- Polls)
 
