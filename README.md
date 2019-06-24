@@ -17,3 +17,7 @@ It will be extended as needed.
 It can probably be used for general purpose as well.
 
 Feel free to contribute!
+
+[Release Notes](https://github.com/drehtisch/NationStatesAPIBot/wiki/Release-Notes)
+[Command Reference](https://github.com/drehtisch/NationStatesAPIBot/wiki/Command-Reference)
+[Roadmap](https://github.com/drehtisch/NationStatesAPIBot/wiki/Roadmap)
