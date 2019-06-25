@@ -249,10 +249,10 @@ namespace NationStatesAPIBot.Services
 
         private async void UpdateRecruitmentStatsAsync()
         {
-            var today = DateTime.Today.Date;
-            
             while (IsRecruiting)
             {                
+                var today = DateTime.Today.Date;
+                
                 var sent = NationManager.GetNationsByStatusName("send");
                 var manual = NationManager.GetNationsByStatusName("reserved_manual");
                 var region = await _dumpDataService.GetRegionAsync(_config.NationStatesRegionName);
@@ -270,11 +270,7 @@ namespace NationStatesAPIBot.Services
                 ManualRecruited = manualRecruited.Count;
                 ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
                 
-                if (today.Date != DateTime.Today.Date || !File.Exists(@"/RecruitmentStats.json"))
-                {
-                    await WriteRecruited(today.AddDays(-1), apiRecruited, manualRecruited);
-                    today = DateTime.Today.Date;
-                }
+                await WriteRecruited(today, apiRecruited, manualRecruited);
                 
                 var rt = await GetRecruitedOn(today);
                 RecruitedTodayA = rt[0];
@@ -323,9 +319,15 @@ namespace NationStatesAPIBot.Services
                 var newApi = allApi.Except(oldAllApi).ToList();
                 var newManual = allManual.Except(oldAllManual).ToList();
                 stats["all"] = new JObject(new JProperty("api", allApi), new JProperty("manual", allManual));
-                stats.Add(new JObject(new JProperty($"{date.Date}", new JObject(
-                    new JProperty("api", newApi), 
-                    new JProperty("manual", newManual)))));
+                var jo = new JObject(new JProperty("api", newApi), new JProperty("manual", newManual));
+                if (stats.GetValue($"{date.Date}") == null)
+                {
+                    stats.Add(new JObject(new JProperty($"{date.Date}", jo)));
+                }
+                else
+                {
+                    stats[$"{date.Date}"] = jo;
+                }
                 json = stats.ToString();
             }
             File.WriteAllText(@"/RecruitmentStats.json", json);
