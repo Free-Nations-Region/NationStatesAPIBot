@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
@@ -21,12 +20,30 @@ namespace NationStatesAPIBot.Services
         private readonly EventId defaulEventId;
         private readonly AppSettings _config;
         private readonly NationStatesApiService _apiService;
+        private readonly DumpDataService _dumpDataService;
+        
+        public int ApiSent { get; private set; }
+        public int ApiPending { get; private set; }
+        public int ApiSkipped { get; private set; }
+        public int ApiFailed { get; private set; }
+        public int ApiRecruited { get; private set; }
+        public double ApiRatio { get; private set; }
+        public int ManualReserved { get; private set; }
+        public int ManualRecruited { get; private set; }
+        public double ManualRatio { get; private set; }
+        public int RecruitedToday { get; private set; }
+        public int RecruitedYesterday { get; private set; }
+        public int RecruitedLastWeek { get; private set; }
+        public int RecruitedLastWeekAvgD { get; private set; }
+        public int RecruitedLastMonth { get; private set; }
+        public int RecruitedLastMonthAvgD { get; private set; }
 
-        public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, NationStatesApiService apiService)
+        public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, NationStatesApiService apiService, DumpDataService dumpDataService)
         {
             _logger = logger;
             _config = appSettings.Value;
             _apiService = apiService;
+            _dumpDataService = dumpDataService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
         }
 
@@ -38,6 +55,7 @@ namespace NationStatesAPIBot.Services
             IsRecruiting = true;
             Task.Run(async () => await GetNewNationsAsync());
             Task.Run(async () => await RecruitAsync());
+            UpdateRecruitmentStatsAsync();
             _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
         }
 
@@ -218,6 +236,29 @@ namespace NationStatesAPIBot.Services
             else
             {
                 return "No /rn command currently running.";
+            }
+        }
+
+        private async void UpdateRecruitmentStatsAsync()
+        {
+            while (IsRecruiting)
+            {
+                var sent = NationManager.GetNationsByStatusName("send");
+                var manual = NationManager.GetNationsByStatusName("reserved_manual");
+                ApiSent = sent.Count;
+                ManualReserved = manual.Count;
+                ApiPending = NationManager.GetNationsByStatusName("pending").Count;
+                ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
+                ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+
+                var region = await _dumpDataService.GetRegionAsync(_config.NationStatesRegionName);
+                ApiRecruited = region.NATIONS.Count(n => sent.Any(s => n.NAME == s.Name));
+                ManualRecruited = region.NATIONS.Count(n => manual.Any(m => n.NAME == m.Name));
+
+                ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2); 
+                ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
+                
+                await Task.Delay(TimeSpan.FromHours(24));
             }
         }
     }

@@ -3,13 +3,11 @@ using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using NationStatesAPIBot.Services;
 using NationStatesAPIBot.Manager;
 
@@ -20,18 +18,14 @@ namespace NationStatesAPIBot.Commands.Management
         readonly IPermissionManager _permManager;
         readonly ILogger<Recruitment> _logger;
         readonly RecruitmentService _recruitmentService;
-        private readonly DumpDataService _dumpDataService;
-        readonly AppSettings _config;
 
         static readonly string actionQueued = $"Your action was queued successfully. Please be patient this may take a moment.";
 
-        public Recruitment(IPermissionManager permissionManager, ILogger<Recruitment> logger, RecruitmentService recruitmentService, DumpDataService dumpDataService, IOptions<AppSettings> config)
+        public Recruitment(IPermissionManager permissionManager, ILogger<Recruitment> logger, RecruitmentService recruitmentService)
         {
             _permManager = permissionManager ?? throw new ArgumentNullException(nameof(permissionManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _recruitmentService = recruitmentService;
-            _dumpDataService = dumpDataService;
-            _config = config.Value;
         }
 
         [Command("startRecruitment"), Summary("Starts the recruitment process")]
@@ -193,28 +187,22 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                var sent = NationManager.GetNationsByStatusName("send");
-                var manual = NationManager.GetNationsByStatusName("reserved_manual");
-                var pending = NationManager.GetNationsByStatusName("pending").Count;
-                var skipped = NationManager.GetNationsByStatusName("skipped").Count;
-                var failed = NationManager.GetNationsByStatusName("failed").Count;
-
-                var region = await _dumpDataService.GetRegionAsync(_config.NationStatesRegionName);
-                var apiRecruited = region.NATIONS.Count(n => sent.Any(s => n.NAME == s.Name));
-                var manualRecruited = region.NATIONS.Count(n => manual.Any(m => n.NAME == m.Name));
-
-                var apiRatio = Math.Round((100 * apiRecruited / (sent.Count + failed + 0.0)), 2); 
-                var manualRatio = Math.Round((100 * manualRecruited / (manual.Count + 0.0)), 2);
-                
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"Recruitment statistics:");
-                builder.WithDescription($"Sent (API): {sent.Count}{Environment.NewLine}" +
-                                        $"Pending (API): {pending}{Environment.NewLine}" +
-                                        $"Skipped (API): {skipped}{Environment.NewLine}" +
-                                        $"Failed (API): {failed}{Environment.NewLine}" +
-                                        $"Recruited (API): {apiRecruited} ({apiRatio}%){Environment.NewLine}" +
-                                        $"Reserved (Manual): {manual.Count}{Environment.NewLine}" +
-                                        $"Recruited (Manual): {manualRecruited} ({manualRatio}%){Environment.NewLine}");
+                builder.WithDescription($"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
+                                        $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
+                                        $"Skipped (API): {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
+                                        $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
+                                        $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio}%){Environment.NewLine}" +
+                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
+                                        $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio}%){Environment.NewLine}" +
+                                        $"Recruited Today: {_recruitmentService.RecruitedToday}{Environment.NewLine}" +
+                                        $"Recruited Yesterday: {_recruitmentService.RecruitedYesterday}{Environment.NewLine}{Environment.NewLine}" +
+                                        $"Recruited Last Week: {_recruitmentService.RecruitedLastWeek}{Environment.NewLine}" +
+                                        $"Recruited Last Week (Avg/D): {_recruitmentService.RecruitedLastWeekAvgD}{Environment.NewLine}" +
+                                        $"Recruited Last Month: {_recruitmentService.RecruitedLastMonth}{Environment.NewLine}" +
+                                        $"Recruited Last Month (Avg/D): {_recruitmentService.RecruitedLastMonthAvgD}{Environment.NewLine}" +
+                                        $"Note: recruits which CTE'd or left the region are excluded.");
                 builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                 
                 await ReplyAsync(embed: builder.Build());
