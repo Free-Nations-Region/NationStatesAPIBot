@@ -252,13 +252,13 @@ namespace NationStatesAPIBot.Services
             while (IsRecruiting)
             {                
                 var today = DateTime.Today.Date;
-                
-                var sent = NationManager.GetNationsByStatusName("send");
-                var manual = NationManager.GetNationsByStatusName("reserved_manual");
+
+                var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
+                var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
                 var region = await _dumpDataService.GetRegionAsync(_config.NationStatesRegionName);
 
-                var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s.Name)).ToList();
-                var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m.Name)).ToList();
+                var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
+                var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
                 
                 ApiSent = sent.Count;
                 ApiPending = NationManager.GetNationsByStatusName("pending").Count;
@@ -300,7 +300,7 @@ namespace NationStatesAPIBot.Services
         }
         
         // TODO: Put data in DB
-        private async Task WriteRecruited(DateTime date, List<NATION> allApi, List<NATION> allManual)
+        private static async Task WriteRecruited(DateTime date, IReadOnlyCollection<string> allApi, IReadOnlyCollection<string> allManual)
         {
             string json;
             if (!File.Exists(@"/RecruitmentStats.json"))
@@ -314,8 +314,8 @@ namespace NationStatesAPIBot.Services
             else
             {
                 var stats = JObject.Parse(File.ReadAllText(@"/RecruitmentStats.json"));
-                var oldAllApi = stats["all"]["api"].Value<List<NATION>>();
-                var oldAllManual = stats["all"]["manual"].Value<List<NATION>>();
+                var oldAllApi = stats["all"]["api"].Value<List<string>>();
+                var oldAllManual = stats["all"]["manual"].Value<List<string>>();
                 var newApi = allApi.Except(oldAllApi).ToList();
                 var newManual = allManual.Except(oldAllManual).ToList();
                 stats["all"] = new JObject(new JProperty("api", allApi), new JProperty("manual", allManual));
@@ -334,29 +334,27 @@ namespace NationStatesAPIBot.Services
         }
         
         // TODO: Get data from DB
-        private async Task<List<int>> GetRecruitedOn(DateTime date)
+        private static async Task<List<int>> GetRecruitedOn(DateTime date)
         {
             var stats = JObject.Parse(File.ReadAllText(@"/RecruitmentStats.json"));
-            var checkApi = stats.GetValue("all")["api"].Value<List<NATION>>();
-            var checkManual = stats.GetValue("all")["manual"].Value<List<NATION>>();
-            var api = stats.GetValue($"{date.Date}")?["api"].Value<List<NATION>>();
-            var manual = stats.GetValue($"{date.Date}")?["manual"].Value<List<NATION>>();
+            var checkApi = stats.GetValue("all")["api"].Value<List<string>>();
+            var checkManual = stats.GetValue("all")["manual"].Value<List<string>>();
+            var api = stats.GetValue($"{date.Date}")?["api"].Value<List<string>>();
+            var manual = stats.GetValue($"{date.Date}")?["manual"].Value<List<string>>();
             var recruited = new List<int>
             {
-                api?.Count(n => checkApi.Any(c => n.NAME == c.NAME)) ?? 0,
-                manual?.Count(n => checkManual.Any(c => n.NAME == c.NAME)) ?? 0
+                api?.Count(n => checkApi.Any(c => n == c)) ?? 0,
+                manual?.Count(n => checkManual.Any(c => n == c)) ?? 0
             };
             return recruited;
         }
         
-        private async Task<List<int>> GetRecruitedBetween(DateTime date1, DateTime date2)
+        private static async Task<List<int>> GetRecruitedBetween(DateTime date1, DateTime date2)
         {
             var days = date2.Subtract(date1).Days;
-            var recruited = new List<int>();
-            recruited[0] = 0;
-            recruited[1] = 0;
-            
-            for (int i = 0; i < days; i++)
+            var recruited = new List<int> {[0] = 0, [1] = 0};
+
+            for (var i = 0; i < days; i++)
             {
                 var ro = await GetRecruitedOn(date1.AddDays(i));
                 recruited[0] += ro[0];
