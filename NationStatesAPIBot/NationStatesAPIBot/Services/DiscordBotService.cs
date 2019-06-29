@@ -64,10 +64,10 @@ namespace NationStatesAPIBot.Services
                         if (await IsRelevantAsync(message, context.User))
                         {
                             //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
-                            if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == "/sleep")
+                            if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == $"{_config.SeperatorChar}sleep")
                             {
                                 await context.Client.SetStatusAsync(UserStatus.DoNotDisturb);
-                                await context.Channel.SendMessageAsync("Ok! Going to sleep now. Wake me up later with /wakeup.");
+                                await context.Channel.SendMessageAsync($"Ok! Going to sleep now. Wake me up later with {_config.SeperatorChar}wakeup.");
                                 Reactive = false;
                             }
                             else
@@ -78,7 +78,7 @@ namespace NationStatesAPIBot.Services
                     }
                     else
                     {
-                        if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == "/wakeup")
+                        if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == $"{_config.SeperatorChar}wakeup")
                         {
                             Reactive = true;
                             await context.Client.SetStatusAsync(UserStatus.Online);
