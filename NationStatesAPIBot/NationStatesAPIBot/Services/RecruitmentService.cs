@@ -250,62 +250,70 @@ namespace NationStatesAPIBot.Services
         private async void UpdateRecruitmentStatsAsync()
         {
             while (IsRecruiting)
-            {                
-                var today = DateTime.Today.Date;
+            {
+                try
+                {
+                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Updating Recruitment Stats"));
+                    var today = DateTime.Today.Date;
 
-                var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
-                var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
-                var region = await _dumpDataService.GetRegionAsync(_config.NationStatesRegionName);
+                    var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
+                    var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
+                    var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(_config.NationStatesRegionName));
 
-                var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
-                var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
-                
-                ApiSent = sent.Count;
-                ApiPending = NationManager.GetNationsByStatusName("pending").Count;
-                ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
-                ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
-                ApiRecruited = apiRecruited.Count;
-                ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
-                ManualReserved = manual.Count;
-                ManualRecruited = manualRecruited.Count;
-                ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
-                
-                await WriteRecruited(today, apiRecruited, manualRecruited);
-                
-                var rt = await GetRecruitedOn(today);
-                RecruitedTodayA = rt[0];
-                RecruitedTodayM = rt[1];
+                    var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
+                    var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
 
-                var ry = await GetRecruitedOn(today.AddDays(-1));
-                RecruitedYesterdayA = ry[0];
-                RecruitedYesterdayM = ry[1];
+                    ApiSent = sent.Count;
+                    ApiPending = NationManager.GetNationsByStatusName("pending").Count;
+                    ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
+                    ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+                    ApiRecruited = apiRecruited.Count;
+                    ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
+                    ManualReserved = manual.Count;
+                    ManualRecruited = manualRecruited.Count;
+                    ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
 
-                var lastMonday = (today - new TimeSpan((int) today.DayOfWeek, 0, 0, 0)).AddDays(1);
-                var rlw = await GetRecruitedBetween(lastMonday - TimeSpan.FromDays(7), lastMonday);
-                RecruitedLastWeekA = rlw[0];
-                RecruitedLastWeekM = rlw[1];
-                RecruitedLastWeekAvgDA = Math.Round((RecruitedLastWeekA / 7.0), 2);
-                RecruitedLastWeekAvgDM = Math.Round((RecruitedLastWeekM / 7.0), 2);
-                              
-                var firstDayLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
-                var daysInLastMonth = DateTime.DaysInMonth(firstDayLastMonth.Year, firstDayLastMonth.Month);
-                var rlm = await GetRecruitedBetween(firstDayLastMonth, firstDayLastMonth.AddMonths(1).AddDays(-1));
-                RecruitedLastMonthA = rlm[0];
-                RecruitedLastMonthM = rlm[1];
-                RecruitedLastMonthAvgDA = Math.Round(RecruitedLastMonthA / (daysInLastMonth + 0.0), 2);
-                RecruitedLastMonthAvgDM = Math.Round(RecruitedLastMonthM / (daysInLastMonth + 0.0), 2);
-                
+                    await WriteRecruited(today, apiRecruited, manualRecruited.AsQueryable());
+
+                    var rt = await GetRecruitedOn(today);
+                    RecruitedTodayA = rt[0];
+                    RecruitedTodayM = rt[1];
+
+                    var ry = await GetRecruitedOn(today.AddDays(-1));
+                    RecruitedYesterdayA = ry[0];
+                    RecruitedYesterdayM = ry[1];
+
+                    var lastMonday = (today - new TimeSpan((int)today.DayOfWeek, 0, 0, 0)).AddDays(1);
+                    var rlw = await GetRecruitedBetween(lastMonday - TimeSpan.FromDays(7), lastMonday);
+                    RecruitedLastWeekA = rlw[0];
+                    RecruitedLastWeekM = rlw[1];
+                    RecruitedLastWeekAvgDA = Math.Round(RecruitedLastWeekA / 7.0, 2);
+                    RecruitedLastWeekAvgDM = Math.Round(RecruitedLastWeekM / 7.0, 2);
+
+                    var firstDayLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                    var daysInLastMonth = DateTime.DaysInMonth(firstDayLastMonth.Year, firstDayLastMonth.Month);
+                    var rlm = await GetRecruitedBetween(firstDayLastMonth, firstDayLastMonth.AddMonths(1).AddDays(-1));
+                    RecruitedLastMonthA = rlm[0];
+                    RecruitedLastMonthM = rlm[1];
+                    RecruitedLastMonthAvgDA = Math.Round(RecruitedLastMonthA / (daysInLastMonth + 0.0), 2);
+                    RecruitedLastMonthAvgDM = Math.Round(RecruitedLastMonthM / (daysInLastMonth + 0.0), 2);
+                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment Stats Updated"));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "A critical error occured."));
+                }
                 await Task.Delay(TimeSpan.FromHours(4));
             }
         }
         
         // TODO: Put data in DB
-        private static async Task WriteRecruited(DateTime date, IReadOnlyCollection<string> allApi, IReadOnlyCollection<string> allManual)
+        private static async Task WriteRecruited(DateTime date, IEnumerable<string> allApi, IQueryable<string> allManual)
         {
             string json;
-            if (!File.Exists(@"/RecruitmentStats.json"))
+            if (!File.Exists(@"RecruitmentStats.json"))
             {
-                File.Create(@"/RecruitmentStats.json");
+                //allRemainingRecruits means -> all nations that were recruited and are still member of the region
                 var initial = new JObject(new JProperty("allRemainingRecruits", new JObject(
                     new JProperty("api", allApi), 
                     new JProperty("manual", allManual))));
@@ -313,16 +321,16 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                var stats = JObject.Parse(File.ReadAllText(@"/RecruitmentStats.json"));
-                var oldAllApi = stats["all"]["api"].Value<List<string>>();
-                var oldAllManual = stats["all"]["manual"].Value<List<string>>();
+                var stats = JObject.Parse(File.ReadAllText(@"RecruitmentStats.json"));
+                var oldAllApi = stats.GetValue("allRemainingRecruits")["api"].Select(j => j.Value<string>());
+                var oldAllManual = stats.GetValue("allRemainingRecruits")["manual"].Select(j => j.Value<string>());
                 var newApi = allApi.Except(oldAllApi).ToList();
                 var newManual = allManual.Except(oldAllManual).ToList();
-                stats["all"] = new JObject(new JProperty("api", allApi), new JProperty("manual", allManual));
+                stats["allRemainingRecruits"] = new JObject(new JProperty("api", allApi), new JProperty("manual", allManual));
                 var jo = new JObject(new JProperty("api", newApi), new JProperty("manual", newManual));
                 if (stats.GetValue($"{date.Date}") == null)
                 {
-                    stats.Add(new JObject(new JProperty($"{date.Date}", jo)));
+                    stats.Add(new JProperty($"{date.Date}", jo));
                 }
                 else
                 {
@@ -330,17 +338,17 @@ namespace NationStatesAPIBot.Services
                 }
                 json = stats.ToString();
             }
-            File.WriteAllText(@"/RecruitmentStats.json", json);
+            await File.WriteAllTextAsync(@"RecruitmentStats.json", json);
         }
         
         // TODO: Get data from DB
         private static async Task<List<int>> GetRecruitedOn(DateTime date)
         {
-            var stats = JObject.Parse(File.ReadAllText(@"/RecruitmentStats.json"));
-            var checkApi = stats.GetValue("all")["api"].Value<List<string>>();
-            var checkManual = stats.GetValue("all")["manual"].Value<List<string>>();
-            var api = stats.GetValue($"{date.Date}")?["api"].Value<List<string>>();
-            var manual = stats.GetValue($"{date.Date}")?["manual"].Value<List<string>>();
+            var stats = JObject.Parse(await File.ReadAllTextAsync(@"RecruitmentStats.json"));
+            var checkApi = stats.GetValue("allRemainingRecruits")["api"].Select(j => j.Value<string>());
+            var checkManual = stats.GetValue("allRemainingRecruits")["manual"].Select(j => j.Value<string>());
+            var api = stats.GetValue($"{date.Date}")?["api"].Select(j => j.Value<string>());
+            var manual = stats.GetValue($"{date.Date}")?["manual"].Select(j => j.Value<string>());
             var recruited = new List<int>
             {
                 api?.Count(n => checkApi.Any(c => n == c)) ?? 0,
@@ -352,7 +360,7 @@ namespace NationStatesAPIBot.Services
         private static async Task<List<int>> GetRecruitedBetween(DateTime date1, DateTime date2)
         {
             var days = date2.Subtract(date1).Days;
-            var recruited = new List<int> {[0] = 0, [1] = 0};
+            var recruited = new List<int> {0, 0};
 
             for (var i = 0; i < days; i++)
             {

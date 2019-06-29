@@ -264,7 +264,7 @@ namespace NationStatesAPIBot.Services
 
                 new REGION
                 {
-                    NAME = m.Element("NAME").Value,
+                    NAME = BaseApiService.ToID(m.Element("NAME").Value),
                     NUMNATIONS = (int)m.Element("NUMNATIONS"),
                     NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToHashSet(),
                     DELEGATE = m.Element("DELEGATE").Value,
@@ -318,7 +318,7 @@ namespace NationStatesAPIBot.Services
         {
             return new NATION
             {
-                NAME = m.Element("NAME").Value,
+                NAME = BaseApiService.ToID(m.Element("NAME").Value),
                 TYPE = m.Element("TYPE").Value,
                 FULLNAME = m.Element("FULLNAME").Value,
                 MOTTO = m.Element("MOTTO").Value,
@@ -326,8 +326,8 @@ namespace NationStatesAPIBot.Services
                 WAMEMBER = m.Element("UNSTATUS").Value == "WA Member",
                 ENDORSEMENTS = m.Element("ENDORSEMENTS").Value.Split(";").ToList(),
                 FREEDOM = BuildFreedom(m),
-                REGION = GetRegionInternal(m.Element("REGION").Value),
-                REGIONNAME = m.Element("REGION").Value,
+                REGION = GetRegionInternal(BaseApiService.ToID(m.Element("REGION").Value)),
+                REGIONNAME = BaseApiService.ToID(m.Element("REGION").Value),
                 POPULATION = Convert.ToDouble(m.Element("POPULATION").Value),
                 TAX = Convert.ToDouble(m.Element("TAX").Value),
                 ANIMAL = m.Element("ANIMAL").Value,

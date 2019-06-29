@@ -197,12 +197,12 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +
-                                        $"Recruited Today: A:{_recruitmentService.RecruitedTodayA}, M:{_recruitmentService.RecruitedTodayM}{Environment.NewLine}" +
-                                        $"Recruited Yesterday: A:{_recruitmentService.RecruitedYesterdayA}, M:{_recruitmentService.RecruitedYesterdayM}{Environment.NewLine}" +
-                                        $"Recruited Last Week: A:{_recruitmentService.RecruitedLastWeekA}, M:{_recruitmentService.RecruitedLastWeekM}{Environment.NewLine}" +
-                                        $"Recruited Last Week (Avg/D): A:{_recruitmentService.RecruitedLastWeekAvgDA}, M:{_recruitmentService.RecruitedLastWeekAvgDM}{Environment.NewLine}" +
-                                        $"Recruited Last Month: A:{_recruitmentService.RecruitedLastMonthA}, M:{_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
-                                        $"Recruited Last Month (Avg/D): A:{_recruitmentService.RecruitedLastMonthAvgDA}, M:{_recruitmentService.RecruitedLastMonthAvgDM}{Environment.NewLine}" +
+                                        $"Recruited Today: A: {_recruitmentService.RecruitedTodayA}, M: {_recruitmentService.RecruitedTodayM}{Environment.NewLine}" +
+                                        $"Recruited Yesterday: A: {_recruitmentService.RecruitedYesterdayA}, M: {_recruitmentService.RecruitedYesterdayM}{Environment.NewLine}" +
+                                        $"Recruited Last Week: A: {_recruitmentService.RecruitedLastWeekA}, M: {_recruitmentService.RecruitedLastWeekM}{Environment.NewLine}" +
+                                        $"Recruited Last Week (Avg/D): A: {_recruitmentService.RecruitedLastWeekAvgDA.ToString("0.00")}, M: {_recruitmentService.RecruitedLastWeekAvgDM.ToString("0.00")}{Environment.NewLine}" +
+                                        $"Recruited Last Month: A: {_recruitmentService.RecruitedLastMonthA}, M: {_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
+                                        $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00")}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00")}{Environment.NewLine}{Environment.NewLine}" +
                                         $"Recruits which CTE'd or left the region are excluded.");
                 builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                 
