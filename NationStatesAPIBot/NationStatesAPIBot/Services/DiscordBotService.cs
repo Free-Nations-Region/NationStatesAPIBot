@@ -49,7 +49,7 @@ namespace NationStatesAPIBot.Services
             }
             return await Task.FromResult(false);
         }
-
+        bool Reactive = true;
         public async Task ProcessMessageAsync(object message)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
@@ -58,10 +58,36 @@ namespace NationStatesAPIBot.Services
                 if (message is SocketUserMessage socketMsg)
                 {
                     var context = new SocketCommandContext(DiscordClient, socketMsg);
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
-                    if (await IsRelevantAsync(message, context.User))
+                    if (Reactive)
                     {
-                        await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
+                        if (await IsRelevantAsync(message, context.User))
+                        {
+                            //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
+                            if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == "/sleep")
+                            {
+                                await context.Client.SetStatusAsync(UserStatus.DoNotDisturb);
+                                await context.Channel.SendMessageAsync("Ok! Going to sleep now. Wake me up later with /wakeup.");
+                                Reactive = false;
+                            }
+                            else
+                            {
+                                await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (await _permManager.IsBotAdminAsync(context.User) && socketMsg.Content == "/wakeup")
+                        {
+                            Reactive = true;
+                            await context.Client.SetStatusAsync(UserStatus.Online);
+                            await context.Channel.SendMessageAsync("Hey! I'm back.");
+                        }
+                        else if (await IsRelevantAsync(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb && !await _permManager.IsBotAdminAsync(context.User))
+                        {
+                            await context.Channel.SendMessageAsync(AppSettings.SLEEPTEXT);
+                        }
                     }
                 }
             }
