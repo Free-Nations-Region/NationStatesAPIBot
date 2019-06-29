@@ -15,12 +15,14 @@ namespace NationStatesAPIBot.Commands.Stats
     public class BasicNationStats : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger<BasicNationStats> _logger;
-        private readonly NationStatesApiService dataService;
+        private readonly NationStatesApiService _apiDataService;
+        private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
-        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService)
+        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService)
         {
             _logger = logger;
-            dataService = apiService;
+            _apiDataService = apiService;
+            _dumpDataService = dumpDataService;
         }
 
         //TODO: Make CultureInfo configurable
@@ -32,7 +34,7 @@ namespace NationStatesAPIBot.Commands.Stats
             {
                 string nationName = string.Join(" ", args);
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"BasicNationStats for {nationName} requested."));
-                XmlDocument nationStats = await dataService.GetNationStatsAsync(nationName, id);
+                XmlDocument nationStats = await _apiDataService.GetNationStatsAsync(nationName, id);
                 if (nationStats != null)
                 {
                     var demonymplural = nationStats.GetElementsByTagName("DEMONYM2PLURAL")[0].InnerText;
@@ -115,20 +117,20 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        [Command("nationsendorsed", false), Alias("ne"), Summary("Returns all nations who endorsed a nation")]
+        [Command("endorsed", false), Alias("e"), Summary("Returns all nations who endorsed a nation")]
         public async Task GetEndorsements(params string[] args)
         {
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRegionStats);
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
             try
             {
                 string nationName = string.Join(" ", args);
-                XmlDocument nationStats = await dataService.GetEndorsements(nationName, id);
+                XmlDocument nationStats = await _apiDataService.GetEndorsements(nationName, id);
                 var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
                 var builder = new EmbedBuilder();
-                builder.WithTitle($"{nationName} was endorsed by:");
+                var nations = endorsements.Split(",").ToList(); ;
+                builder.WithTitle($"{nationName} was endorsed by {nations.Count} nations:");
                 if (!string.IsNullOrWhiteSpace(endorsements))
                 {
-                    var nations = endorsements.Split(",").ToList();
                     StringBuilder sBuilder = new StringBuilder();
                     foreach (string name in nations)
                     {
@@ -142,7 +144,53 @@ namespace NationStatesAPIBot.Commands.Stats
                 }
                 builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                 builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
-                await ReplyAsync(embed: builder.Build());
+                //ToDo: Maybe move to embed sender ?
+                var e = builder.Build();
+                if (e.Length >= 2000)
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
+                }
+                await ReplyAsync(embed: e);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
+                await ReplyAsync("Something went wrong. Sorry :(");
+            }
+        }
+
+        [Command("nationsendorsedby", false), Alias("ne"), Summary("Returns all nations that where endorsed by a nation")]
+        public async Task GetNationsendorsedby(params string[] args)
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
+            try
+            {
+                string nationName = string.Join(" ", args);
+                var builder = new EmbedBuilder();
+                var endorsed = await _dumpDataService.GetNationsEndorsedBy(nationName);
+                builder.WithTitle($"{nationName} has endorsed {endorsed.Count} nations:");
+                if (endorsed.Count > 0)
+                {
+                    StringBuilder sBuilder = new StringBuilder();
+                    foreach (var nation in endorsed)
+                    {
+                        sBuilder.Append(nation.NAME + " ; ");
+                    }
+                    builder.WithDescription(sBuilder.ToString());
+                }
+                else
+                {
+                    builder.WithDescription("No one so far.");
+                }
+                builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                //ToDo: Maybe move to embed sender ?
+                var e = builder.Build();
+                if (e.Length >= 2000)
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
+                }
+                await ReplyAsync(embed: e);
             }
             catch (Exception ex)
             {
