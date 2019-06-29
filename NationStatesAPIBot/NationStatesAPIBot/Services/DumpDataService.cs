@@ -462,7 +462,7 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage("region were null"));
+                _logger.LogWarning(defaultEventId, GetLogMessage($"region {regionName} was null"));
                 return null;
             }
         }
@@ -486,13 +486,13 @@ namespace NationStatesAPIBot.Services
                 }
                 else
                 {
-                    _logger.LogWarning(defaultEventId, GetLogMessage("region where null"));
+                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
                 }
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage("nation where null"));
+                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
                 return null;
             }
         }
