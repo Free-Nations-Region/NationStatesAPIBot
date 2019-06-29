@@ -191,9 +191,9 @@ namespace NationStatesAPIBot.Commands.Management
                 builder.WithTitle($"Recruitment statistics:");
                 builder.WithDescription($"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
-                                        $"Skipped (API): {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
                                         $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio}%){Environment.NewLine}" +
+                                        $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +
