@@ -32,7 +32,7 @@ namespace NationStatesAPIBot.Services
 
         public bool IsReceivingRecruitableNations { get; internal set; }
         public static bool IsRecruiting { get; private set; }
-
+        public static string RecruitmentStatus { get; private set; } = "Not Running";
         public void StartRecruitment()
         {
             IsRecruiting = true;
@@ -44,6 +44,7 @@ namespace NationStatesAPIBot.Services
         public void StopRecruitment()
         {
             IsRecruiting = false;
+            RecruitmentStatus = "Stopped";
             _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process stopped."));
         }
 
@@ -58,7 +59,7 @@ namespace NationStatesAPIBot.Services
             IsReceivingRecruitableNations = false;
         }
 
-        public async Task<List<Nation>> GetRecruitableNationsAsync(int number)
+        public async Task<List<Nation>> GetRecruitableNationsAsync(int number, bool isAPI)
         {
             List<Nation> returnNations = new List<Nation>();
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRecruitableNations);
@@ -74,16 +75,31 @@ namespace NationStatesAPIBot.Services
                 {
                     var picked = pendingNations.Take(1);
                     var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (await IsNationRecruitableAsync(nation, id))
+                    if (nation != null)
                     {
-                        returnNations.Add(nation);
-                        if (IsReceivingRecruitableNations)
+                        if (await IsNationRecruitableAsync(nation, id))
                         {
-                            currentRNStatus.CurrentCount++;
+                            returnNations.Add(nation);
+                            if (IsReceivingRecruitableNations && !isAPI)
+                            {
+                                currentRNStatus.CurrentCount++;
+                            }
+                        }
+                        pendingNations.Remove(nation);
+                        returnNations = returnNations.Distinct().ToList();
+                    }
+                    else
+                    {
+                        if (pendingNations.Count == 0)
+                        {
+                            _logger.LogCritical(id, "No more nations in pending pool !");
+                            return returnNations;
+                        }
+                        else
+                        {
+                            _logger.LogCritical(id, "Picked nation was null !");
                         }
                     }
-                    pendingNations.Remove(nation);
-                    returnNations = returnNations.Distinct().ToList();
                 }
             }
             catch (Exception ex)
@@ -168,10 +184,26 @@ namespace NationStatesAPIBot.Services
                 {
                     if (pendingNations.Count == 0)
                     {
+                        if(NationManager.GetNationCountByStatusName("pending") == 0)
+                        {
+                            _logger.LogWarning("Delaying API recruitment for 15 minutes due to lack of recruitable nations");
+                            RecruitmentStatus = "Throttled: lack of nations";
+                            await Task.Delay(900000);
+                        }
                         pendingNations = NationManager.GetNationsByStatusName("reserved_api");
                         if (pendingNations.Count < 10)
                         {
-                            pendingNations = await GetRecruitableNationsAsync(10 - pendingNations.Count);
+                            var numberToRequest = 10 - pendingNations.Count;
+                            pendingNations = await GetRecruitableNationsAsync(numberToRequest, true);
+                            if (pendingNations.Count < numberToRequest)
+                            {
+                                RecruitmentStatus = "Throttled: lack of of nations";
+                                _logger.LogWarning("Didn't received enough recruitable nations");
+                            }
+                            else
+                            {
+                                RecruitmentStatus = "Fully operational";
+                            }
                             foreach (var pendingNation in pendingNations)
                             {
                                 await NationManager.SetNationStatusToAsync(pendingNation, "reserved_api");
@@ -200,12 +232,16 @@ namespace NationStatesAPIBot.Services
                             pendingNations.Remove(nation);
                         }
                     }
+                    else
+                    {
+                        _logger.LogCritical(defaulEventId, LogMessageBuilder.Build(defaulEventId, "No nation to recruit found."));
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "An error occured."));
                 }
-                await Task.Delay(10000);
+                await Task.Delay(60000);
             }
         }
 
