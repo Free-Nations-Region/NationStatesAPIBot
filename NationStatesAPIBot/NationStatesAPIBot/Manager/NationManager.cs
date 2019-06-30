@@ -22,6 +22,14 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
+        public static int GetNationCountByStatusName(string name)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return dbContext.Nations.Count(n => n.Status.Name == name);
+            }
+        }
+
         public static async Task SetNationStatusToAsync(Nation nation, string statusName)
         {
             using (var dbContext = new BotDbContext(_config))
