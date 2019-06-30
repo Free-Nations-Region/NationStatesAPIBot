@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Services
             IsReceivingRecruitableNations = false;
         }
 
-        public async Task<List<Nation>> GetRecruitableNationsAsync(int number)
+        public async Task<List<Nation>> GetRecruitableNationsAsync(int number, bool isAPI)
         {
             List<Nation> returnNations = new List<Nation>();
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRecruitableNations);
@@ -74,16 +74,31 @@ namespace NationStatesAPIBot.Services
                 {
                     var picked = pendingNations.Take(1);
                     var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (await IsNationRecruitableAsync(nation, id))
+                    if (nation != null)
                     {
-                        returnNations.Add(nation);
-                        if (IsReceivingRecruitableNations)
+                        if (await IsNationRecruitableAsync(nation, id))
                         {
-                            currentRNStatus.CurrentCount++;
+                            returnNations.Add(nation);
+                            if (IsReceivingRecruitableNations && !isAPI)
+                            {
+                                currentRNStatus.CurrentCount++;
+                            }
+                        }
+                        pendingNations.Remove(nation);
+                        returnNations = returnNations.Distinct().ToList();
+                    }
+                    else
+                    {
+                        if (pendingNations.Count == 0)
+                        {
+                            _logger.LogCritical(id, "No more nations in pending pool !");
+                            return returnNations;
+                        }
+                        else
+                        {
+                            _logger.LogCritical(id, "Picked nation was null !");
                         }
                     }
-                    pendingNations.Remove(nation);
-                    returnNations = returnNations.Distinct().ToList();
                 }
             }
             catch (Exception ex)
@@ -171,7 +186,7 @@ namespace NationStatesAPIBot.Services
                         pendingNations = NationManager.GetNationsByStatusName("reserved_api");
                         if (pendingNations.Count < 10)
                         {
-                            pendingNations = await GetRecruitableNationsAsync(10 - pendingNations.Count);
+                            pendingNations = await GetRecruitableNationsAsync(10 - pendingNations.Count, true);
                             foreach (var pendingNation in pendingNations)
                             {
                                 await NationManager.SetNationStatusToAsync(pendingNation, "reserved_api");

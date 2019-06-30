@@ -78,14 +78,14 @@ namespace NationStatesAPIBot.Commands.Management
                             _recruitmentService.StartReceiveRecruitableNations(currentRN);
                             await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
                             _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
-                            returnNations = await _recruitmentService.GetRecruitableNationsAsync(number);
+                            returnNations = await _recruitmentService.GetRecruitableNationsAsync(number, false);
                             foreach (var nation in returnNations)
                             {
                                 await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
                             }
                             StringBuilder builder = new StringBuilder();
                             builder.AppendLine("-----");
-                            var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {number} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
+                            var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {returnNations.Count} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
                             int replyCount = (number / 40) + (number % 40 != 0 ? 1 : 0);
 
                             int currentReply = 1;
@@ -126,6 +126,10 @@ namespace NationStatesAPIBot.Commands.Management
                                 {
                                     await ReplyAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                 }
+                            }
+                            if(returnNations.Count < number)
+                            {
+                                await ReplyAsync($"{Environment.NewLine}- - - - -{Environment.NewLine}WARNING: No more nations in pending nations pool.");
                             }
                         }
                         else
