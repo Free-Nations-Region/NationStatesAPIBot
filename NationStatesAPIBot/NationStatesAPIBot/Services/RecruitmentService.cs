@@ -134,7 +134,7 @@ namespace NationStatesAPIBot.Services
             else
             {
                 var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
-                _logger.LogWarning(id, LogMessageBuilder.Build(id, "Result of GetWouldReceiveTelegramAsync were null"));
+                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Result of GetWouldReceiveTelegramAsync '{nationName}' were null"));
                 return false;
             }
         }
