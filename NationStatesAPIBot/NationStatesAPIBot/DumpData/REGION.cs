@@ -7,6 +7,7 @@ namespace NationStatesAPIBot.DumpData
     public class REGION
     {
         public string NAME { get; set; }
+        public int DumpPosition { get; set; }
         public int NUMNATIONS { get; set; }
         public HashSet<string> NATIONNAMES { get; set; }
         public HashSet<NATION> NATIONS { get; set; }
@@ -26,6 +27,7 @@ namespace NationStatesAPIBot.DumpData
         {
             return obj is REGION region &&
                    NAME == region.NAME &&
+                   DumpPosition == region.DumpPosition &&
                    NUMNATIONS == region.NUMNATIONS &&
                    EqualityComparer<HashSet<string>>.Default.Equals(NATIONNAMES, region.NATIONNAMES) &&
                    EqualityComparer<HashSet<NATION>>.Default.Equals(NATIONS, region.NATIONS) &&
@@ -46,6 +48,7 @@ namespace NationStatesAPIBot.DumpData
         {
             var hash = new HashCode();
             hash.Add(NAME);
+            hash.Add(DumpPosition);
             hash.Add(NUMNATIONS);
             hash.Add(NATIONNAMES);
             hash.Add(NATIONS);
