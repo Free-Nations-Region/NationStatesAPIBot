@@ -264,7 +264,6 @@ namespace NationStatesAPIBot.Services
 
                 new REGION
                 {
-                    DumpPosition = m.NodesBeforeSelf().Count(),
                     NAME = BaseApiService.ToID(m.Element("NAME").Value),
                     DumpPosition = m.NodesBeforeSelf().Count(),
                     NUMNATIONS = (int)m.Element("NUMNATIONS"),
