@@ -57,7 +57,7 @@ namespace NationStatesAPIBot.Manager
                 foreach (string nationName in newNations)
                 {
                     
-                    if(await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) != null)
+                    if(await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
                     {
                         await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow, Status = status, StatusId = status.Id });
                         await context.SaveChangesAsync();
