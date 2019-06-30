@@ -60,11 +60,15 @@ namespace NationStatesAPIBot.Services
         public static string RecruitmentStatus { get; private set; } = "Not Running";
         public void StartRecruitment()
         {
-            IsRecruiting = true;
-            Task.Run(async () => await GetNewNationsAsync());
-            Task.Run(async () => await RecruitAsync());
-            UpdateRecruitmentStatsAsync();
-            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
+            if (!IsRecruiting)
+            {
+                IsRecruiting = true;
+                Task.Run(async () => await GetNewNationsAsync());
+                Task.Run(async () => await RecruitAsync());
+                RecruitmentStatus = "Started";
+                UpdateRecruitmentStatsAsync();
+                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
+            }
         }
 
         public void StopRecruitment()
