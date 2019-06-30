@@ -23,9 +23,10 @@ namespace NationStatesAPIBot.DumpData
             set
             {
                 region = value;
+        
                 if(region != null)
                 {
-                    if(region.NATIONS == null)
+                    if (region.NATIONS == null)
                     {
                         region.NATIONS = new HashSet<NATION>();
                     }

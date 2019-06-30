@@ -5,10 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Logging;
 using NationStatesAPIBot.Services;
 using NationStatesAPIBot.Manager;
+using System.Globalization;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -182,6 +184,38 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
+            }
+        }
+        
+        [Command("rstat"), Summary("Returns statistics to determine the effectiveness of recruitment")]
+        public async Task DoGetRecruitmentStats()
+        {
+            if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
+            {
+                var builder = new EmbedBuilder();
+                builder.WithTitle($"Recruitment statistics:");
+                builder.WithDescription($"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
+                                        $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
+                                        $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
+                                        $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
+                                        $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
+                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
+                                        $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
+                                        $"{Environment.NewLine}" +
+                                        $"Recruited Today: A: {_recruitmentService.RecruitedTodayA}, M: {_recruitmentService.RecruitedTodayM}{Environment.NewLine}" +
+                                        $"Recruited Yesterday: A: {_recruitmentService.RecruitedYesterdayA}, M: {_recruitmentService.RecruitedYesterdayM}{Environment.NewLine}" +
+                                        $"Recruited Last Week: A: {_recruitmentService.RecruitedLastWeekA}, M: {_recruitmentService.RecruitedLastWeekM}{Environment.NewLine}" +
+                                        $"Recruited Last Week (Avg/D): A: {_recruitmentService.RecruitedLastWeekAvgDA.ToString("0.00", new CultureInfo("en-US"))}, M: {_recruitmentService.RecruitedLastWeekAvgDM.ToString("0.00", new CultureInfo("en-US"))}{Environment.NewLine}" +
+                                        $"Recruited Last Month: A: {_recruitmentService.RecruitedLastMonthA}, M: {_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
+                                        $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00", new CultureInfo("en-US"))}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00", new CultureInfo("en-US"))}{Environment.NewLine}{Environment.NewLine}" +
+                                        $"Recruits which CTE'd or left the region are excluded.");
+                builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+                
+                await ReplyAsync(embed: builder.Build());
+            }
+            else
+            {
+                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
             }
         }
     }
