@@ -10,6 +10,7 @@ using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Logging;
 using NationStatesAPIBot.Services;
 using NationStatesAPIBot.Manager;
+using System.Globalization;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -192,17 +193,17 @@ namespace NationStatesAPIBot.Commands.Management
                 builder.WithDescription($"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
-                                        $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio}%){Environment.NewLine}" +
+                                        $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
-                                        $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio}%){Environment.NewLine}" +
+                                        $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +
                                         $"Recruited Today: A: {_recruitmentService.RecruitedTodayA}, M: {_recruitmentService.RecruitedTodayM}{Environment.NewLine}" +
                                         $"Recruited Yesterday: A: {_recruitmentService.RecruitedYesterdayA}, M: {_recruitmentService.RecruitedYesterdayM}{Environment.NewLine}" +
                                         $"Recruited Last Week: A: {_recruitmentService.RecruitedLastWeekA}, M: {_recruitmentService.RecruitedLastWeekM}{Environment.NewLine}" +
-                                        $"Recruited Last Week (Avg/D): A: {_recruitmentService.RecruitedLastWeekAvgDA.ToString("0.00")}, M: {_recruitmentService.RecruitedLastWeekAvgDM.ToString("0.00")}{Environment.NewLine}" +
+                                        $"Recruited Last Week (Avg/D): A: {_recruitmentService.RecruitedLastWeekAvgDA.ToString("0.00", new CultureInfo("en-US"))}, M: {_recruitmentService.RecruitedLastWeekAvgDM.ToString("0.00", new CultureInfo("en-US"))}{Environment.NewLine}" +
                                         $"Recruited Last Month: A: {_recruitmentService.RecruitedLastMonthA}, M: {_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
-                                        $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00")}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00")}{Environment.NewLine}{Environment.NewLine}" +
+                                        $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00", new CultureInfo("en-US"))}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00", new CultureInfo("en-US"))}{Environment.NewLine}{Environment.NewLine}" +
                                         $"Recruits which CTE'd or left the region are excluded.");
                 builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
                 
