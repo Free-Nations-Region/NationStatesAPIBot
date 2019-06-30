@@ -22,6 +22,14 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
+        public static int GetNationCountByStatusName(string name)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return dbContext.Nations.Count(n => n.Status.Name == name);
+            }
+        }
+
         public static async Task SetNationStatusToAsync(Nation nation, string statusName)
         {
             using (var dbContext = new BotDbContext(_config))
@@ -57,7 +65,7 @@ namespace NationStatesAPIBot.Manager
                 foreach (string nationName in newNations)
                 {
                     
-                    if(await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) != null)
+                    if(await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
                     {
                         await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow, Status = status, StatusId = status.Id });
                         await context.SaveChangesAsync();

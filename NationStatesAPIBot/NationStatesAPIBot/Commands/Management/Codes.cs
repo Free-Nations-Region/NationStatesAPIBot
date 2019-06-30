@@ -30,6 +30,30 @@ namespace NationStatesAPIBot.Commands.Management
             }
         }
 
+        [Command("evc"), Summary("Returns an number of election verification codes")]
+        public async Task DoGenerateEvc(int count)
+        {
+            var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
+            if (await permManager.IsBotAdminAsync(Context.User) && Context.IsPrivate)
+            {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (int i = 1; i <= count; i++)
+                {
+                    stringBuilder.AppendLine(GenerateCode());
+                    if(i % 25 == 0)
+                    {
+                        await ReplyAsync(stringBuilder.ToString());
+                        stringBuilder.Clear();
+                    }
+                }
+                if(count < 25 || count % 25 != 0)
+                {
+                    await ReplyAsync(stringBuilder.ToString());
+                }
+            }
+        }
+
+
         public string GenerateCode()
         {
             StringBuilder resultBuilder = new StringBuilder();
@@ -60,7 +84,7 @@ namespace NationStatesAPIBot.Commands.Management
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static String Encode(long input)
+        public static string Encode(long input)
         {
             if (input < 0) throw new ArgumentOutOfRangeException("input", input, "input cannot be negative");
 

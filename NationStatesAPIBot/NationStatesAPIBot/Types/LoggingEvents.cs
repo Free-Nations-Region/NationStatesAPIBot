@@ -12,10 +12,12 @@
         RNCommand = 10500,
         RNSCommand = 10550,
         GetNewNations = 10600,
+        GetEndorsedBy = 10700,
+        GetNationsEndorsed = 10800,
         APIRecruitment = 11000,
         WouldReceiveTelegram = 11100,
         GetRecruitableNations = 11200,
         SendRecruitmentTelegram = 12000,
-        DumpDataServiceAction = 13000
+        DumpDataServiceAction = 13000,
     }
 }

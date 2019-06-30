@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Recruitment",
-                    Value = RecruitmentService.IsRecruiting ? "Running" : "Not Running"
+                    Value = RecruitmentService.RecruitmentStatus
                 }
             });
             await ReplyAsync(embed: builder.Build());

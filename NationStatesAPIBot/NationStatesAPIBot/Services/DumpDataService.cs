@@ -43,7 +43,7 @@ namespace NationStatesAPIBot.Services
         {
             return LogMessageBuilder.Build(defaultEventId, message);
         }
-
+        #region Management & Parsing
         public void StartDumpUpdateCycle()
         {
             isDumpUpdateCycleRunning = true;
@@ -264,7 +264,8 @@ namespace NationStatesAPIBot.Services
 
                 new REGION
                 {
-                    NAME = m.Element("NAME").Value,
+                    DumpPosition = m.NodesBeforeSelf().Count(),
+                    NAME = BaseApiService.ToID(m.Element("NAME").Value),
                     DumpPosition = m.NodesBeforeSelf().Count(),
                     NUMNATIONS = (int)m.Element("NUMNATIONS"),
                     NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToHashSet(),
@@ -319,16 +320,16 @@ namespace NationStatesAPIBot.Services
         {
             return new NATION
             {
-                NAME = m.Element("NAME").Value,
+                NAME = BaseApiService.ToID(m.Element("NAME").Value),
                 TYPE = m.Element("TYPE").Value,
                 FULLNAME = m.Element("FULLNAME").Value,
                 MOTTO = m.Element("MOTTO").Value,
                 CATEGORY = m.Element("CATEGORY").Value,
                 WAMEMBER = m.Element("UNSTATUS").Value == "WA Member",
-                ENDORSEMENTS = m.Element("ENDORSEMENTS").Value.Split(";").ToList(),
+                ENDORSEMENTS = m.Element("ENDORSEMENTS").Value.Split(",").ToList(),
                 FREEDOM = BuildFreedom(m),
-                REGION = GetRegionInternal(m.Element("REGION").Value),
-                REGIONNAME = m.Element("REGION").Value,
+                REGION = GetRegionInternal(BaseApiService.ToID(m.Element("REGION").Value)),
+                REGIONNAME = BaseApiService.ToID(m.Element("REGION").Value),
                 POPULATION = Convert.ToDouble(m.Element("POPULATION").Value),
                 TAX = Convert.ToDouble(m.Element("TAX").Value),
                 ANIMAL = m.Element("ANIMAL").Value,
@@ -410,6 +411,24 @@ namespace NationStatesAPIBot.Services
             };
         }
 
+        private async Task WaitForDataAvailabilityAsync()
+        {
+            if (DataAvailable && !IsUpdating)
+                return;
+            if (IsUpdating)
+            {
+                while (IsUpdating && !tokenSource.Token.IsCancellationRequested)
+                {
+                    await Task.Delay(1000);
+                }
+                tokenSource.Token.ThrowIfCancellationRequested();
+            }
+            else if (!DataAvailable)
+            {
+                throw new DataUnavailableException("No data available that could be accessed.");
+            }
+        }
+#endregion
         private REGION GetRegionInternal(string name)
         {
             return _regions.FirstOrDefault(r => r.NAME == name);
@@ -429,27 +448,56 @@ namespace NationStatesAPIBot.Services
 
         public async Task<REGION> GetRegionAsync(string name)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Nation {name} requested."));
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Region {name} requested."));
             await WaitForDataAvailabilityAsync();
             return GetRegionInternal(name);
         }
 
-        private async Task WaitForDataAvailabilityAsync()
+        public async Task<List<NATION>> GetWAOfRegion(string regionName)
         {
-            if (DataAvailable && !IsUpdating)
-                return;
-            if (IsUpdating)
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: WA nations of region {regionName} requested."));
+            await WaitForDataAvailabilityAsync();
+            var region = GetRegionInternal(regionName);
+            if (region != null)
             {
-                while (IsUpdating && !tokenSource.Token.IsCancellationRequested)
-                {
-                    await Task.Delay(1000);
-                }
-                tokenSource.Token.ThrowIfCancellationRequested();
+                return region.NATIONS.Where(n => n.WAMEMBER).ToList();
             }
-            else if (!DataAvailable)
+            else
             {
-                throw new DataUnavailableException("No data available that could be accessed.");
+                _logger.LogWarning(defaultEventId, GetLogMessage($"region {regionName} was null"));
+                return null;
             }
         }
+
+        /// <summary>
+        /// Returns a List of Nations that were endorsed by a specific nation
+        /// </summary>
+        /// <param name="nationName">specific nation name</param>
+        /// <returns>List of Nations</returns>
+        public async Task<List<NATION>> GetNationsEndorsedBy(string nationName)
+        {
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
+            await WaitForDataAvailabilityAsync();
+            var nation = GetNationInternal(nationName);
+            if(nation != null)
+            {
+                var region = nation.REGION;
+                if(region != null)
+                {
+                    return region.NATIONS.Where(n => n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                }
+                else
+                {
+                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    return null;
+                }
+            }
+            else
+            {
+                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                return null;
+            }
+        }
+
     }
 }
