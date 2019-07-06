@@ -226,21 +226,7 @@ namespace NationStatesAPIBot.Services
         private async Task EnsurePoolFilled()
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.EnsurePoolFilled);
-            List<REGION> regionsToRecruitFrom = new List<REGION>();
-            var regionNames = _config.RegionsToRecruitFrom.Split(";");
-            foreach (var regionName in regionNames)
-            {
-                var region = await _dumpDataService.GetRegionAsync(regionName);
-                if (region != null)
-                {
-                    regionsToRecruitFrom.Add(region);
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
-                }
-                else
-                {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
-                }
-            }
+            List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFrom(id);
             while (IsRecruiting)
             {
                 bool fillingUp = false;
@@ -268,6 +254,27 @@ namespace NationStatesAPIBot.Services
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
                 await Task.Delay(1800000); //30 min
             }
+        }
+
+        private async Task<List<REGION>> GetRegionToRecruitFrom(EventId id)
+        {
+            List<REGION> regionsToRecruitFrom = new List<REGION>();
+            var regionNames = _config.RegionsToRecruitFrom.Split(";");
+            foreach (var regionName in regionNames)
+            {
+                var region = await _dumpDataService.GetRegionAsync(regionName);
+                if (region != null)
+                {
+                    regionsToRecruitFrom.Add(region);
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
+                }
+                else
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
+                }
+            }
+
+            return regionsToRecruitFrom;
         }
 
         private async Task AddNationToPendingAsync(EventId id, List<string> nationNames)
