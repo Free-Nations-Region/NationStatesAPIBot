@@ -231,12 +231,13 @@ namespace NationStatesAPIBot.Services
             {
                 bool fillingUp = false;
                 int counter = 0;
-                while (NationManager.GetNationCountByStatusName("pending") < _config.MinimumRecruitmentPoolSize)
+                int pendingCount = NationManager.GetNationCountByStatusName("pending");
+                while (pendingCount < _config.MinimumRecruitmentPoolSize)
                 {
                     if (!fillingUp)
                     {
                         fillingUp = true;
-                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {NationManager.GetNationCountByStatusName("pending")} to {_config.MinimumRecruitmentPoolSize}"));
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {pendingCount} to {_config.MinimumRecruitmentPoolSize}"));
                     }
                     var regionId = _rnd.Next(regionsToRecruitFrom.Count);
                     var region = regionsToRecruitFrom.ElementAt(regionId);
@@ -250,6 +251,8 @@ namespace NationStatesAPIBot.Services
                     var nation = await NationManager.GetNationAsync(nationName);
                     await NationManager.SetNationStatusToAsync(nation, "pending");
                     counter++;
+                    pendingCount = NationManager.GetNationCountByStatusName("pending");
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Added nation '{nationName}' to pending. Now at {pendingCount} from minimum {_config.MinimumRecruitmentPoolSize}."));
                 }
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
                 await Task.Delay(1800000); //30 min
