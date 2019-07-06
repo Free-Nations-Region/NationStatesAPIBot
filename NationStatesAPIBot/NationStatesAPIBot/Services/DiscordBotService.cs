@@ -19,7 +19,7 @@ namespace NationStatesAPIBot.Services
         private readonly AppSettings _config;
         private DiscordSocketClient DiscordClient;
         private CommandService commandService;
-        private IPermissionManager _permManager;
+        private readonly IPermissionManager _permManager;
 
         public bool IsRunning { get; private set; }
 

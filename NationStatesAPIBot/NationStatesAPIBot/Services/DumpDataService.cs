@@ -22,11 +22,11 @@ namespace NationStatesAPIBot.Services
         private HashSet<NATION> _nations;
         private HashSet<REGION> _regions;
         private bool isDumpUpdateCycleRunning = false;
-        private CancellationTokenSource tokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
         private DateTime lastDumpUpdateTime = DateTime.UnixEpoch;
-        private string regionFileName = "regions-dump-latest.xml.gz";
-        private string nationFileName = "nations-dump-latest.xml.gz";
-        private EventId defaultEventId;
+        private readonly string regionFileName = "regions-dump-latest.xml.gz";
+        private readonly string nationFileName = "nations-dump-latest.xml.gz";
+        private readonly EventId defaultEventId;
         public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService)
         {
             _logger = logger;

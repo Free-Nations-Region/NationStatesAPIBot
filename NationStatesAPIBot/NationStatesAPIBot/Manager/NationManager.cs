@@ -14,6 +14,16 @@ namespace NationStatesAPIBot.Manager
         {
             _config = config;
         }
+
+        public static async Task<Nation> GetNationAsync(string nationName)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return await dbContext.Nations.FirstOrDefaultAsync(n => n.Name == nationName);
+            }
+        }
+
+
         public static List<Nation> GetNationsByStatusName(string name)
         {
             using (var dbContext = new BotDbContext(_config))
@@ -27,6 +37,22 @@ namespace NationStatesAPIBot.Manager
             using (var dbContext = new BotDbContext(_config))
             {
                 return dbContext.Nations.Count(n => n.Status.Name == name);
+            }
+        }
+
+        public static async Task<bool> IsNationPendingSkippedSendOrFailedAsync(string name)
+        {
+            using(var dbContext = new BotDbContext(_config))
+            {
+                var nation = await dbContext.Nations.Include(n => n.Status).FirstOrDefaultAsync
+                    (
+                    n => n.Name == name 
+                    && n.Status.Name == "pending" 
+                    && n.Status.Name == "skipped" 
+                    && n.Status.Name == "send" 
+                    && n.Status.Name == "failed"
+                    );
+                return nation != null;
             }
         }
 

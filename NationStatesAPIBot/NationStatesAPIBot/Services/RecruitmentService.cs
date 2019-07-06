@@ -24,7 +24,7 @@ namespace NationStatesAPIBot.Services
         private readonly AppSettings _config;
         private readonly NationStatesApiService _apiService;
         private readonly DumpDataService _dumpDataService;
-
+        private readonly Random _rnd;
         public int ApiSent { get; private set; }
         public int ApiPending { get; private set; }
         public int ApiSkipped { get; private set; }
@@ -53,6 +53,7 @@ namespace NationStatesAPIBot.Services
             _apiService = apiService;
             _dumpDataService = dumpDataService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
+            _rnd = new Random();
             if (_config.EnableRecruitment)
             {
                 RecruitmentStatus = "Disabled";
@@ -68,6 +69,7 @@ namespace NationStatesAPIBot.Services
             {
                 IsRecruiting = true;
                 Task.Run(async () => await GetNewNationsAsync());
+                Task.Run(async () => await EnsurePoolFilled());
                 Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
                 UpdateRecruitmentStatsAsync();
@@ -144,8 +146,6 @@ namespace NationStatesAPIBot.Services
 
         }
 
-
-
         private async Task<bool> IsNationRecruitableAsync(Nation nation, EventId id)
         {
             if (nation != null)
@@ -172,11 +172,6 @@ namespace NationStatesAPIBot.Services
                 return true;
             }
             return false;
-        }
-
-        private async Task<bool> DoesNationFitCriteriaAsync(Nation nation)
-        {
-            return await DoesNationFitCriteriaAsync(nation.Name);
         }
 
         private async Task<bool> DoesNationFitCriteriaAsync(string nationName)
@@ -228,10 +223,57 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task AddNationToPendingAsync(EventId id, List<string> result)
+        private async Task EnsurePoolFilled()
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.EnsurePoolFilled);
+            List<REGION> regionsToRecruitFrom = new List<REGION>();
+            var regionNames = _config.RegionsToRecruitFrom.Split(";");
+            foreach (var regionName in regionNames)
+            {
+                var region = await _dumpDataService.GetRegionAsync(regionName);
+                if (region != null)
+                {
+                    regionsToRecruitFrom.Add(region);
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
+                }
+                else
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
+                }
+            }
+            while (IsRecruiting)
+            {
+                bool fillingUp = false;
+                int counter = 0;
+                while (NationManager.GetNationCountByStatusName("pending") < _config.MinimumRecruitmentPoolSize)
+                {
+                    if (!fillingUp)
+                    {
+                        fillingUp = true;
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {NationManager.GetNationCountByStatusName("pending")} to {_config.MinimumRecruitmentPoolSize}"));
+                    }
+                    var regionId = _rnd.Next(regionsToRecruitFrom.Count);
+                    var region = regionsToRecruitFrom.ElementAt(regionId);
+                    string nationName;
+                    do
+                    {
+                        var nationId = _rnd.Next(region.NATIONNAMES.Count);
+                        nationName = region.NATIONNAMES.ElementAt(nationId);
+                    }
+                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || !await IsNationRecruitableAsync(nationName, id));
+                    var nation = await NationManager.GetNationAsync(nationName);
+                    await NationManager.SetNationStatusToAsync(nation, "pending");
+                    counter++;
+                }
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
+                await Task.Delay(1800000); //30 min
+            }
+        }
+
+        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames)
         {
             List<string> nationsToAdd = new List<string>();
-            foreach (var res in result)
+            foreach (var res in nationNames)
             {
                 if (await IsNationRecruitableAsync(res, id))
                 {
@@ -309,6 +351,10 @@ namespace NationStatesAPIBot.Services
                     _logger.LogError(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "An error occured."));
                 }
                 await Task.Delay(60000);
+            }
+            if (!_config.EnableRecruitment)
+            {
+                _logger.LogWarning(defaulEventId, "Recruitment disabled.");
             }
         }
 
