@@ -34,8 +34,15 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                _recruitmentService.StartRecruitment();
-                await ReplyAsync("Recruitment Process started.");
+                if (RecruitmentService.RecruitmentStatus != "Disabled")
+                {
+                    _recruitmentService.StartRecruitment();
+                    await ReplyAsync("Recruitment Process started.");
+                }
+                else
+                {
+                    await ReplyAsync("Can't start Recruitment because it is Disabled");
+                }
             }
             else
             {
@@ -48,8 +55,15 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                _recruitmentService.StopRecruitment();
-                await ReplyAsync("Recruitment Process stopped.");
+                if (RecruitmentService.IsRecruiting)
+                {
+                    _recruitmentService.StopRecruitment();
+                    await ReplyAsync("Recruitment Process stopped.");
+                }
+                else
+                {
+                    await ReplyAsync("Recruitment Process isn't running.");
+                }
             }
             else
             {

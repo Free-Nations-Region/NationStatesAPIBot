@@ -53,6 +53,10 @@ namespace NationStatesAPIBot.Services
             _apiService = apiService;
             _dumpDataService = dumpDataService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
+            if (_config.EnableRecruitment)
+            {
+                RecruitmentStatus = "Disabled";
+            }
         }
 
         public bool IsReceivingRecruitableNations { get; internal set; }
@@ -241,7 +245,7 @@ namespace NationStatesAPIBot.Services
         private async Task RecruitAsync()
         {
             List<Nation> pendingNations = new List<Nation>();
-            while (IsRecruiting)
+            while (IsRecruiting && _config.EnableRecruitment)
             {
                 try
                 {
