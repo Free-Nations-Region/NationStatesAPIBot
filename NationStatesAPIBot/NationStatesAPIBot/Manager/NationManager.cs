@@ -47,10 +47,10 @@ namespace NationStatesAPIBot.Manager
                 var nation = await dbContext.Nations.Include(n => n.Status).FirstOrDefaultAsync
                     (
                     n => n.Name == name 
-                    && n.Status.Name == "pending" 
-                    && n.Status.Name == "skipped" 
-                    && n.Status.Name == "send" 
-                    && n.Status.Name == "failed"
+                    && (n.Status.Name == "pending" 
+                    || n.Status.Name == "skipped" 
+                    || n.Status.Name == "send" 
+                    || n.Status.Name == "failed")
                     );
                 return nation != null;
             }
