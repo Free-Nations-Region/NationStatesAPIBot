@@ -35,9 +35,9 @@ namespace NationStatesAPIBot.Services
             _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
         }
 
-        public bool IsUpdating { get; private set; } = false;
+        public static bool IsUpdating { get; private set; } = false;
 
-        public bool DataAvailable { get; private set; } = false;
+        public static bool DataAvailable { get; private set; } = false;
 
         private string GetLogMessage(string message)
         {

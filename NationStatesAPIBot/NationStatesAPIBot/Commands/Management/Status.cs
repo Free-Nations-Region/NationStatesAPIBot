@@ -57,6 +57,11 @@ namespace NationStatesAPIBot.Commands.Management
                 },
                 new EmbedFieldBuilder()
                 {
+                    Name = "Dump Data",
+                    Value = $"Available: {DumpDataService.DataAvailable}; Updating: {DumpDataService.IsUpdating}"
+                },
+                new EmbedFieldBuilder()
+                {
                     Name = "Recruitment",
                     Value = RecruitmentService.RecruitmentStatus
                 }
