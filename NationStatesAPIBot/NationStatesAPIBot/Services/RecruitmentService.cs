@@ -249,7 +249,14 @@ namespace NationStatesAPIBot.Services
                     }
                     while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || !await IsNationRecruitableAsync(nationName, id));
                     var nation = await NationManager.GetNationAsync(nationName);
-                    await NationManager.SetNationStatusToAsync(nation, "pending");
+                    if (nation != null)
+                    {
+                        await NationManager.SetNationStatusToAsync(nation, "pending");
+                    }
+                    else
+                    {
+                        await NationManager.AddUnknownNationsAsPendingAsync(new List<string>() { nationName });
+                    }
                     counter++;
                     pendingCount = NationManager.GetNationCountByStatusName("pending");
                     _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Added nation '{nationName}' to pending. Now at {pendingCount} from minimum {_config.MinimumRecruitmentPoolSize}."));
@@ -265,15 +272,18 @@ namespace NationStatesAPIBot.Services
             var regionNames = _config.RegionsToRecruitFrom.Split(";");
             foreach (var regionName in regionNames)
             {
-                var region = await _dumpDataService.GetRegionAsync(regionName);
-                if (region != null)
+                if (!string.IsNullOrWhiteSpace(regionName))
                 {
-                    regionsToRecruitFrom.Add(region);
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
-                }
-                else
-                {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
+                    var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(regionName));
+                    if (region != null)
+                    {
+                        regionsToRecruitFrom.Add(region);
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
+                    }
+                    else
+                    {
+                        _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
+                    }
                 }
             }
 
@@ -291,7 +301,10 @@ namespace NationStatesAPIBot.Services
                 }
             }
             var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd);
-            _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
+            if (counter > 0)
+            {
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
+            }
         }
 
         private async Task RecruitAsync()

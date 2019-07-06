@@ -16,7 +16,7 @@ namespace NationStatesAPIBot.Services
     public class NationStatesApiService : BaseApiService
     {
         public const int API_VERSION = 9;
-        public const long API_REQUEST_INTERVAL = 6000000; //0,6 s
+        public const long API_REQUEST_INTERVAL = 6500000; //0,6 s + additional 0,05 s as buffer -> 0,65 s
         public const long SEND_NON_RECRUITMENTTELEGRAM_INTERVAL = 300000000; //30 s
         public const long SEND_RECRUITMENTTELEGRAM_INTERVAL = 1800000000; //3 m 1800000000
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 18000000000
@@ -156,18 +156,26 @@ namespace NationStatesAPIBot.Services
             await WaitForAction(NationStatesApiRequestType.GetNewNations);
             var url = BuildApiRequestUrl("q=happenings;filter=founding&limit=200");
             XmlDocument foundingsXML = await ExecuteRequestWithXmlResult(url, eventId);
-            lastAutomaticNewNationsRequest = DateTime.UtcNow;
-            XmlNodeList foundingXMLNodes = foundingsXML.GetElementsByTagName("TEXT");
-
-            List<string> foundings = new List<string>();
-            Regex regex = new Regex("@@(.*?)@@");
-
-            for (int i = 0; i < foundingXMLNodes.Count; i++)
+            if (foundingsXML != null)
             {
-                var name = regex.Match(foundingXMLNodes.Item(i).InnerText).Value;
-                foundings.Add(name);
+                lastAutomaticNewNationsRequest = DateTime.UtcNow;
+                XmlNodeList foundingXMLNodes = foundingsXML.GetElementsByTagName("TEXT");
+
+                List<string> foundings = new List<string>();
+                Regex regex = new Regex("@@(.*?)@@");
+
+                for (int i = 0; i < foundingXMLNodes.Count; i++)
+                {
+                    var name = regex.Match(foundingXMLNodes.Item(i).InnerText).Value;
+                    foundings.Add(name);
+                }
+                return foundings.Select(nation => ToID(nation)).ToList();
             }
-            return foundings.Select(nation => ToID(nation)).ToList();
+            else
+            {
+                _logger.LogWarning(eventId, LogMessageBuilder.Build(eventId, "Foundings XML were null."));
+                return new List<string>();
+            }
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)
