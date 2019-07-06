@@ -155,7 +155,7 @@ namespace NationStatesAPIBot.Services
                 {
                     await NationManager.SetNationStatusToAsync(nation, "skipped");
                 }
-                return true;
+                return result;
             }
             return false;
         }
