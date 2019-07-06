@@ -63,6 +63,7 @@ namespace NationStatesAPIBot.Services
         public bool IsReceivingRecruitableNations { get; internal set; }
         public static bool IsRecruiting { get; private set; }
         public static string RecruitmentStatus { get; private set; } = "Not Running";
+        public static string PoolStatus { get; private set; } = "Waiting for new nations";
         public void StartRecruitment()
         {
             if (!IsRecruiting)
@@ -212,8 +213,10 @@ namespace NationStatesAPIBot.Services
                 try
                 {
                     await _apiService.WaitForAction(NationStatesApiRequestType.GetNewNations);
+                    PoolStatus = "Filling up with new nations";
                     var result = await _apiService.GetNewNationsAsync(id);
-                    await AddNationToPendingAsync(id, result);
+                    await AddNationToPendingAsync(id, result, false);
+                    PoolStatus = "Waiting for new nations";
                 }
                 catch (Exception ex)
                 {
@@ -239,6 +242,7 @@ namespace NationStatesAPIBot.Services
                         fillingUp = true;
                         _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {pendingCount} to {_config.MinimumRecruitmentPoolSize}"));
                     }
+                    PoolStatus = "Filling up with random nations";
                     var regionId = _rnd.Next(regionsToRecruitFrom.Count);
                     var region = regionsToRecruitFrom.ElementAt(regionId);
                     string nationName;
@@ -255,7 +259,7 @@ namespace NationStatesAPIBot.Services
                     }
                     else
                     {
-                        await NationManager.AddUnknownNationsAsPendingAsync(new List<string>() { nationName });
+                        await NationManager.AddUnknownNationsAsPendingAsync(new List<string>() { nationName }, true);
                     }
                     counter++;
                     pendingCount = NationManager.GetNationCountByStatusName("pending");
@@ -290,7 +294,7 @@ namespace NationStatesAPIBot.Services
             return regionsToRecruitFrom;
         }
 
-        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames)
+        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames, bool isSourceDumps)
         {
             List<string> nationsToAdd = new List<string>();
             foreach (var res in nationNames)
@@ -300,7 +304,7 @@ namespace NationStatesAPIBot.Services
                     nationsToAdd.Add(res);
                 }
             }
-            var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd);
+            var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd, isSourceDumps);
             if (counter > 0)
             {
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
