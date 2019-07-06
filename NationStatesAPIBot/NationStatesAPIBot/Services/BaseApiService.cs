@@ -27,7 +27,7 @@ namespace NationStatesAPIBot.Services
         {
             bool releaseId = false;
             var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId();
-            lastAPIRequest = DateTime.Now;
+            lastAPIRequest = DateTime.UtcNow;
             if (eventId == null)
             {
                 releaseId = true;
