@@ -54,7 +54,7 @@ namespace NationStatesAPIBot.Services
             _dumpDataService = dumpDataService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
             _rnd = new Random();
-            if (_config.EnableRecruitment)
+            if (!_config.EnableRecruitment)
             {
                 RecruitmentStatus = "Disabled";
             }
