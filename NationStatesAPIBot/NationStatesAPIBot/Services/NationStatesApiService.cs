@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Services
                  * And have a time window of 31 Minutes to it gets definitely hit by the 30 Minute interval of WaitForAction
                  * These times converted to UTC are 6:00 AM and 6:31 AM + 1 hour for possibly daylight saving time issues
                  */
-                return Task.FromResult(DateTime.UtcNow.TimeOfDay > new TimeSpan(6, 59, 59) && DateTime.UtcNow.TimeOfDay < new TimeSpan(7, 31, 00));
+                return Task.FromResult(DateTime.UtcNow.TimeOfDay > new TimeSpan(6, 59, 59) && DateTime.UtcNow.TimeOfDay < new TimeSpan(7, 31, 00) && DumpDataService.LastDumpUpdateTimeUtc.Date != DateTime.UtcNow.Date);
             }
             else
             {
