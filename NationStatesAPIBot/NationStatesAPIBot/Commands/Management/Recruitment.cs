@@ -214,7 +214,7 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
                                         $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
-                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTime)} ago --" +
+                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTime, TimeZoneInfo.Local)).ToString("h'h m'm s's")} ago --" +
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +

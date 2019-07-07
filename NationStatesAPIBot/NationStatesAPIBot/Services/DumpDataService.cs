@@ -23,7 +23,6 @@ namespace NationStatesAPIBot.Services
         private HashSet<REGION> _regions;
         private bool isDumpUpdateCycleRunning = false;
         private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
-        private static DateTime lastDumpUpdateTime = DateTime.UnixEpoch;
         private readonly string regionFileName = "regions-dump-latest.xml.gz";
         private readonly string nationFileName = "nations-dump-latest.xml.gz";
         private readonly EventId defaultEventId;
@@ -38,7 +37,7 @@ namespace NationStatesAPIBot.Services
         public static bool IsUpdating { get; private set; } = false;
 
         public static bool DataAvailable { get; private set; } = false;
-        public static DateTime LastDumpUpdateTime { get => lastDumpUpdateTime; private set => lastDumpUpdateTime = value; }
+        public static DateTime LastDumpUpdateTime { get; private set; } = DateTime.UnixEpoch;
 
         private string GetLogMessage(string message)
         {
@@ -179,7 +178,7 @@ namespace NationStatesAPIBot.Services
                 stopWatch.Stop();
                 _logger.LogDebug(defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
                 var fileInfoNations = new FileInfo(nationFileName);
-                LastDumpUpdateTime = fileInfoNations.CreationTimeUtc;
+                LastDumpUpdateTime = fileInfoNations.LastWriteTimeUtc;
                 LoadDumpsFromStream(regionStream, nationStream);
             }
             finally
