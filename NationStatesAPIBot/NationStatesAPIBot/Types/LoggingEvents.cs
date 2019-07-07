@@ -17,6 +17,7 @@
         APIRecruitment = 11000,
         WouldReceiveTelegram = 11100,
         GetRecruitableNations = 11200,
+        EnsurePoolFilled = 11500,
         SendRecruitmentTelegram = 12000,
         DumpDataServiceAction = 13000,
     }

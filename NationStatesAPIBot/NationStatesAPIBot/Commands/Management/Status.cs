@@ -57,13 +57,28 @@ namespace NationStatesAPIBot.Commands.Management
                 },
                 new EmbedFieldBuilder()
                 {
+                    Name = "Dump Data",
+                    Value = $"Available: {DumpDataService.DataAvailable}; Updating: {DumpDataService.IsUpdating}"
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "Last Dump Data Update",
+                    Value = $"{(DumpDataService.LastDumpUpdateTimeUtc == DateTime.UnixEpoch || (!DumpDataService.DataAvailable && DumpDataService.IsUpdating)?"Updating":DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago")}"
+                },
+                new EmbedFieldBuilder()
+                {
                     Name = "Recruitment",
                     Value = RecruitmentService.RecruitmentStatus
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "Pool Status",
+                    Value = RecruitmentService.PoolStatus
                 }
             });
             await ReplyAsync(embed: builder.Build());
         }
-                
+
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
         public async Task DoPing()
         {

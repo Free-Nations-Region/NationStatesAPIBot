@@ -34,8 +34,15 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                _recruitmentService.StartRecruitment();
-                await ReplyAsync("Recruitment Process started.");
+                if (RecruitmentService.RecruitmentStatus != "Disabled")
+                {
+                    _recruitmentService.StartRecruitment();
+                    await ReplyAsync("Recruitment Process started.");
+                }
+                else
+                {
+                    await ReplyAsync("Can't start Recruitment because it is Disabled");
+                }
             }
             else
             {
@@ -48,8 +55,15 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                _recruitmentService.StopRecruitment();
-                await ReplyAsync("Recruitment Process stopped.");
+                if (RecruitmentService.IsRecruiting)
+                {
+                    _recruitmentService.StopRecruitment();
+                    await ReplyAsync("Recruitment Process stopped.");
+                }
+                else
+                {
+                    await ReplyAsync("Recruitment Process isn't running.");
+                }
             }
             else
             {
@@ -192,13 +206,16 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
+                _recruitmentService.RStatDbUpdate();
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"Recruitment statistics:");
-                builder.WithDescription($"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
+                builder.WithDescription($"-- DataSource DB : Last updated just now --{Environment.NewLine}" + 
+                                        $"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
+                                        $"Skipped (API) : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
+                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'")} ago --{Environment.NewLine}" +
                                         $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
-                                        $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +

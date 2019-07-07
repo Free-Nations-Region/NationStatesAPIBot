@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NationStatesAPIBot.Entities;
+using NationStatesAPIBot.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,16 @@ namespace NationStatesAPIBot.Manager
         {
             _config = config;
         }
+
+        public static async Task<Nation> GetNationAsync(string nationName)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return await dbContext.Nations.FirstOrDefaultAsync(n => n.Name == nationName);
+            }
+        }
+
+
         public static List<Nation> GetNationsByStatusName(string name)
         {
             using (var dbContext = new BotDbContext(_config))
@@ -27,6 +38,22 @@ namespace NationStatesAPIBot.Manager
             using (var dbContext = new BotDbContext(_config))
             {
                 return dbContext.Nations.Count(n => n.Status.Name == name);
+            }
+        }
+
+        public static async Task<bool> IsNationPendingSkippedSendOrFailedAsync(string name)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                var nation = await dbContext.Nations.Include(n => n.Status).FirstOrDefaultAsync
+                    (
+                    n => n.Name == name
+                    && (n.Status.Name == "pending"
+                    || n.Status.Name == "skipped"
+                    || n.Status.Name == "send"
+                    || n.Status.Name == "failed")
+                    );
+                return nation != null;
             }
         }
 
@@ -50,7 +77,7 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
-        public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations)
+        public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations, bool sourceDumps)
         {
             int counter = 0;
             using (var context = new BotDbContext(_config))
@@ -64,14 +91,16 @@ namespace NationStatesAPIBot.Manager
                 }
                 foreach (string nationName in newNations)
                 {
+
                     
-                    if(await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
+                    if (await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
                     {
-                        await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow, Status = status, StatusId = status.Id });
+                        var time = sourceDumps ? TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTimeUtc, TimeZoneInfo.Local) : DateTime.UtcNow;
+                        await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time , Status = status, StatusId = status.Id });
                         await context.SaveChangesAsync();
                         counter++;
                     }
-                }                
+                }
             }
             return counter;
         }

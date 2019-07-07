@@ -26,7 +26,8 @@ namespace NationStatesAPIBot.Services
         protected async Task<HttpResponseMessage> ExecuteGetRequest(string url, EventId? eventId)
         {
             bool releaseId = false;
-            var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId(); ;
+            var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId();
+            lastAPIRequest = DateTime.UtcNow;
             if (eventId == null)
             {
                 releaseId = true;
@@ -39,7 +40,19 @@ namespace NationStatesAPIBot.Services
                     client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
                     client.DefaultRequestHeaders.Add("User-Agent", $"(contact { _config.Contact};)");
                     var response = await client.GetAsync(url);
-                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                    
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogError(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                    }
+                    else
+                    {
+                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                    }
+                    if ((int)response.StatusCode == 429)
+                    {
+                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Retry in {response.Headers.RetryAfter.Delta} seconds."));
+                    }
                     return response;
                 }
             }
@@ -55,6 +68,7 @@ namespace NationStatesAPIBot.Services
         protected async Task<Stream> ExecuteRequestWithStreamResult(string url, EventId? eventId)
         {
             var response = await ExecuteGetRequest(url, eventId);
+            
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadAsStreamAsync();

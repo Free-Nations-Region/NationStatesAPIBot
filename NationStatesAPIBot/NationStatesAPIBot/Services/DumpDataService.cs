@@ -22,11 +22,10 @@ namespace NationStatesAPIBot.Services
         private HashSet<NATION> _nations;
         private HashSet<REGION> _regions;
         private bool isDumpUpdateCycleRunning = false;
-        private CancellationTokenSource tokenSource = new CancellationTokenSource();
-        private DateTime lastDumpUpdateTime = DateTime.UnixEpoch;
-        private string regionFileName = "regions-dump-latest.xml.gz";
-        private string nationFileName = "nations-dump-latest.xml.gz";
-        private EventId defaultEventId;
+        private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
+        private readonly string regionFileName = "regions-dump-latest.xml.gz";
+        private readonly string nationFileName = "nations-dump-latest.xml.gz";
+        private readonly EventId defaultEventId;
         public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService)
         {
             _logger = logger;
@@ -35,9 +34,10 @@ namespace NationStatesAPIBot.Services
             _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
         }
 
-        public bool IsUpdating { get; private set; } = false;
+        public static bool IsUpdating { get; private set; } = false;
 
-        public bool DataAvailable { get; private set; } = false;
+        public static bool DataAvailable { get; private set; } = false;
+        public static DateTime LastDumpUpdateTimeUtc { get; private set; } = DateTime.UnixEpoch;
 
         private string GetLogMessage(string message)
         {
@@ -100,7 +100,7 @@ namespace NationStatesAPIBot.Services
         {
             try
             {
-                if (lastDumpUpdateTime == DateTime.UnixEpoch)
+                if (LastDumpUpdateTimeUtc == DateTime.UnixEpoch)
                 {
                     await InitialUpdate();
                 }
@@ -178,7 +178,7 @@ namespace NationStatesAPIBot.Services
                 stopWatch.Stop();
                 _logger.LogDebug(defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
                 var fileInfoNations = new FileInfo(nationFileName);
-                lastDumpUpdateTime = fileInfoNations.CreationTimeUtc;
+                LastDumpUpdateTimeUtc = fileInfoNations.LastWriteTimeUtc;
                 LoadDumpsFromStream(regionStream, nationStream);
             }
             finally

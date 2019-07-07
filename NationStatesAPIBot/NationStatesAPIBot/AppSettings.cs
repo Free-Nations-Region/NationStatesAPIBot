@@ -4,7 +4,7 @@ namespace NationStatesAPIBot
 {
     public class AppSettings
     {
-        public const string VERSION = "v3.1-Pre-4";
+        public const string VERSION = "v3.1-Pre-5";
         public const int API_VERSION = 9;
         public const long API_REQUEST_INTERVAL = 6000000; //0,6 s
         public const long SEND_NON_RECRUITMENTTELEGRAM_INTERVAL = 300000000; //30 s
@@ -25,7 +25,9 @@ namespace NationStatesAPIBot
         public string NationStatesRegionName { get; set; }
         public char SeperatorChar { get; set; }
         public bool CriteriaCheckOnNations { get; set; }
-
+        public bool EnableRecruitment { get; set; }
+        public int MinimumRecruitmentPoolSize { get; set; }
+        public string RegionsToRecruitFrom { get; set; }
         public string Configuration
         {
             get

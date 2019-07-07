@@ -24,7 +24,7 @@ namespace NationStatesAPIBot.Services
         private readonly AppSettings _config;
         private readonly NationStatesApiService _apiService;
         private readonly DumpDataService _dumpDataService;
-        
+        private readonly Random _rnd;
         public int ApiSent { get; private set; }
         public int ApiPending { get; private set; }
         public int ApiSkipped { get; private set; }
@@ -53,17 +53,24 @@ namespace NationStatesAPIBot.Services
             _apiService = apiService;
             _dumpDataService = dumpDataService;
             defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
+            _rnd = new Random();
+            if (!_config.EnableRecruitment)
+            {
+                RecruitmentStatus = "Disabled";
+            }
         }
 
         public bool IsReceivingRecruitableNations { get; internal set; }
         public static bool IsRecruiting { get; private set; }
         public static string RecruitmentStatus { get; private set; } = "Not Running";
+        public static string PoolStatus { get; private set; } = "Waiting for new nations";
         public void StartRecruitment()
         {
             if (!IsRecruiting)
             {
                 IsRecruiting = true;
                 Task.Run(async () => await GetNewNationsAsync());
+                Task.Run(async () => await EnsurePoolFilled());
                 Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
                 UpdateRecruitmentStatsAsync();
@@ -144,10 +151,23 @@ namespace NationStatesAPIBot.Services
         {
             if (nation != null)
             {
-                if (!await DoesNationFitCriteriaAsync(nation) || !await WouldReceiveTelegram(nation.Name))
+                var result = await IsNationRecruitableAsync(nation.Name, id);
+                if (!result)
                 {
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped"));
                     await NationManager.SetNationStatusToAsync(nation, "skipped");
+                }
+                return result;
+            }
+            return false;
+        }
+
+        private async Task<bool> IsNationRecruitableAsync(string nationName, EventId id)
+        {
+            if (!string.IsNullOrWhiteSpace(nationName))
+            {
+                if (!await DoesNationFitCriteriaAsync(nationName) || !await WouldReceiveTelegram(nationName))
+                {
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped"));
                     return false;
                 }
                 return true;
@@ -155,12 +175,12 @@ namespace NationStatesAPIBot.Services
             return false;
         }
 
-        private async Task<bool> DoesNationFitCriteriaAsync(Nation nation)
+        private async Task<bool> DoesNationFitCriteriaAsync(string nationName)
         {
             if (_config.CriteriaCheckOnNations)
             {
-                var res = !nation.Name.Any(c => char.IsDigit(c)) && nation.Name.Count(c => c == nation.Name[0]) != nation.Name.Length;
-                _logger.LogDebug($"{nation.Name} criteria fit: {res}");
+                var res = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
+                _logger.LogDebug($"{nationName} criteria fit: {res}");
                 return await Task.FromResult(res);
             }
             else
@@ -193,9 +213,10 @@ namespace NationStatesAPIBot.Services
                 try
                 {
                     await _apiService.WaitForAction(NationStatesApiRequestType.GetNewNations);
+                    PoolStatus = "Filling up with new nations";
                     var result = await _apiService.GetNewNationsAsync(id);
-                    var counter = await NationManager.AddUnknownNationsAsPendingAsync(result);
-                    _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
+                    await AddNationToPendingAsync(id, result, false);
+                    PoolStatus = "Waiting for new nations";
                 }
                 catch (Exception ex)
                 {
@@ -205,16 +226,101 @@ namespace NationStatesAPIBot.Services
             }
         }
 
+        private async Task EnsurePoolFilled()
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.EnsurePoolFilled);
+            List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFrom(id);
+            while (IsRecruiting)
+            {
+                bool fillingUp = false;
+                int counter = 0;
+                int pendingCount = NationManager.GetNationCountByStatusName("pending");
+                while (pendingCount < _config.MinimumRecruitmentPoolSize)
+                {
+                    if (!fillingUp)
+                    {
+                        fillingUp = true;
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {pendingCount} to {_config.MinimumRecruitmentPoolSize}"));
+                    }
+                    PoolStatus = "Filling up with random nations";
+                    var regionId = _rnd.Next(regionsToRecruitFrom.Count);
+                    var region = regionsToRecruitFrom.ElementAt(regionId);
+                    string nationName;
+                    do
+                    {
+                        var nationId = _rnd.Next(region.NATIONNAMES.Count);
+                        nationName = region.NATIONNAMES.ElementAt(nationId);
+                    }
+                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || !await IsNationRecruitableAsync(nationName, id));
+                    var nation = await NationManager.GetNationAsync(nationName);
+                    if (nation != null)
+                    {
+                        await NationManager.SetNationStatusToAsync(nation, "pending");
+                    }
+                    else
+                    {
+                        await NationManager.AddUnknownNationsAsPendingAsync(new List<string>() { nationName }, true);
+                    }
+                    counter++;
+                    pendingCount = NationManager.GetNationCountByStatusName("pending");
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Added nation '{nationName}' to pending. Now at {pendingCount} from minimum {_config.MinimumRecruitmentPoolSize}."));
+                }
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
+                await Task.Delay(1800000); //30 min
+            }
+        }
+
+        private async Task<List<REGION>> GetRegionToRecruitFrom(EventId id)
+        {
+            List<REGION> regionsToRecruitFrom = new List<REGION>();
+            var regionNames = _config.RegionsToRecruitFrom.Split(";");
+            foreach (var regionName in regionNames)
+            {
+                if (!string.IsNullOrWhiteSpace(regionName))
+                {
+                    var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(regionName));
+                    if (region != null)
+                    {
+                        regionsToRecruitFrom.Add(region);
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
+                    }
+                    else
+                    {
+                        _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Region for name '{regionName}' couldn't be found in dumps."));
+                    }
+                }
+            }
+
+            return regionsToRecruitFrom;
+        }
+
+        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames, bool isSourceDumps)
+        {
+            List<string> nationsToAdd = new List<string>();
+            foreach (var res in nationNames)
+            {
+                if (await IsNationRecruitableAsync(res, id))
+                {
+                    nationsToAdd.Add(res);
+                }
+            }
+            var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd, isSourceDumps);
+            if (counter > 0)
+            {
+                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
+            }
+        }
+
         private async Task RecruitAsync()
         {
             List<Nation> pendingNations = new List<Nation>();
-            while (IsRecruiting)
+            while (IsRecruiting && _config.EnableRecruitment)
             {
                 try
                 {
                     if (pendingNations.Count == 0)
                     {
-                        if(NationManager.GetNationCountByStatusName("pending") == 0)
+                        if (NationManager.GetNationCountByStatusName("pending") == 0)
                         {
                             _logger.LogWarning("Delaying API recruitment for 15 minutes due to lack of recruitable nations");
                             RecruitmentStatus = "Throttled: lack of nations";
@@ -273,6 +379,10 @@ namespace NationStatesAPIBot.Services
                 }
                 await Task.Delay(60000);
             }
+            if (!_config.EnableRecruitment)
+            {
+                _logger.LogWarning(defaulEventId, "Recruitment disabled.");
+            }
         }
 
         internal string GetRNStatus()
@@ -303,10 +413,8 @@ namespace NationStatesAPIBot.Services
                     var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
                     var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
 
-                    ApiSent = sent.Count;
-                    ApiPending = NationManager.GetNationsByStatusName("pending").Count;
-                    ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
-                    ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+                    RStatDbUpdate();
+
                     ApiRecruited = apiRecruited.Count;
                     ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
                     ManualReserved = manual.Count;
@@ -346,7 +454,15 @@ namespace NationStatesAPIBot.Services
                 await Task.Delay(TimeSpan.FromHours(4));
             }
         }
-        
+
+        public void RStatDbUpdate()
+        {
+            ApiSent = NationManager.GetNationsByStatusName("send").Count;
+            ApiPending = NationManager.GetNationsByStatusName("pending").Count;
+            ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
+            ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+        }
+
         // TODO: Put data in DB
         private static async Task WriteRecruited(DateTime date, IEnumerable<string> allApi, IQueryable<string> allManual)
         {
@@ -355,7 +471,7 @@ namespace NationStatesAPIBot.Services
             {
                 //allRemainingRecruits means -> all nations that were recruited and are still member of the region
                 var initial = new JObject(new JProperty("allRemainingRecruits", new JObject(
-                    new JProperty("api", allApi), 
+                    new JProperty("api", allApi),
                     new JProperty("manual", allManual))));
                 json = initial.ToString();
             }
@@ -380,7 +496,7 @@ namespace NationStatesAPIBot.Services
             }
             await File.WriteAllTextAsync(@"RecruitmentStats.json", json);
         }
-        
+
         // TODO: Get data from DB
         private static async Task<List<int>> GetRecruitedOn(DateTime date)
         {
@@ -396,11 +512,11 @@ namespace NationStatesAPIBot.Services
             };
             return recruited;
         }
-        
+
         private static async Task<List<int>> GetRecruitedBetween(DateTime date1, DateTime date2)
         {
             var days = date2.Subtract(date1).Days;
-            var recruited = new List<int> {0, 0};
+            var recruited = new List<int> { 0, 0 };
 
             for (var i = 0; i < days; i++)
             {
