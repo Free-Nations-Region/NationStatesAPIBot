@@ -206,15 +206,16 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
+                _recruitmentService.RStatDbUpdate();
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"Recruitment statistics:");
                 builder.WithDescription($"-- DataSource DB : Last updated just now --" + 
                                         $"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
+                                        $"Skipped (API) : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
+                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTimeUtc, TimeZoneInfo.Local)).ToString("h'h m'm s's")} ago --" +
                                         $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
-                                        $"Skipped : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
-                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTime, TimeZoneInfo.Local)).ToString("h'h m'm s's")} ago --" +
                                         $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(new CultureInfo("en-US"))}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +

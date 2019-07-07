@@ -37,7 +37,7 @@ namespace NationStatesAPIBot.Services
         public static bool IsUpdating { get; private set; } = false;
 
         public static bool DataAvailable { get; private set; } = false;
-        public static DateTime LastDumpUpdateTime { get; private set; } = DateTime.UnixEpoch;
+        public static DateTime LastDumpUpdateTimeUtc { get; private set; } = DateTime.UnixEpoch;
 
         private string GetLogMessage(string message)
         {
@@ -100,7 +100,7 @@ namespace NationStatesAPIBot.Services
         {
             try
             {
-                if (LastDumpUpdateTime == DateTime.UnixEpoch)
+                if (LastDumpUpdateTimeUtc == DateTime.UnixEpoch)
                 {
                     await InitialUpdate();
                 }
@@ -178,7 +178,7 @@ namespace NationStatesAPIBot.Services
                 stopWatch.Stop();
                 _logger.LogDebug(defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
                 var fileInfoNations = new FileInfo(nationFileName);
-                LastDumpUpdateTime = fileInfoNations.LastWriteTimeUtc;
+                LastDumpUpdateTimeUtc = fileInfoNations.LastWriteTimeUtc;
                 LoadDumpsFromStream(regionStream, nationStream);
             }
             finally

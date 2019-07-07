@@ -95,7 +95,7 @@ namespace NationStatesAPIBot.Manager
                     
                     if (await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
                     {
-                        var time = sourceDumps ? TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTime, TimeZoneInfo.Local) : DateTime.UtcNow;
+                        var time = sourceDumps ? TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTimeUtc, TimeZoneInfo.Local) : DateTime.UtcNow;
                         await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time , Status = status, StatusId = status.Id });
                         await context.SaveChangesAsync();
                         counter++;

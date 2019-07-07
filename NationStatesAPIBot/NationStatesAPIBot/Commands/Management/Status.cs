@@ -63,7 +63,7 @@ namespace NationStatesAPIBot.Commands.Management
                 new EmbedFieldBuilder()
                 {
                     Name = "Last Dump Data Update",
-                    Value = $"{(DumpDataService.LastDumpUpdateTime == DateTime.UnixEpoch || (!DumpDataService.DataAvailable && DumpDataService.IsUpdating)?"Updating":DateTime.UtcNow.Subtract(TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTime, TimeZoneInfo.Local)).ToString("h'h 'm'm 's's'") + " ago")}"
+                    Value = $"{(DumpDataService.LastDumpUpdateTimeUtc == DateTime.UnixEpoch || (!DumpDataService.DataAvailable && DumpDataService.IsUpdating)?"Updating":DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago")}"
                 },
                 new EmbedFieldBuilder()
                 {

@@ -413,10 +413,8 @@ namespace NationStatesAPIBot.Services
                     var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
                     var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
 
-                    ApiSent = sent.Count;
-                    ApiPending = NationManager.GetNationsByStatusName("pending").Count;
-                    ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
-                    ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+                    RStatDbUpdate();
+
                     ApiRecruited = apiRecruited.Count;
                     ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
                     ManualReserved = manual.Count;
@@ -455,6 +453,14 @@ namespace NationStatesAPIBot.Services
                 }
                 await Task.Delay(TimeSpan.FromHours(4));
             }
+        }
+
+        public void RStatDbUpdate()
+        {
+            ApiSent = NationManager.GetNationsByStatusName("send").Count;
+            ApiPending = NationManager.GetNationsByStatusName("pending").Count;
+            ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
+            ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
         }
 
         // TODO: Put data in DB
