@@ -265,7 +265,12 @@ namespace NationStatesAPIBot.Services
                     pendingCount = NationManager.GetNationCountByStatusName("pending");
                     _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Added nation '{nationName}' to pending. Now at {pendingCount} from minimum {_config.MinimumRecruitmentPoolSize}."));
                 }
-                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
+                if (fillingUp)
+                {
+                    _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
+                    PoolStatus = "Waiting for new nations";
+                }
+                
                 await Task.Delay(1800000); //30 min
             }
         }
@@ -282,7 +287,7 @@ namespace NationStatesAPIBot.Services
                     if (region != null)
                     {
                         regionsToRecruitFrom.Add(region);
-                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Region '{regionName}' added to regionsToRecruitFrom."));
                     }
                     else
                     {
