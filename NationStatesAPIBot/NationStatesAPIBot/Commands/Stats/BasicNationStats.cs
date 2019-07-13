@@ -167,8 +167,13 @@ namespace NationStatesAPIBot.Commands.Stats
             {
                 string nationName = string.Join(" ", args);
                 var builder = new EmbedBuilder();
+                if (DumpDataService.IsUpdating)
+                {
+                    await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
+                    builder.WithTitle($"{Context.User.Mention}/n");
+                }
                 var endorsed = await _dumpDataService.GetNationsEndorsedBy(nationName);
-                builder.WithTitle($"{nationName} has endorsed {endorsed.Count} nations:");
+                builder.WithTitle($"{builder.Title}{nationName} has endorsed {endorsed.Count} nations:");
                 if (endorsed.Count > 0)
                 {
                     StringBuilder sBuilder = new StringBuilder();
