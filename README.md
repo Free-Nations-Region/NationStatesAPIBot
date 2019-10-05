@@ -8,13 +8,12 @@ It will check if the recipient would receive the telegram before actually sendin
 
 It is intended to provide:
   - some statistics from NationStates API to discord users
-  - verification of nation ownership via the NationStates API (To-Do)
-  - backup functionality of discord channel chat logs. (To-Do)
-  - a lot other cool stuff
+  - recruitment support for the region
+  - a lot of other cool stuff
   
 It will be extended as needed.
 
-It can probably be used for general purpose as well.
+It probably can be used for general purpose as well.
 
 Feel free to contribute!
 
