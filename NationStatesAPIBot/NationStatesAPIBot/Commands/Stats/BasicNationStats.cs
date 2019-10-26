@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using NationStatesAPIBot.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace NationStatesAPIBot.Commands.Stats
 {
@@ -18,14 +19,16 @@ namespace NationStatesAPIBot.Commands.Stats
         private readonly NationStatesApiService _apiDataService;
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
-        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService)
+        private readonly CultureInfo _locale;
+        
+        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config)
         {
             _logger = logger;
             _apiDataService = apiService;
             _dumpDataService = dumpDataService;
+            _locale = config.Value.Locale;
         }
 
-        //TODO: Make CultureInfo configurable
         [Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
         public async Task GetBasicStats(params string[] args)
         {
@@ -60,7 +63,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     var influenceValue = census[3].ChildNodes[0].InnerText;
                     var endorsementCount = census[4].ChildNodes[0].InnerText;
                     var residency = census[5].ChildNodes[0].InnerText;
-                    var residencyDbl = Convert.ToDouble(residency, CultureInfo.InvariantCulture);
+                    var residencyDbl = Convert.ToDouble(residency, _locale);
                     var residencyYears = (int)(residencyDbl / 365.242199);
 
                     var populationdbl = Convert.ToDouble(population);
@@ -72,7 +75,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     builder.WithThumbnailUrl(flagUrl);
                     builder.WithTitle($"BasicStats for Nation");
                     builder.WithDescription($"**[{fullname}]({nationUrl})** {Environment.NewLine}" +
-                        $"{(populationdbl / 1000.0 < 1 ? populationdbl : populationdbl / 1000.0).ToString(new CultureInfo("en-US"))} {(populationdbl / 1000.0 < 1 ? "million" : "billion")} {demonymplural} | " +
+                        $"{(populationdbl / 1000.0 < 1 ? populationdbl : populationdbl / 1000.0).ToString(_locale)} {(populationdbl / 1000.0 < 1 ? "million" : "billion")} {demonymplural} | " +
                         $"Founded {founded} | " +
                         $"Last active {lastActivity}");
                     builder.AddField("Region",

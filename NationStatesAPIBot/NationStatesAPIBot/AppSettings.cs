@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace NationStatesAPIBot
 {
@@ -28,6 +29,7 @@ namespace NationStatesAPIBot
         public bool EnableRecruitment { get; set; }
         public int MinimumRecruitmentPoolSize { get; set; }
         public string RegionsToRecruitFrom { get; set; }
+        public CultureInfo Locale { get; set; }
         public string Configuration
         {
             get
