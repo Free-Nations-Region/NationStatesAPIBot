@@ -331,3 +331,4 @@ ASALocalRun/
 .mfractor/
 appsettings.development.json
 appsettings.production.json
+NationStatesAPIBot/NationStatesAPIBot/RecruitmentStats.json

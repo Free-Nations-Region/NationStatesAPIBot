@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# CA1707: Bezeichner dürfen keine Unterstriche enthalten
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1303: Literale nicht als lokalisierte Parameter übergeben
+dotnet_diagnostic.CA1303.severity = suggestion
+
+# CA2007: Aufruf von "ConfigureAwait" für erwarteten Task erwägen
+dotnet_diagnostic.CA2007.severity = silent
