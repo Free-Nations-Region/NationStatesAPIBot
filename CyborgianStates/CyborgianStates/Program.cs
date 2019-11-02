@@ -1,4 +1,6 @@
 ﻿using CyborgianStates.Interfaces;
+using CyborgianStates.Repositories;
+using CyborgianStates.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -53,7 +55,7 @@ namespace CyborgianStates
             serviceCollection.AddSingleton<IBotService, DiscordBotService>();
             serviceCollection.AddSingleton<NationStatesApiService, NationStatesApiService>();
             serviceCollection.AddSingleton<DumpDataService, DumpDataService>();
-            serviceCollection.AddSingleton<IPermissionRepository, PermissionManager>();
+            serviceCollection.AddSingleton<IPermissionRepository, PermissionRepository>();
             serviceCollection.AddSingleton<RecruitmentService, RecruitmentService>();
             // add app
             serviceCollection.AddTransient<App>();
