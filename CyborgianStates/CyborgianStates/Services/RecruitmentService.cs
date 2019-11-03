@@ -9,9 +9,9 @@ using Microsoft.Extensions.Options;
 using CyborgianStates.Commands.Management;
 using CyborgianStates.DumpData;
 using CyborgianStates.Entities;
-using CyborgianStates.Manager;
 using CyborgianStates.Types;
 using Newtonsoft.Json.Linq;
+using CyborgianStates.Models;
 
 namespace CyborgianStates.Services
 {

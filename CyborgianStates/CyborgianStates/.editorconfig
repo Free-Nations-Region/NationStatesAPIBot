@@ -8,3 +8,6 @@ dotnet_diagnostic.CA1303.severity = suggestion
 
 # CA2007: Aufruf von "ConfigureAwait" für erwarteten Task erwägen
 dotnet_diagnostic.CA2007.severity = silent
+
+# IDE0063: Einfache using-Anweisung verwenden
+csharp_prefer_simple_using_statement = true:silent

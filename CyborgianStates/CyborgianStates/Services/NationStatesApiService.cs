@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CyborgianStates.Manager;
 using CyborgianStates.Types;
 using System;
 using System.Collections.Generic;

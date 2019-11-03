@@ -23,7 +23,7 @@ namespace CyborgianStates.Services
             _logger = logger;
             _config = config.Value;
         }
-        protected async Task<HttpResponseMessage> ExecuteGetRequest(string url, EventId? eventId)
+        protected async Task<HttpResponseMessage> ExecuteGetRequest(Uri url, EventId? eventId)
         {
             bool releaseId = false;
             var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId();
@@ -39,7 +39,7 @@ namespace CyborgianStates.Services
                     _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing Request to {url}"));
                     client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
                     client.DefaultRequestHeaders.Add("User-Agent", $"(contact { _config.Contact};)");
-                    var response = await client.GetAsync(new Uri(url)).ConfigureAwait(false);
+                    var response = await client.GetAsync(url).ConfigureAwait(false);
                     
                     if (!response.IsSuccessStatusCode)
                     {
@@ -65,7 +65,7 @@ namespace CyborgianStates.Services
             }
         }
 
-        protected async Task<Stream> ExecuteRequestWithStreamResult(string url, EventId? eventId)
+        protected async Task<Stream> ExecuteRequestWithStreamResult(Uri url, EventId? eventId)
         {
             var response = await ExecuteGetRequest(url, eventId);
             
@@ -79,7 +79,7 @@ namespace CyborgianStates.Services
             }
         }
 
-        protected async Task<XmlDocument> ExecuteRequestWithXmlResult(string url, EventId eventId)
+        protected async Task<XmlDocument> ExecuteRequestWithXmlResult(Uri url, EventId eventId)
         {
             using (var stream = await ExecuteRequestWithStreamResult(url, eventId).ConfigureAwait(false))
             {
