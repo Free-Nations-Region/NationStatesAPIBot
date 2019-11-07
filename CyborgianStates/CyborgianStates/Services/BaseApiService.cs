@@ -12,22 +12,26 @@ namespace CyborgianStates.Services
 {
     public class BaseApiService
     {
-        protected readonly ILogger<BaseApiService> _logger;
-        protected readonly AppSettings _config;
-        protected DateTime lastAPIRequest;
-        protected DateTime lastTelegramSending;
-        protected DateTime lastAutomaticNewNationsRequest;
-        protected DateTime lastAutomaticRegionNationsRequest;
+        protected ILogger<BaseApiService> Logger { get; }
+        protected AppSettings Config { get; }
+        protected DateTime LastAPIRequest { get; set; }
+        protected DateTime LastTelegramSending { get; set; }
+        protected DateTime LastAutomaticNewNationsRequest { get; set; }
+        protected DateTime LastAutomaticRegionNationsRequest { get; set; }
         public BaseApiService(IOptions<AppSettings> config, ILogger<BaseApiService> logger)
         {
-            _logger = logger;
-            _config = config.Value;
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+            Logger = logger;
+            Config = config.Value;
         }
         protected async Task<HttpResponseMessage> ExecuteGetRequest(Uri url, EventId? eventId)
         {
             bool releaseId = false;
             var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId();
-            lastAPIRequest = DateTime.UtcNow;
+            LastAPIRequest = DateTime.UtcNow;
             if (eventId == null)
             {
                 releaseId = true;
@@ -36,25 +40,35 @@ namespace CyborgianStates.Services
             {
                 using (var client = new HttpClient())
                 {
-                    _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing Request to {url}"));
+                    Logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing Request to {url}"));
                     client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
-                    client.DefaultRequestHeaders.Add("User-Agent", $"(contact { _config.Contact};)");
+                    client.DefaultRequestHeaders.Add("User-Agent", $"(contact { Config.Contact};)");
                     var response = await client.GetAsync(url).ConfigureAwait(false);
-                    
+
                     if (!response.IsSuccessStatusCode)
                     {
-                        _logger.LogError(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                        Logger.LogError(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
                     }
                     else
                     {
-                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                        Logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
                     }
                     if ((int)response.StatusCode == 429)
                     {
-                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Retry in {response.Headers.RetryAfter.Delta} seconds."));
+                        Logger.LogWarning(logId, LogMessageBuilder.Build(logId, $"Retry in {response.Headers.RetryAfter.Delta} seconds."));
                     }
                     return response;
                 }
+            }
+            catch(ArgumentNullException ex)
+            {
+                Logger.LogCritical(logId, ex, LogMessageBuilder.Build(logId, $"A critical error occured.{Environment.NewLine}{ex}"));
+                return null;
+            }
+            catch (HttpRequestException ex)
+            {
+                Logger.LogCritical(logId, ex, LogMessageBuilder.Build(logId, $"A critical error occured.{Environment.NewLine}{ex}"));
+                return null;
             }
             finally
             {
@@ -68,7 +82,7 @@ namespace CyborgianStates.Services
         protected async Task<Stream> ExecuteRequestWithStreamResult(Uri url, EventId? eventId)
         {
             var response = await ExecuteGetRequest(url, eventId);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadAsStreamAsync();
@@ -96,9 +110,12 @@ namespace CyborgianStates.Services
                         return null;
                     }
                 }
-                catch (Exception ex)
+                catch (XmlException ex)
                 {
-                    _logger.LogCritical(eventId, ex, LogMessageBuilder.Build(eventId, $"Some critical error with xml occured.{Environment.NewLine}XML: {await new StreamReader(stream).ReadToEndAsync().ConfigureAwait(false)}"));
+                    using (var reader = new StreamReader(stream))
+                    {
+                        Logger.LogCritical(eventId, ex, LogMessageBuilder.Build(eventId, $"Some critical error with xml occured. {Environment.NewLine}XML: {await reader.ReadToEndAsync().ConfigureAwait(false)}"));
+                    }
                     return null;
                 }
             }
@@ -119,21 +136,21 @@ namespace CyborgianStates.Services
                 if (type == NationStatesDumpType.Nations)
                 {
                     url += "nations.xml.gz";
-                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Nation dump requested"));
+                    Logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Nation dump requested"));
                 }
                 else if (type == NationStatesDumpType.Regions)
                 {
                     url += "regions.xml.gz";
-                    _logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Region dump requested"));
+                    Logger.LogInformation(eventId, LogMessageBuilder.Build(eventId, "Retrieval of latest Region dump requested"));
                 }
                 else
                 {
                     throw new NotImplementedException($"Retrieval for DumpType {type} not implemented yet.");
                 }
-                var stream = await ExecuteRequestWithStreamResult(url, eventId).ConfigureAwait(false);
-                var compressed = new GZipStream(stream,CompressionMode.Decompress);
+                var stream = await ExecuteRequestWithStreamResult(new Uri(url), eventId).ConfigureAwait(false);
+                var compressed = new GZipStream(stream, CompressionMode.Decompress);
                 return compressed;
-                
+
             }
             finally
             {

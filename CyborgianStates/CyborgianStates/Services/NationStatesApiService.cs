@@ -23,12 +23,12 @@ namespace CyborgianStates.Services
 
         public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
 
-        public DateTime LastAPIRequest { get => lastAPIRequest; private set => lastAPIRequest = value; }
-        public DateTime LastTelegramSending { get => lastTelegramSending; private set => lastTelegramSending = value; }
+        public DateTime LastAPIRequest { get => base.LastAPIRequest; private set => base.LastAPIRequest = value; }
+        public DateTime LastTelegramSending { get => base.LastTelegramSending; private set => base.LastTelegramSending = value; }
 
 
-        public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; private set => lastAutomaticNewNationsRequest = value; }
-        public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; private set => lastAutomaticRegionNationsRequest = value; }
+        public DateTime LastAutomaticNewNationsRequest { get => base.LastAutomaticNewNationsRequest; private set => base.LastAutomaticNewNationsRequest = value; }
+        public DateTime LastAutomaticRegionNationsRequest { get => base.LastAutomaticRegionNationsRequest; private set => base.LastAutomaticRegionNationsRequest = value; }
 
         public Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
         {
@@ -61,7 +61,7 @@ namespace CyborgianStates.Services
             }
             else
             {
-                _logger.LogCritical($"Unrecognized ApiRequestType '{type.ToString()}'");
+                Logger.LogCritical($"Unrecognized ApiRequestType '{type.ToString()}'");
                 return Task.FromResult(false);
             }
         }
@@ -93,15 +93,15 @@ namespace CyborgianStates.Services
         public async Task<XmlDocument> GetWouldReceiveTelegramAsync(string nationName)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
-            _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
+            Logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.WouldReceiveRecruitmentTelegram);
-            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(_config.NationStatesRegionName)}");
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(Config.NationStatesRegionName)}");
             return await ExecuteRequestWithXmlResult(url, id);
         }
 
         public async Task<XmlDocument> GetRegionStatsAsync(string regionName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
             await WaitForAction(NationStatesApiRequestType.GetRegionStats);
             var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+power+founder+delegate+flag+tags");
             return await ExecuteRequestWithXmlResult(url, eventId);
@@ -109,7 +109,7 @@ namespace CyborgianStates.Services
 
         public async Task<XmlDocument> GetNationStatsAsync(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats-Request: {nationName}"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
             return await ExecuteRequestWithXmlResult(url, eventId);
@@ -118,46 +118,46 @@ namespace CyborgianStates.Services
         public async Task<bool> SendRecruitmentTelegramAsync(string nationName)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.SendRecruitmentTelegram);
-            var lastSend = NationManager.GetNationsByStatusName("send").Take(1).ToArray();
-            if (lastSend.Length > 0 && !(lastTelegramSending.Year < DateTime.UtcNow.Year))
+            var lastSend = NationRepository.GetNationsByStatusName("send").Take(1).ToArray();
+            if (lastSend.Length > 0 && !(base.LastTelegramSending.Year < DateTime.UtcNow.Year))
             {
-                lastTelegramSending = lastSend[0].StatusTime;
+                base.LastTelegramSending = lastSend[0].StatusTime;
             }
             try
             {
-                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for SendRecruitmentTelegram-Request: {nationName}"));
+                Logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for SendRecruitmentTelegram-Request: {nationName}"));
                 await WaitForAction(NationStatesApiRequestType.SendRecruitmentTelegram);
-                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Sending Telegram to {nationName}."));
+                Logger.LogDebug(id, LogMessageBuilder.Build(id, $"Sending Telegram to {nationName}."));
                 var url = BuildApiRequestUrl($"a=sendTG" +
-                    $"&client={_config.ClientKey}" +
-                    $"&tgid={_config.TelegramId}" +
-                    $"&key={_config.TelegramSecretKey}" +
+                    $"&client={Config.ClientKey}" +
+                    $"&tgid={Config.TelegramId}" +
+                    $"&key={Config.TelegramSecretKey}" +
                     $"&to={ToID(nationName)}");
                 var response = await ExecuteGetRequest(url, id);
-                lastTelegramSending = DateTime.UtcNow;
+                base.LastTelegramSending = DateTime.UtcNow;
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                    Logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));
                 }
                 return response.IsSuccessStatusCode;
 
             }
             catch (Exception ex)
             {
-                _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"An error occured."));
+                Logger.LogError(id, ex, LogMessageBuilder.Build(id, $"An error occured."));
                 return false;
             }
         }
 
         public async Task<List<string>> GetNewNationsAsync(EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetNewNations-Request"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetNewNations-Request"));
             await WaitForAction(NationStatesApiRequestType.GetNewNations);
             var url = BuildApiRequestUrl("q=happenings;filter=founding&limit=200");
             XmlDocument foundingsXML = await ExecuteRequestWithXmlResult(url, eventId);
             if (foundingsXML != null)
             {
-                lastAutomaticNewNationsRequest = DateTime.UtcNow;
+                base.LastAutomaticNewNationsRequest = DateTime.UtcNow;
                 XmlNodeList foundingXMLNodes = foundingsXML.GetElementsByTagName("TEXT");
 
                 List<string> foundings = new List<string>();
@@ -172,14 +172,14 @@ namespace CyborgianStates.Services
             }
             else
             {
-                _logger.LogWarning(eventId, LogMessageBuilder.Build(eventId, "Foundings XML were null."));
+                Logger.LogWarning(eventId, LogMessageBuilder.Build(eventId, "Foundings XML were null."));
                 return new List<string>();
             }
         }
 
         public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname");
             return await ExecuteRequestWithXmlResult(url, eventId);
@@ -187,7 +187,7 @@ namespace CyborgianStates.Services
 
         public async Task<XmlDocument> GetDelegateString(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname+influence+census;mode=score;scale=65+66");
             return await ExecuteRequestWithXmlResult(url, eventId);
@@ -195,7 +195,7 @@ namespace CyborgianStates.Services
 
         public async Task<XmlDocument> GetEndorsements(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetEndorsements-Request: {nationName}"));
+            Logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetEndorsements-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=endorsements");
             return await ExecuteRequestWithXmlResult(url, eventId);
