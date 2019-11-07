@@ -14,3 +14,6 @@ csharp_prefer_simple_using_statement = true:silent
 
 # CA1304: CultureInfo angeben
 dotnet_diagnostic.CA1304.severity = suggestion
+
+# CA1307: StringComparison angeben
+dotnet_diagnostic.CA1307.severity = suggestion

@@ -23,13 +23,6 @@ namespace CyborgianStates.Services
 
         public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
 
-        public DateTime LastAPIRequest { get => base.LastAPIRequest; private set => base.LastAPIRequest = value; }
-        public DateTime LastTelegramSending { get => base.LastTelegramSending; private set => base.LastTelegramSending = value; }
-
-
-        public DateTime LastAutomaticNewNationsRequest { get => base.LastAutomaticNewNationsRequest; private set => base.LastAutomaticNewNationsRequest = value; }
-        public DateTime LastAutomaticRegionNationsRequest { get => base.LastAutomaticRegionNationsRequest; private set => base.LastAutomaticRegionNationsRequest = value; }
-
         public Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
         {
             if (type == NationStatesApiRequestType.GetNationsFromRegion)

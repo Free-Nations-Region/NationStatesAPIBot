@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CyborgianStates.Commands.Management;
 using CyborgianStates.DumpData;
-using CyborgianStates.Entities;
 using CyborgianStates.Types;
 using Newtonsoft.Json.Linq;
 using CyborgianStates.Models;
@@ -48,6 +46,10 @@ namespace CyborgianStates.Services
         public double RecruitedLastMonthAvgDM { get; private set; }
         public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, NationStatesApiService apiService, DumpDataService dumpDataService)
         {
+            if(appSettings == null)
+            {
+                throw new ArgumentNullException(nameof(appSettings));
+            }
             _logger = logger;
             _config = appSettings.Value;
             _apiService = apiService;
@@ -111,7 +113,7 @@ namespace CyborgianStates.Services
                 while (returnNations.Count < number)
                 {
                     var picked = pendingNations.Take(1);
-                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                    var nation = picked.Any() ? picked.ToArray()[0] : null;
                     if (nation != null)
                     {
                         if (await IsNationRecruitableAsync(nation, id))
@@ -352,7 +354,7 @@ namespace CyborgianStates.Services
                         }
                     }
                     var picked = pendingNations.Take(1);
-                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                    var nation = picked.Any() ? picked.ToArray()[0] : null;
                     if (nation != null)
                     {
                         if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
