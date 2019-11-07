@@ -9,7 +9,7 @@ namespace CyborgianStates.Interfaces
     public interface INationRepository
     {
         Task<Nation> GetNationAsync(string nationName);
-        Task<List<Nation>> GetNationsByStatusName(string statusName);
+        Task<List<Nation>> GetNationsByStatusNameAsync(string statusName);
         Task<int> GetNationCountByStatusName(string statusName);
         Task SetNationStatusAsync(Nation nation, string statusName, bool active);
         Task<int> BulkAddNationsToPending(List<string> newNations, bool sourceDump);

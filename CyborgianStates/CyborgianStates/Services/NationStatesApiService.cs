@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
+using CyborgianStates.Interfaces;
 
 namespace CyborgianStates.Services
 {
@@ -20,8 +21,11 @@ namespace CyborgianStates.Services
         public const long SEND_RECRUITMENTTELEGRAM_INTERVAL = 1800000000; //3 m 1800000000
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 18000000000
         public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
-
-        public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
+        private readonly INationRepository _nationRepo;
+        public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger, INationRepository nationRepository) : base(config, logger)
+        {
+            _nationRepo = nationRepository;
+        }
 
         public Task<bool> IsNationStatesApiActionReadyAsync(NationStatesApiRequestType type, bool isScheduledAction)
         {
@@ -111,10 +115,10 @@ namespace CyborgianStates.Services
         public async Task<bool> SendRecruitmentTelegramAsync(string nationName)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.SendRecruitmentTelegram);
-            var lastSend = NationRepository.GetNationsByStatusName("send").Take(1).ToArray();
-            if (lastSend.Length > 0 && !(base.LastTelegramSending.Year < DateTime.UtcNow.Year))
+            var lastSend = await _nationRepo.GetNationsByStatusNameAsync("send");
+            if (lastSend.Any())
             {
-                base.LastTelegramSending = lastSend[0].StatusTime;
+                LastTelegramSending = lastSend[0].Status.First(s => s.Name == "send").CreatedAt;
             }
             try
             {
@@ -127,7 +131,7 @@ namespace CyborgianStates.Services
                     $"&key={Config.TelegramSecretKey}" +
                     $"&to={ToID(nationName)}");
                 var response = await ExecuteGetRequest(url, id);
-                base.LastTelegramSending = DateTime.UtcNow;
+                LastTelegramSending = DateTime.UtcNow;
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));

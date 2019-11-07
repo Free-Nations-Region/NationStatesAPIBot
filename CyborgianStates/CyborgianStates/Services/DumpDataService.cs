@@ -283,19 +283,6 @@ namespace CyborgianStates.Services
                 }).ToHashSet();
         }
 
-        private List<OFFICER> BuildOfficers(XElement m)
-        {
-            return m.Element("OFFICERS").Descendants("OFFICER").Select(o => new OFFICER
-            {
-                NATION = o.Element("NATION").Value,
-                BY = o.Element("BY").Value,
-                OFFICE = o.Element("OFFICE").Value,
-                ORDER = (int)o.Element("ORDER"),
-                AUTHORITY = o.Element("AUTHORITY").Value,
-                TIME = DateTimeOffset.FromUnixTimeSeconds((long)o.Element("TIME")),
-            }).ToList();
-        }
-
         private HashSet<NATION> ParseNationsFromStream(Stream stream)
         {
             HashSet<NATION> nations = new HashSet<NATION>();
@@ -315,7 +302,20 @@ namespace CyborgianStates.Services
             reader.Dispose();
             return nations;
         }
+        private List<OFFICER> BuildOfficers(XElement m)
+        {
+            return m.Element("OFFICERS").Descendants("OFFICER").Select(o => new OFFICER
+            {
+                NATION = o.Element("NATION").Value,
+                BY = o.Element("BY").Value,
+                OFFICE = o.Element("OFFICE").Value,
+                ORDER = (int)o.Element("ORDER"),
+                AUTHORITY = o.Element("AUTHORITY").Value,
+                TIME = DateTimeOffset.FromUnixTimeSeconds((long)o.Element("TIME")),
+            }).ToList();
+        }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification = "<Ausstehend>")]
         private NATION BuildNation(XElement m)
         {
             return new NATION
@@ -358,6 +358,7 @@ namespace CyborgianStates.Services
             };
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification = "<Ausstehend>")]
         private static List<WABADGE> BuildWABadges(XElement m)
         {
             return m.Element("WABADGES")?.Descendants("WABADGE").Select(w => new WABADGE
@@ -367,6 +368,7 @@ namespace CyborgianStates.Services
             }).ToList();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification = "<Ausstehend>")]
         private static DEATHS BuildDeaths(XElement m)
         {
             return new DEATHS
@@ -379,6 +381,7 @@ namespace CyborgianStates.Services
             };
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification = "<Ausstehend>")]
         private static GOVT BuildGOVT(XElement m)
         {
             return new GOVT
@@ -398,11 +401,13 @@ namespace CyborgianStates.Services
             };
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification = "<Ausstehend>")]
         private static FREEDOM BuildFreedom(XElement m)
         {
             return new FREEDOM
             {
                 CIVILRIGHTS = m.Element("FREEDOM")?.Element("CIVILRIGHTS").Value,
+
                 CIVILRIGHTS_SCORE = Convert.ToDouble(m.Element("FREEDOMSCORES")?.Element("CIVILRIGHTS").Value),
                 ECONOMY = m.Element("FREEDOM")?.Element("ECONOMY").Value,
                 ECONOMY_SCORE = Convert.ToDouble(m.Element("FREEDOMSCORES")?.Element("ECONOMY").Value),
@@ -410,6 +415,7 @@ namespace CyborgianStates.Services
                 POLITICALFREEDOM_SCORE = Convert.ToDouble(m.Element("FREEDOMSCORES")?.Element("POLITICALFREEDOM").Value),
             };
         }
+
 
         private async Task WaitForDataAvailabilityAsync()
         {
@@ -428,7 +434,7 @@ namespace CyborgianStates.Services
                 throw new DataUnavailableException("No data available that could be accessed.");
             }
         }
-#endregion
+        #endregion
         private REGION GetRegionInternal(string name)
         {
             return _regions.FirstOrDefault(r => r.NAME == name);
@@ -479,10 +485,10 @@ namespace CyborgianStates.Services
             _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
             await WaitForDataAvailabilityAsync();
             var nation = GetNationInternal(nationName);
-            if(nation != null)
+            if (nation != null)
             {
                 var region = nation.REGION;
-                if(region != null)
+                if (region != null)
                 {
                     return region.NATIONS.Where(n => n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
                 }

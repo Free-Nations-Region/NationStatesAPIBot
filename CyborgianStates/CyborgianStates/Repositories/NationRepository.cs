@@ -24,7 +24,7 @@ namespace CyborgianStates.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<List<Nation>> GetNationsByStatusName(string statusName)
+        public Task<List<Nation>> GetNationsByStatusNameAsync(string statusName)
         {
             throw new NotImplementedException();
         }

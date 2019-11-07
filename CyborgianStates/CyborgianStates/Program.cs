@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetEscapades.Extensions.Logging.RollingFile;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -31,10 +32,9 @@ namespace CyborgianStates
 #if DEBUG
             configurationName = "development";
 #endif
-
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile($"appsettings.{configurationName}.json", false, true)
+                .AddJsonFile($"appsettings.{configurationName}.json", false, false)
                 .Build();
             serviceCollection.AddOptions();
             serviceCollection.Configure<AppSettings>(configuration.GetSection("Configuration"));
@@ -56,7 +56,6 @@ namespace CyborgianStates
             serviceCollection.AddSingleton<NationStatesApiService, NationStatesApiService>();
             serviceCollection.AddSingleton<DumpDataService, DumpDataService>();
             serviceCollection.AddSingleton<IPermissionRepository, PermissionRepository>();
-            serviceCollection.AddSingleton<RecruitmentService, RecruitmentService>();
             // add app
             serviceCollection.AddTransient<App>();
         }

@@ -11,11 +11,11 @@ using CyborgianStates.Types;
 using Microsoft.Extensions.DependencyInjection;
 namespace CyborgianStates.Services
 {
-    public class DiscordBotService : IBotService
+    public class DiscordBotService : IBotService, IDisposable
     {
         private readonly ILogger<DiscordBotService> _logger;
         private readonly AppSettings _config;
-        private DiscordSocketClient DiscordClient;
+        private DiscordSocketClient discordClient;
         private CommandService commandService;
         private readonly IPermissionRepository _permRepo;
         private readonly IUserRepository _userRepo;
@@ -24,6 +24,10 @@ namespace CyborgianStates.Services
 
         public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, IPermissionRepository permissionRepository, IUserRepository userRepository)
         {
+            if(config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
             _logger = logger;
             _config = config.Value;
             _permRepo = permissionRepository;
@@ -57,22 +61,22 @@ namespace CyborgianStates.Services
             {
                 if (message is SocketUserMessage socketMsg)
                 {
-                    var context = new SocketCommandContext(DiscordClient, socketMsg);
+                    var context = new SocketCommandContext(discordClient, socketMsg);
                     if (Reactive)
                     {
                         _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
-                        if (await IsRelevantAsync(message, context.User).ConfigureAwait(false))
+                        if (await IsRelevantAsync(message, context.User))
                         {
                             //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
-                            if (await _permRepo.IsBotAdminAsync(context.User).ConfigureAwait(false) && socketMsg.Content == $"{_config.SeperatorChar}sleep")
+                            if (await _permRepo.IsBotAdminAsync(context.User) && socketMsg.Content == $"{_config.SeperatorChar}sleep")
                             {
-                                await context.Client.SetStatusAsync(UserStatus.DoNotDisturb).ConfigureAwait(false);
-                                await context.Channel.SendMessageAsync($"Ok! Going to sleep now. Wake me up later with {_config.SeperatorChar}wakeup.").ConfigureAwait(false);
+                                await context.Client.SetStatusAsync(UserStatus.DoNotDisturb);
+                                await context.Channel.SendMessageAsync($"Ok! Going to sleep now. Wake me up later with {_config.SeperatorChar}wakeup.");
                                 Reactive = false;
                             }
                             else
                             {
-                                await commandService.ExecuteAsync(context, 1, Program.ServiceProvider).ConfigureAwait(false);
+                                await commandService.ExecuteAsync(context, 1, Program.ServiceProvider);
                             }
                         }
                     }
@@ -100,7 +104,7 @@ namespace CyborgianStates.Services
         public async Task RunAsync()
         {
             _logger.LogInformation($"--- DiscordBotService started ---");
-            DiscordClient = new DiscordSocketClient();
+            discordClient = new DiscordSocketClient();
             commandService = new CommandService(new CommandServiceConfig
             {
                 SeparatorChar = _config.SeperatorChar,
@@ -109,24 +113,24 @@ namespace CyborgianStates.Services
             });
             SetUpDiscordEvents();
             await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), Program.ServiceProvider);
-            await DiscordClient.LoginAsync(TokenType.Bot, _config.DiscordBotLoginToken);
-            await DiscordClient.StartAsync();
+            await discordClient.LoginAsync(TokenType.Bot, _config.DiscordBotLoginToken);
+            await discordClient.StartAsync();
             IsRunning = true;
 
         }
 
         private void SetUpDiscordEvents()
         {
-            DiscordClient.Connected += DiscordClient_Connected;
-            DiscordClient.Disconnected += DiscordClient_Disconnected;
-            DiscordClient.MessageReceived += DiscordClient_MessageReceived;
-            DiscordClient.Log += DiscordClient_Log;
-            DiscordClient.LoggedIn += DiscordClient_LoggedIn;
-            DiscordClient.LoggedOut += DiscordClient_LoggedOut;
-            DiscordClient.Ready += DiscordClient_Ready;
-            DiscordClient.UserBanned += DiscordClient_UserBanned;
-            DiscordClient.UserJoined += DiscordClient_UserJoined;
-            DiscordClient.UserLeft += DiscordClient_UserLeft;
+            discordClient.Connected += DiscordClient_Connected;
+            discordClient.Disconnected += DiscordClient_Disconnected;
+            discordClient.MessageReceived += DiscordClient_MessageReceived;
+            discordClient.Log += DiscordClient_Log;
+            discordClient.LoggedIn += DiscordClient_LoggedIn;
+            discordClient.LoggedOut += DiscordClient_LoggedOut;
+            discordClient.Ready += DiscordClient_Ready;
+            discordClient.UserBanned += DiscordClient_UserBanned;
+            discordClient.UserJoined += DiscordClient_UserJoined;
+            discordClient.UserLeft += DiscordClient_UserLeft;
         }
 
         private Task DiscordClient_UserLeft(SocketGuildUser arg)
@@ -209,12 +213,40 @@ namespace CyborgianStates.Services
 
         public async Task ShutdownAsync()
         {
-            await DiscordClient.LogoutAsync();
-            await DiscordClient.StopAsync();
-            Program.ServiceProvider.GetService<RecruitmentService>().StopRecruitment();
+            await discordClient.LogoutAsync();
+            await discordClient.StopAsync();
             Program.ServiceProvider.GetService<DumpDataService>().StopDumpUpdateCycle();
             IsRunning = false;
             Environment.Exit(0);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // Used to detect redundant calls.
+
+        ~DiscordBotService()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    discordClient.Dispose();
+                }                
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
+
     }
 }
