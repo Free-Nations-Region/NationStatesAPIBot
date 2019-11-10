@@ -17,7 +17,7 @@ namespace CyborgianStates
     {
         public static IServiceProvider ServiceProvider { get; private set; }
         public static string BuildConfig { get; private set; }
-
+        public static DateTime StartTime { get; private set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Stil", "IDE0060:Nicht verwendete Parameter entfernen", Justification = "<Ausstehend>")]
         static void Main(string[] args)
         {
@@ -27,7 +27,8 @@ namespace CyborgianStates
 
             ServiceProvider = serviceCollection.BuildServiceProvider();
             Console.CancelKeyPress += Console_CancelKeyPress;
-            
+            StartTime = DateTime.UtcNow;
+
             ServiceProvider.GetService<App>().Run().Wait();
         }
 
@@ -69,7 +70,6 @@ namespace CyborgianStates
             serviceCollection.AddSingleton<IBotService, DiscordBotService>();
             serviceCollection.AddSingleton<NationStatesApiService, NationStatesApiService>();
             serviceCollection.AddSingleton<DumpDataService, DumpDataService>();
-            serviceCollection.AddSingleton<IPermissionRepository, PermissionRepository>();
             serviceCollection.AddSingleton<INationRepository, NationRepository>();
             serviceCollection.AddSingleton<IUserRepository, UserRepository>();
             // add app

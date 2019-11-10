@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,12 +44,14 @@ namespace CyborgianStates.Repositories
 
         public async Task RemoveUserFromDbAsync(ulong userId)
         {
-            users.FindOneAndDeleteAsync(u => u.DiscordUserId == userId);
+            await users.FindOneAndDeleteAsync(u => u.DiscordUserId == userId);
         }
 
-        public Task<bool> IsAllowedAsync(string permissionType, ulong userId)
+        public async Task<bool> IsAllowedAsync(string permissionType, ulong userId)
         {
-            return Task.FromResult(true);
+            var res = await users.FindAsync(u => u.DiscordUserId == userId && u.Permissions.Any(p => p.Name == permissionType));
+            var user = await res.FirstOrDefaultAsync();
+            return user != null;
         }
 
         public Task<bool> IsBotAdminAsync(ulong userId)

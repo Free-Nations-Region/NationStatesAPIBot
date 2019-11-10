@@ -7,7 +7,7 @@ namespace CyborgianStates
 {
     public class AppSettings
     {
-        public const string VERSION = "v4.0-Pre-1";
+        public const string VERSION = "v4.0-Pre-2";
         public const int API_VERSION = 9;
         public const long API_REQUEST_INTERVAL = 6000000; //0,6 s
         public const long SEND_RECRUITMENTTELEGRAM_INTERVAL = 1800000000; //3 m

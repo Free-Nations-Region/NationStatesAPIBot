@@ -17,12 +17,11 @@ namespace CyborgianStates.Services
         private readonly AppSettings _config;
         private DiscordSocketClient discordClient;
         private CommandService commandService;
-        private readonly IPermissionRepository _permRepo;
         private readonly IUserRepository _userRepo;
 
         public bool IsRunning { get; private set; }
 
-        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, IPermissionRepository permissionRepository, IUserRepository userRepository)
+        public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, IUserRepository userRepository)
         {
             if(config == null)
             {
@@ -30,7 +29,6 @@ namespace CyborgianStates.Services
             }
             _logger = logger;
             _config = config.Value;
-            _permRepo = permissionRepository;
             _userRepo = userRepository;
         }
 
@@ -68,7 +66,7 @@ namespace CyborgianStates.Services
                         if (await IsRelevantAsync(message, context.User))
                         {
                             //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
-                            if (await _permRepo.IsBotAdminAsync(context.User) && socketMsg.Content == $"{_config.SeperatorChar}sleep")
+                            if (await _userRepo.IsBotAdminAsync(context.User.Id) && socketMsg.Content == $"{_config.SeperatorChar}sleep")
                             {
                                 await context.Client.SetStatusAsync(UserStatus.DoNotDisturb);
                                 await context.Channel.SendMessageAsync($"Ok! Going to sleep now. Wake me up later with {_config.SeperatorChar}wakeup.");
@@ -82,13 +80,13 @@ namespace CyborgianStates.Services
                     }
                     else
                     {
-                        if (await _permRepo.IsBotAdminAsync(context.User) && socketMsg.Content == $"{_config.SeperatorChar}wakeup")
+                        if (await _userRepo.IsBotAdminAsync(context.User.Id) && socketMsg.Content == $"{_config.SeperatorChar}wakeup")
                         {
                             Reactive = true;
                             await context.Client.SetStatusAsync(UserStatus.Online);
                             await context.Channel.SendMessageAsync("Hey! I'm back.");
                         }
-                        else if (await IsRelevantAsync(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb && !await _permRepo.IsBotAdminAsync(context.User))
+                        else if (await IsRelevantAsync(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb && !await _userRepo.IsBotAdminAsync(context.User.Id))
                         {
                             await context.Channel.SendMessageAsync(AppSettings.SLEEPTEXT);
                         }
