@@ -11,6 +11,8 @@ namespace CyborgianStates.Repositories
 {
     public class PermissionRepository : IPermissionRepository
     {
+
+
         public Task AddPermissionAsync(string discordUserId, Role role)
         {
             throw new NotImplementedException();
@@ -46,15 +48,7 @@ namespace CyborgianStates.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<bool> IsAllowedAsync(PermissionType permissionType, SocketUser user)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> IsBotAdminAsync(SocketUser user)
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public Task RemoveRoleAsync(Role role)
         {

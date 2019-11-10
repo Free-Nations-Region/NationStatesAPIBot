@@ -19,7 +19,7 @@ namespace CyborgianStates
         public static string BuildConfig { get; private set; }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Stil", "IDE0060:Nicht verwendete Parameter entfernen", Justification = "<Ausstehend>")]
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             DetermineConfiguration();
             var serviceCollection = new ServiceCollection();
@@ -28,7 +28,7 @@ namespace CyborgianStates
             ServiceProvider = serviceCollection.BuildServiceProvider();
             Console.CancelKeyPress += Console_CancelKeyPress;
             
-            await ServiceProvider.GetService<App>().Run();
+            ServiceProvider.GetService<App>().Run().Wait();
         }
 
         private static void DetermineConfiguration()
@@ -65,7 +65,7 @@ namespace CyborgianStates
             var database = GetMongoDbDatabase(configuration.GetSection("Configuration"));
 
             // add services
-            serviceCollection.AddSingleton(database);
+            serviceCollection.AddSingleton(typeof(IMongoDatabase), database);
             serviceCollection.AddSingleton<IBotService, DiscordBotService>();
             serviceCollection.AddSingleton<NationStatesApiService, NationStatesApiService>();
             serviceCollection.AddSingleton<DumpDataService, DumpDataService>();

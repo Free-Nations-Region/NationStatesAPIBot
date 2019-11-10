@@ -10,5 +10,7 @@ namespace CyborgianStates.Interfaces
         Task<bool> IsUserInDbAsync(ulong userId);
         Task AddUserToDbAsync(ulong userId);
         Task RemoveUserFromDbAsync(ulong userId);
+        Task<bool> IsAllowedAsync(string permissionType, ulong userId);
+        Task<bool> IsBotAdminAsync(ulong userId);
     }
 }

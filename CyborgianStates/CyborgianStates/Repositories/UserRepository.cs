@@ -1,4 +1,7 @@
 ﻿using CyborgianStates.Interfaces;
+using CyborgianStates.Models;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,19 +11,49 @@ namespace CyborgianStates.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        public Task AddUserToDbAsync(ulong userId)
+        IMongoCollection<User> users;
+        AppSettings _config;
+        public UserRepository(IMongoDatabase database, IOptions<AppSettings> config)
         {
-            throw new NotImplementedException();
+            if(database == null)
+            {
+                throw new ArgumentNullException(nameof(database));
+            }
+            if(config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+            users = database.GetCollection<User>("user");
+            _config = config.Value;
         }
 
-        public Task<bool> IsUserInDbAsync(ulong userId)
+        public async Task AddUserToDbAsync(ulong userId)
         {
-            throw new NotImplementedException();
+            var user = new User() { DiscordUserId = userId };
+            user.Permissions.Add(new Permission() { Name = "ExecuteCommands", CreatedAt = DateTime.UtcNow });
+            await users.InsertOneAsync(user);
         }
 
-        public Task RemoveUserFromDbAsync(ulong userId)
+        public async Task<bool> IsUserInDbAsync(ulong userId)
         {
-            throw new NotImplementedException();
+            var res = await users.FindAsync(u => u.DiscordUserId == userId);
+            var user = await res.FirstOrDefaultAsync();
+            return user != null;
+        }
+
+        public async Task RemoveUserFromDbAsync(ulong userId)
+        {
+            users.FindOneAndDeleteAsync(u => u.DiscordUserId == userId);
+        }
+
+        public Task<bool> IsAllowedAsync(string permissionType, ulong userId)
+        {
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> IsBotAdminAsync(ulong userId)
+        {
+            return Task.FromResult(_config.DiscordBotAdminUser == userId);
         }
     }
 }

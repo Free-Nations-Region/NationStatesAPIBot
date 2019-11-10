@@ -18,7 +18,6 @@ namespace CyborgianStates.Interfaces
         Task<IEnumerable<Permission>> GetRolePermissionsAsync(long roleId);
         Task<IEnumerable<Role>> GetRolesAsync(string discordUserId);
         Task<IEnumerable<Permission>> GetUserPermissionsAsync(string discordUserId);
-        Task<bool> IsAllowedAsync(PermissionType permissionType, SocketUser user);
-        Task<bool> IsBotAdminAsync(SocketUser user);
+        
     }
 }
