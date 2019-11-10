@@ -45,7 +45,7 @@ namespace CyborgianStates.Services
                     !socketUser.IsBot &&
                     socketMsg.Content.StartsWith(_config.SeperatorChar) &&
                     await _userRepo.IsAllowedAsync("ExecuteCommands", socketUser.Id);
-                return _config.Configuration == "development" ?
+                return AppSettings.Configuration == "development" ?
                     await _userRepo.IsBotAdminAsync(socketUser.Id) && value
                     : value;
             }

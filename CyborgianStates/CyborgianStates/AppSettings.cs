@@ -30,7 +30,7 @@ namespace CyborgianStates
         public int MinimumRecruitmentPoolSize { get; set; }
         public string RegionsToRecruitFrom { get; set; }
         public CultureInfo Locale { get; set; }
-        public string Configuration
+        public static string Configuration
         {
             get
             {

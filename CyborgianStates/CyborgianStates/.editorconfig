@@ -20,3 +20,6 @@ dotnet_diagnostic.CA1307.severity = suggestion
 
 # CA1816: Dispose-Methoden müssen SuppressFinalize aufrufen
 dotnet_diagnostic.CA1816.severity = suggestion
+
+# CA1031: Keine allgemeinen Ausnahmetypen abfangen
+dotnet_diagnostic.CA1031.severity = suggestion

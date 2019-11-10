@@ -19,7 +19,7 @@ namespace CyborgianStates
         public static string BuildConfig { get; private set; }
         public static DateTime StartTime { get; private set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Stil", "IDE0060:Nicht verwendete Parameter entfernen", Justification = "<Ausstehend>")]
-        static void Main(string[] args)
+        static void Main()
         {
             DetermineConfiguration();
             var serviceCollection = new ServiceCollection();

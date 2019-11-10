@@ -258,7 +258,7 @@ namespace CyborgianStates.Services
             return result;
         }
 
-        private HashSet<REGION> ParseRegionsFromStream(Stream stream)
+        private static HashSet<REGION> ParseRegionsFromStream(Stream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
             return xml.Descendants("REGION").Select(m =>
@@ -302,7 +302,7 @@ namespace CyborgianStates.Services
             reader.Dispose();
             return nations;
         }
-        private List<OFFICER> BuildOfficers(XElement m)
+        private static List<OFFICER> BuildOfficers(XElement m)
         {
             return m.Element("OFFICERS").Descendants("OFFICER").Select(o => new OFFICER
             {

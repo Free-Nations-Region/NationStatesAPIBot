@@ -4,6 +4,7 @@ using System.Xml.Linq;
 
 namespace CyborgianStates.DumpData
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Sammlungseigenschaften müssen schreibgeschützt sein", Justification = "Needs to be set by DumpDataService")]
     public class NATION
     {
         public string NAME { get; set; }
@@ -12,10 +13,12 @@ namespace CyborgianStates.DumpData
         public string MOTTO { get; set; }
         public string CATEGORY { get; set; }
         public bool WAMEMBER { get; set; }
+
         public List<string> ENDORSEMENTS { get; set; }
         public FREEDOM FREEDOM { get; set; }
         private REGION region;
-        public REGION REGION {
+        public REGION REGION
+        {
             get
             {
                 return region;
@@ -23,8 +26,8 @@ namespace CyborgianStates.DumpData
             set
             {
                 region = value;
-        
-                if(region != null)
+
+                if (region != null)
                 {
                     if (region.NATIONS == null)
                     {

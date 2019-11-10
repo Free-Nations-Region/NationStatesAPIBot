@@ -4,11 +4,13 @@ using System.Xml.Linq;
 
 namespace CyborgianStates.DumpData
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Sammlungseigenschaften müssen schreibgeschützt sein", Justification = "Needs to be set by DumpDataService")]
     public class REGION
     {
         public string NAME { get; set; }
         public int DumpPosition { get; set; }
         public int NUMNATIONS { get; set; }
+
         public HashSet<string> NATIONNAMES { get; set; }
         public HashSet<NATION> NATIONS { get; set; }
         public string DELEGATE { get; set; }
