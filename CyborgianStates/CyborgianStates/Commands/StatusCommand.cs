@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace CyboargianStates.Commands
 {
-    public class Status : ModuleBase<SocketCommandContext>
+    public class StatusCommand : ModuleBase<SocketCommandContext>
     {
         private readonly AppSettings _config;
-        public Status(IOptions<AppSettings> config)
+        public StatusCommand(IOptions<AppSettings> config)
         {
             if(config == null)
             {
@@ -68,7 +68,7 @@ namespace CyboargianStates.Commands
                 new EmbedFieldBuilder()
                 {
                     Name = "Last Dump Data Update",
-                    Value = $"{(DumpDataService.LastDumpUpdateTimeUtc == DateTime.UnixEpoch || (!DumpDataService.DataAvailable && DumpDataService.IsUpdating)?"Updating":DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago")}"
+                    Value = $"{(DumpDataService.LastDumpUpdateTimeUtc == DateTime.UnixEpoch || (!DumpDataService.DataAvailable && DumpDataService.IsUpdating)?"Updating":DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'", _config.Locale) + " ago")}"
                 }
             });
             await ReplyAsync(embed: builder.Build());

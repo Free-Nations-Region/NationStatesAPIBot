@@ -49,9 +49,16 @@ namespace CyborgianStates.Repositories
 
         public async Task<bool> IsAllowedAsync(string permissionType, ulong userId)
         {
-            var res = await users.FindAsync(u => u.DiscordUserId == userId && u.Permissions.Any(p => p.Name == permissionType));
+            var res = await users.FindAsync(u => u.DiscordUserId == userId);
             var user = await res.FirstOrDefaultAsync();
-            return user != null;
+            if(user != null)
+            {
+                return user.Permissions.Any(p => p.Name == permissionType);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public Task<bool> IsBotAdminAsync(ulong userId)
