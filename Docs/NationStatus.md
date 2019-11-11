@@ -8,6 +8,10 @@ Assuming SeperatorChar is ``/``.
 
 Returns Basic Stats about a Nation.
 
+## Requirements
+
+``ExecuteCommands``-Permission
+
 ## Usage & Example
 
 ```
