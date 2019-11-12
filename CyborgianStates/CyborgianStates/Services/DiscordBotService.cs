@@ -23,7 +23,7 @@ namespace CyborgianStates.Services
 
         public DiscordBotService(ILogger<DiscordBotService> logger, IOptions<AppSettings> config, IUserRepository userRepository)
         {
-            if(config == null)
+            if (config == null)
             {
                 throw new ArgumentNullException(nameof(config));
             }
@@ -211,11 +211,19 @@ namespace CyborgianStates.Services
 
         public async Task ShutdownAsync()
         {
-            await discordClient.LogoutAsync();
-            await discordClient.StopAsync();
-            Program.ServiceProvider.GetService<DumpDataService>().StopDumpUpdateCycle();
-            IsRunning = false;
-            Environment.Exit(0);
+            try
+            {
+                await discordClient.LogoutAsync();
+                await discordClient.StopAsync();
+                Program.ServiceProvider.GetService<DumpDataService>().StopDumpUpdateCycle();
+                IsRunning = false;
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                var eventId = LogEventIdProvider.GetRandomLogEventId();
+                _logger.LogCritical(eventId, ex, "Critical Error occured.");
+            }
         }
 
         #region IDisposable Support
@@ -233,7 +241,7 @@ namespace CyborgianStates.Services
                 if (disposing)
                 {
                     discordClient.Dispose();
-                }                
+                }
 
                 disposedValue = true;
             }

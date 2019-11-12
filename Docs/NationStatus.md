@@ -1,12 +1,12 @@
 # Nation Status
 
----
-
 Assuming SeperatorChar is ``/``.
 
 ## Description
 
 Returns Basic Stats about a Nation.
+
+Supported since v2.3
 
 ## Requirements
 
@@ -20,6 +20,12 @@ Returns Basic Stats about a Nation.
 
 ```
 /nation Testlandia
+```
+
+### Alias
+
+```
+/n Testlandia
 ```
 
 ## Return & Output
@@ -53,5 +59,3 @@ Returns Basic Stats about a Nation.
 - Number of Endorsements
 
 - Influence
-
-
