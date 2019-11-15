@@ -117,6 +117,7 @@ namespace CyborgianStates.Services
                 }
                 _logger.LogInformation(defaultEventId, GetLogMessage("--- Dump Data Update Finished ---"));
             }
+            catch (TaskCanceledException) {}
             catch (Exception ex)
             {
                 _logger.LogCritical(defaultEventId, ex, GetLogMessage("A critical error occurred while processing of Dump Update"));
@@ -144,7 +145,7 @@ namespace CyborgianStates.Services
                 await DowloadAndReadDumpsAsync();
             }
         }
-
+        #region Load and Parse
         private void LoadDumpsFromStream(GZipStream regionsStream, GZipStream nationsStream)
         {
             Stopwatch stopWatch = Stopwatch.StartNew();
@@ -216,7 +217,7 @@ namespace CyborgianStates.Services
                 stopWatch.Restart();
                 await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing nation dump to local cache took {stopWatch.Elapsed} to complete."));
                 ReadDumpsFromLocalFileSystem();
             }
             finally
@@ -415,7 +416,7 @@ namespace CyborgianStates.Services
                 POLITICALFREEDOM_SCORE = Convert.ToDouble(m.Element("FREEDOMSCORES")?.Element("POLITICALFREEDOM").Value),
             };
         }
-
+        #endregion
 
         private async Task WaitForDataAvailabilityAsync()
         {
