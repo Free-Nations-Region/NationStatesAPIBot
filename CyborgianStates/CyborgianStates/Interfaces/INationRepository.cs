@@ -10,8 +10,10 @@ namespace CyborgianStates.Interfaces
     {
         Task<Nation> GetNationAsync(string nationName);
         Task<List<Nation>> GetNationsByStatusNameAsync(string statusName);
-        Task<int> GetNationCountByStatusName(string statusName);
+        Task<List<Nation>> GetNationsByStatusNameAsync(string statusName, bool excludeInactive);
+        Task<int> GetNationCountByStatusNameAsync(string statusName);
+        Task<int> GetNationCountByStatusNameAsync(string statusName, bool excludeInactive);
         Task SetNationStatusAsync(Nation nation, string statusName, bool active);
-        Task<int> BulkAddNationsToPending(List<string> newNations, bool sourceDump);
+        Task<int> BulkAddNationsToPending(List<string> newNations);
     }
 }
