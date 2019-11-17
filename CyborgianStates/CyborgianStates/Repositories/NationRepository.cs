@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace CyborgianStates.Repositories
 {
@@ -14,7 +15,9 @@ namespace CyborgianStates.Repositories
     {
         IMongoCollection<Nation> nations;
         AppSettings _config;
-        public NationRepository(IMongoDatabase database, IOptions<AppSettings> config)
+        ILogger<NationRepository> _logger;
+
+        public NationRepository(IMongoDatabase database, IOptions<AppSettings> config, ILogger<NationRepository> logger)
         {
             if (database == null)
             {
@@ -26,8 +29,9 @@ namespace CyborgianStates.Repositories
             }
             nations = database.GetCollection<Nation>("nation");
             _config = config.Value;
+            _logger = logger;
         }
-        public async Task<int> BulkAddNationsToPending(List<string> newNations)
+        public async Task<int> BulkAddNationsToPendingAsync(List<string> newNations)
         {
             if (newNations == null)
             {
@@ -95,6 +99,32 @@ namespace CyborgianStates.Repositories
             }
             var filter = Builders<Nation>.Filter.Eq(n => n.Id, nation.Id);
             await nations.ReplaceOneAsync(filter, nation);
+        }
+
+        public async Task SwitchNationStatusAsync(Nation nation, string fromStatusName, string toStatusName, EventId eventId)
+        {
+            try
+            {
+                if (nation == null)
+                {
+                    throw new ArgumentNullException(nameof(nation));
+                }
+                if (nation.Status.Any(s => s.Name == fromStatusName && s.Active) && nation.Status.Any(s => s.Name == toStatusName && !s.Active))
+                {
+                    // switch active status to inactive
+                    await SetNationStatusAsync(nation, fromStatusName, false);
+                    // switch or add status to active
+                    await SetNationStatusAsync(nation, toStatusName, true);
+                }
+                else
+                {
+                    _logger.LogWarning(eventId, LogMessageBuilder.Build(eventId, $"The nation id:{nation.Id} wasn't in the expected state. Expected active status: {fromStatusName} inactive status: {toStatusName}"));
+                }
+            }
+            finally
+            {
+                LogEventIdProvider.ReleaseEventId(eventId);
+            }
         }
     }
 }

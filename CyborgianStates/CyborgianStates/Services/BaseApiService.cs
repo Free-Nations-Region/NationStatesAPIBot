@@ -40,9 +40,9 @@ namespace CyborgianStates.Services
             {
                 using (var client = new HttpClient())
                 {
-                    Logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing Request to {url}"));
-                    client.DefaultRequestHeaders.Add("User-Agent", $"NationStatesApiBot/{AppSettings.VERSION}");
-                    client.DefaultRequestHeaders.Add("User-Agent", $"(contact { Config.Contact};)");
+                    Logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Executing GET-Request to {url}"));
+                    client.DefaultRequestHeaders.Add("User-Agent", $"CyborgianStates/{AppSettings.VERSION}");
+                    client.DefaultRequestHeaders.Add("User-Agent", $"(contact {Config.Contact};)");
                     var response = await client.GetAsync(url).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
@@ -60,7 +60,7 @@ namespace CyborgianStates.Services
                     return response;
                 }
             }
-            catch(ArgumentNullException ex)
+            catch (ArgumentNullException ex)
             {
                 Logger.LogCritical(logId, ex, LogMessageBuilder.Build(logId, $"A critical error occured.{Environment.NewLine}{ex}"));
                 return null;
@@ -87,9 +87,13 @@ namespace CyborgianStates.Services
             {
                 return await response.Content.ReadAsStreamAsync();
             }
-            else
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return null;
+            }
+            else
+            {
+                throw new HttpRequestException($"A GET request to '{url}' failed with an unexpected error.");
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using CyborgianStates.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,6 +15,7 @@ namespace CyborgianStates.Interfaces
         Task<int> GetNationCountByStatusNameAsync(string statusName);
         Task<int> GetNationCountByStatusNameAsync(string statusName, bool excludeInactive);
         Task SetNationStatusAsync(Nation nation, string statusName, bool active);
-        Task<int> BulkAddNationsToPending(List<string> newNations);
+        Task SwitchNationStatusAsync(Nation nation, string fromStatusName, string toStatusName, EventId eventId);
+        Task<int> BulkAddNationsToPendingAsync(List<string> newNations);
     }
 }
