@@ -15,7 +15,7 @@ namespace NationStatesAPIBot
         public const string BOT_ADMIN_TERM = "BotFather"; //Change to something else if you don't like the term
         public static readonly string SLEEPTEXT = $"Psst...I'm sleeping.{Environment.NewLine}{Environment.NewLine}Maintenance going on right now. Please be patient. Thank you :)";
         public static readonly string PERMISSION_DENIED_RESPONSE = $"Sorry, but i can't do that for you. Reason: Permission denied. Contact {BOT_ADMIN_TERM} if you think that is an issue.";
-        
+
         public string ClientKey { get; set; }
         public string TelegramId { get; set; }
         public string TelegramSecretKey { get; set; }
@@ -29,7 +29,21 @@ namespace NationStatesAPIBot
         public bool EnableRecruitment { get; set; }
         public int MinimumRecruitmentPoolSize { get; set; }
         public string RegionsToRecruitFrom { get; set; }
-        public CultureInfo Locale { get; set; }
+        public string LocaleString { get; set; }
+        public CultureInfo Locale
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(LocaleString))
+                {
+                    return new CultureInfo(LocaleString);
+                }
+                else
+                {
+                    return CultureInfo.InvariantCulture;
+                }
+            }
+        }
         public string Configuration
         {
             get

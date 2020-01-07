@@ -83,7 +83,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     int residencyDays = (int)(residencyDbl % 365.242199);
                     builder.AddField("Residency", $"Resident since " +
                         $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
-                        $"{residencyDays} { (residencyDays > 1 ? $"days" : "day")}"
+                        $"{residencyDays} { (residencyDays != 1 ? $"days" : "day")}"
                         );
                     builder.AddField(category, $"C: {civilStr} ({civilRights}) | E: {economyStr} ({economy}) | P: {politicalStr} ({politicalFreedom})");
                     var waVoteString = "";
