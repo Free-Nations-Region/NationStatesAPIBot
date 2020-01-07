@@ -67,7 +67,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     }
                     builder.AddField("Founder", $"{founderString}");
                     builder.AddField("Delegate", await GetDelegateNationString(wadelegate, id));
-                    builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+                    builder.WithFooter(DiscordBotService.FooterString);
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                     await ReplyAsync(embed: builder.Build());
                 }
