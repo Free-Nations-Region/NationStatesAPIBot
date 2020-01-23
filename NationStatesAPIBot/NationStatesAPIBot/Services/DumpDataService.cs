@@ -353,7 +353,7 @@ namespace NationStatesAPIBot.Services
                 FACTBOOKS = Convert.ToInt32(m.Element("FACTBOOKS").Value),
                 DISPATCHES = Convert.ToInt32(m.Element("DISPATCHES").Value),
                 WABADGES = BuildWABadges(m),
-                CARDCATEGORY = m.Element("CARDCATEGORY").Value,
+                CARDCATEGORY = m.Element("CARDCATEGORY")?.Value,
             };
         }
 

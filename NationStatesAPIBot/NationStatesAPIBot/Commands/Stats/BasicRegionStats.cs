@@ -57,9 +57,17 @@ namespace NationStatesAPIBot.Commands.Stats
                     builder.WithTitle($"BasicStats for Region");
                     builder.WithDescription($"**[{name}]({regionUrl})** {Environment.NewLine}" +
                         $"[{numnations} nations]({regionUrl}/page=list_nations) | {founded} | Power: {power}");
-                    builder.AddField("Founder", $"[{await GetFullNationName(founder, id)}](https://www.nationstates.net/nation={BaseApiService.ToID(founder)})");
+
+                    var founderName = await GetFullNationName(founder, id);
+                    var founderUrl = $"https://www.nationstates.net/nation={BaseApiService.ToID(founder)}";
+                    var founderString = $"[{founderName}](https://www.nationstates.net/nation={BaseApiService.ToID(founder)})";
+                    if(founderName  == "Unknown")
+                    {
+                        founderString = founderName;
+                    }
+                    builder.AddField("Founder", $"{founderString}");
                     builder.AddField("Delegate", await GetDelegateNationString(wadelegate, id));
-                    builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+                    builder.WithFooter(DiscordBotService.FooterString);
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                     await ReplyAsync(embed: builder.Build());
                 }
@@ -82,8 +90,17 @@ namespace NationStatesAPIBot.Commands.Stats
         private async Task<string> GetFullNationName(string name, EventId eventId)
         {
             XmlDocument nationStats = await dataService.GetFullNationNameAsync(name, eventId);
-            var fullName = nationStats.GetElementsByTagName("FULLNAME")[0].InnerText;
-            return fullName;
+
+            var fullNameRaw = nationStats.GetElementsByTagName("FULLNAME");
+            if (fullNameRaw.Count < 1)
+            {
+                return "Unknown";
+            }
+            else
+            {
+                var fullName = fullNameRaw[0].InnerText;
+                return fullName;
+            }
         }
 
         private async Task<string> GetDelegateNationString(string name, EventId eventId)

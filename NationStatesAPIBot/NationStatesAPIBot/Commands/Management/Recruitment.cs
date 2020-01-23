@@ -229,7 +229,7 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"Recruited Last Month: A: {_recruitmentService.RecruitedLastMonthA}, M: {_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
                                         $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00", _locale)}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00", _locale)}{Environment.NewLine}{Environment.NewLine}" +
                                         $"Recruits which CTE'd or left the region are excluded.");
-                builder.WithFooter($"NationStatesApiBot {AppSettings.VERSION} by drehtisch");
+                builder.WithFooter(DiscordBotService.FooterString);
                 
                 await ReplyAsync(embed: builder.Build());
             }

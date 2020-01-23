@@ -30,6 +30,14 @@ namespace NationStatesAPIBot.Services
             _permManager = permissionManager;
         }
 
+        public static string FooterString
+        {
+            get
+            {
+                return $"NationStatesApiBot {AppSettings.VERSION} by drehtisch aka Tigerania";
+            }
+        }
+
         public async Task<bool> IsRelevantAsync(object message, object user)
         {
             if (message is SocketUserMessage socketMsg && user is SocketUser socketUser)
