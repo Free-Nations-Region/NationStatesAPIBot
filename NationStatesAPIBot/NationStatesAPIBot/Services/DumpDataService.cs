@@ -477,7 +477,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
             await WaitForDataAvailabilityAsync();
-            var nation = GetNationInternal(nationName);
+            var nation = GetNationInternal(BaseApiService.ToID(nationName));
             if(nation != null)
             {
                 var region = nation.REGION;
