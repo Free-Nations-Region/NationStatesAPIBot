@@ -94,6 +94,8 @@ namespace NationStatesAPIBot.Commands.Management
                                 StartedAt = DateTimeOffset.UtcNow,
                                 AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
                             };
+                            var channel = await Context.User.GetOrCreateDMChannelAsync();
+                            
                             _recruitmentService.StartReceiveRecruitableNations(currentRN);
                             await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
                             _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
@@ -125,11 +127,11 @@ namespace NationStatesAPIBot.Commands.Management
                                 {
                                     if (i / 40 == 1)
                                     {
-                                        await ReplyAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+                                        await channel.SendMessageAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                     }
                                     else
                                     {
-                                        await ReplyAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+                                        await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                     }
                                     builder.Clear();
                                     currentReply++;
@@ -137,13 +139,13 @@ namespace NationStatesAPIBot.Commands.Management
                             }
                             if (returnNations.Count < 40)
                             {
-                                await ReplyAsync($"{firstReplyStart}{builder.ToString()}");
+                                await channel.SendMessageAsync($"{firstReplyStart}{builder.ToString()}");
                             }
                             else
                             {
                                 if (number % 40 != 0)
                                 {
-                                    await ReplyAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+                                    await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                 }
                             }
                             if(returnNations.Count < number)
@@ -209,7 +211,7 @@ namespace NationStatesAPIBot.Commands.Management
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
-                _recruitmentService.RStatDbUpdate();
+                await _recruitmentService.UpdateRecruitmentStatsAsync();
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"Recruitment statistics:");
                 builder.WithDescription($"-- DataSource DB : Last updated just now --{Environment.NewLine}" + 

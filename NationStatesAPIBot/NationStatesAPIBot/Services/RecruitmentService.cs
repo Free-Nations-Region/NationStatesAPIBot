@@ -270,7 +270,7 @@ namespace NationStatesAPIBot.Services
                     _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
                     PoolStatus = "Waiting for new nations";
                 }
-                
+
                 await Task.Delay(1800000); //30 min
             }
         }
@@ -402,40 +402,36 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async void UpdateRecruitmentStatsAsync()
+        public async Task UpdateRecruitmentStatsAsync()
         {
-            while (IsRecruiting)
+            try
             {
-                try
-                {
-                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Updating Recruitment Stats"));
-                    var today = DateTime.Today.Date;
+                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Updating Recruitment Stats"));
+                var today = DateTime.Today.Date;
 
-                    var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
-                    var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
-                    var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(_config.NationStatesRegionName));
+                var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
+                var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
+                var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(_config.NationStatesRegionName));
 
-                    var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
-                    var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
+                var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
+                var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
 
-                    RStatDbUpdate();
+                RStatDbUpdate();
 
-                    ApiRecruited = apiRecruited.Count;
-                    ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
-                    ManualReserved = manual.Count;
-                    ManualRecruited = manualRecruited.Count;
-                    ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
-                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment Stats Updated"));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "A critical error occured."));
-                }
-                await Task.Delay(TimeSpan.FromHours(4));
+                ApiRecruited = apiRecruited.Count;
+                ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
+                ManualReserved = manual.Count;
+                ManualRecruited = manualRecruited.Count;
+                ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
+                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment Stats Updated"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "A critical error occured."));
             }
         }
 
-        public void RStatDbUpdate()
+        private void RStatDbUpdate()
         {
             ApiSent = NationManager.GetNationsByStatusName("send").Count;
             ApiPending = NationManager.GetNationsByStatusName("pending").Count;
