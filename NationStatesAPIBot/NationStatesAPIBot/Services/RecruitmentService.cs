@@ -73,7 +73,7 @@ namespace NationStatesAPIBot.Services
                 Task.Run(async () => await EnsurePoolFilled());
                 Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
-                Task.Run(async () => UpdateRecruitmentStatsAsync());
+                Task.Run(async () => await UpdateRecruitmentStatsAsync());
                 _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
             }
         }
