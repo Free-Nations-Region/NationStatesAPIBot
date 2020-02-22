@@ -95,15 +95,13 @@ namespace NationStatesAPIBot.Commands.Management
                                 AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
                             };
                             _recruitmentService.StartReceiveRecruitableNations(currentRN);
-                            await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}{Environment.NewLine}For security reasons");
+                            await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
                             _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
                             returnNations = await _recruitmentService.GetRecruitableNationsAsync(number, false);
                             foreach (var nation in returnNations)
                             {
                                 await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
                             }
-                            var channel = await Context.User.GetOrCreateDMChannelAsync();
-                            
                             StringBuilder builder = new StringBuilder();
                             builder.AppendLine("-----");
                             var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {returnNations.Count} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
@@ -127,11 +125,11 @@ namespace NationStatesAPIBot.Commands.Management
                                 {
                                     if (i / 40 == 1)
                                     {
-                                        await channel.SendMessageAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+                                        await ReplyAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                     }
                                     else
                                     {
-                                        await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+                                        await ReplyAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
                                     }
                                     builder.Clear();
                                     currentReply++;
@@ -219,11 +217,17 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
                                         $"Skipped (API) : {_recruitmentService.ApiSkipped}{Environment.NewLine}{Environment.NewLine}" +
-                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'")} ago --{Environment.NewLine}" +
                                         $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(_locale)}%){Environment.NewLine}" +
+                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}" +
                                         $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(_locale)}%){Environment.NewLine}" +
                                         $"{Environment.NewLine}" +
+                                        $"Recruited Today: A: {_recruitmentService.RecruitedTodayA}, M: {_recruitmentService.RecruitedTodayM}{Environment.NewLine}" +
+                                        $"Recruited Yesterday: A: {_recruitmentService.RecruitedYesterdayA}, M: {_recruitmentService.RecruitedYesterdayM}{Environment.NewLine}" +
+                                        $"Recruited Last Week: A: {_recruitmentService.RecruitedLastWeekA}, M: {_recruitmentService.RecruitedLastWeekM}{Environment.NewLine}" +
+                                        $"Recruited Last Week (Avg/D): A: {_recruitmentService.RecruitedLastWeekAvgDA.ToString("0.00", _locale)}, M: {_recruitmentService.RecruitedLastWeekAvgDM.ToString("0.00", _locale)}{Environment.NewLine}" +
+                                        $"Recruited Last Month: A: {_recruitmentService.RecruitedLastMonthA}, M: {_recruitmentService.RecruitedLastMonthM}{Environment.NewLine}" +
+                                        $"Recruited Last Month (Avg/D): A: {_recruitmentService.RecruitedLastMonthAvgDA.ToString("0.00", _locale)}, M: {_recruitmentService.RecruitedLastMonthAvgDM.ToString("0.00", _locale)}{Environment.NewLine}{Environment.NewLine}" +
                                         $"Recruits which CTE'd or left the region are excluded.");
                 builder.WithFooter(DiscordBotService.FooterString);
                 
