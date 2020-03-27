@@ -20,7 +20,7 @@ namespace NationStatesAPIBot.Commands.Stats
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
         private readonly CultureInfo _locale;
-        
+
         public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config)
         {
             _logger = logger;
@@ -120,7 +120,7 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        [Command("endorsed", false), Alias("e"), Summary("Returns all nations who endorsed a nation")]
+        [Command("whoendorsed", false), Alias("we"), Summary("Returns all nations who endorsed the specified nation")]
         public async Task GetEndorsements(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
@@ -162,7 +162,7 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        [Command("nationsendorsedby", false), Alias("ne"), Summary("Returns all nations that where endorsed by a nation")]
+        [Command("endorsedby", false), Alias("eb"), Summary("Returns all nations that where endorsed by the specified nation")]
         public async Task GetNationsendorsedby(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
@@ -206,6 +206,51 @@ namespace NationStatesAPIBot.Commands.Stats
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }
+        [Command("couldbeendorsed", false), Alias("cbe"), Summary("Returns all nations that could be endorsed by the specified nation")]
+        public async Task GetNationsNotEndorsedby(params string[] args)
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsNotEndorsed);
+            try
+            {
+                string nationName = string.Join(" ", args);
+                var builder = new EmbedBuilder();
+                if (DumpDataService.IsUpdating)
+                {
+                    await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
+                    builder.WithTitle($"{Context.User.Mention}/n");
+                }
+                var endorsed = await _dumpDataService.GetNationsNotEndorsedBy(nationName);
+                builder.WithTitle($"{builder.Title}{nationName} could endorse {endorsed.Count} more nations:");
+                if (endorsed.Count > 0)
+                {
+                    StringBuilder sBuilder = new StringBuilder();
+                    foreach (var nation in endorsed)
+                    {
+                        sBuilder.Append(nation.NAME + " ; ");
+                    }
+                    builder.WithDescription(sBuilder.ToString());
+                }
+                else
+                {
+                    builder.WithDescription("No one so far.");
+                }
+                builder.WithFooter(DiscordBotService.FooterString);
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                //ToDo: Maybe move to embed sender ?
+                var e = builder.Build();
+                if (e.Length >= 2000)
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
+                }
+                await ReplyAsync(embed: e);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
+                await ReplyAsync("Something went wrong. Sorry :(");
+            }
+        }
     }
+
 }
 

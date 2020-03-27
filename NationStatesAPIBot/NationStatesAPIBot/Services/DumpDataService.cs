@@ -498,5 +498,29 @@ namespace NationStatesAPIBot.Services
             }
         }
 
+        public async Task<List<NATION>> GetNationsNotEndorsedBy(string nationName)
+        {
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsNotEndorsedBy {nationName} requested."));
+            await WaitForDataAvailabilityAsync();
+            var nation = GetNationInternal(BaseApiService.ToID(nationName));
+            if (nation != null)
+            {
+                var region = nation.REGION;
+                if (region != null)
+                {
+                    return region.NATIONS.Where(n => n.WAMEMBER && !n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                }
+                else
+                {
+                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    return null;
+                }
+            }
+            else
+            {
+                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                return null;
+            }
+        }
     }
 }

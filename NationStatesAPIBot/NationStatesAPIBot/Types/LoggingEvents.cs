@@ -14,6 +14,7 @@
         GetNewNations = 10600,
         GetEndorsedBy = 10700,
         GetNationsEndorsed = 10800,
+        GetNationsNotEndorsed = 10900,
         APIRecruitment = 11000,
         WouldReceiveTelegram = 11100,
         GetRecruitableNations = 11200,
