@@ -131,9 +131,9 @@ namespace NationStatesAPIBot.Commands.Stats
                 var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
                 var builder = new EmbedBuilder();
                 var nations = endorsements.Split(",").ToList(); ;
-                builder.WithTitle($"{nationName} was endorsed by {nations.Count} nations:");
                 if (!string.IsNullOrWhiteSpace(endorsements))
                 {
+                    builder.WithTitle($"{nationName} was endorsed by {nations.Count} nations:");
                     StringBuilder sBuilder = new StringBuilder();
                     foreach (string name in nations)
                     {
@@ -166,16 +166,24 @@ namespace NationStatesAPIBot.Commands.Stats
         public async Task GetNationsendorsedby(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
+            string nationName = string.Join(" ", args);
+            var builder = new EmbedBuilder();
             try
             {
-                string nationName = string.Join(" ", args);
-                var builder = new EmbedBuilder();
                 if (DumpDataService.IsUpdating)
                 {
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
                     builder.WithTitle($"{Context.User.Mention}/n");
                 }
                 var endorsed = await _dumpDataService.GetNationsEndorsedBy(nationName);
+                if (endorsed == null)
+                {
+                    builder.WithDescription("No such nation.");
+                    builder.WithFooter(DiscordBotService.FooterString);
+                    builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                    await ReplyAsync(embed: builder.Build());
+                    return;
+                }
                 builder.WithTitle($"{builder.Title}{nationName} has endorsed {endorsed.Count} nations:");
                 if (endorsed.Count > 0)
                 {
@@ -200,26 +208,42 @@ namespace NationStatesAPIBot.Commands.Stats
                 }
                 await ReplyAsync(embed: e);
             }
+            catch (InvalidOperationException ex)
+            {
+                builder.WithDescription(ex.Message);
+                builder.WithFooter(DiscordBotService.FooterString);
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                var e = builder.Build();
+                await ReplyAsync(embed: e);
+            }
             catch (Exception ex)
             {
                 _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }
-        [Command("couldbeendorsed", false), Alias("cbe"), Summary("Returns all nations that could be endorsed by the specified nation")]
+        [Command("couldendorse", false), Alias("ce"), Summary("Returns all nations that could be endorsed by the specified nation")]
         public async Task GetNationsNotEndorsedby(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsNotEndorsed);
+            string nationName = string.Join(" ", args);
+            var builder = new EmbedBuilder();
             try
             {
-                string nationName = string.Join(" ", args);
-                var builder = new EmbedBuilder();
                 if (DumpDataService.IsUpdating)
                 {
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
                     builder.WithTitle($"{Context.User.Mention}/n");
                 }
                 var endorsed = await _dumpDataService.GetNationsNotEndorsedBy(nationName);
+                if (endorsed == null)
+                {
+                    builder.WithDescription("No such nation.");
+                    builder.WithFooter(DiscordBotService.FooterString);
+                    builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                    await ReplyAsync(embed: builder.Build());
+                    return;
+                }
                 builder.WithTitle($"{builder.Title}{nationName} could endorse {endorsed.Count} more nations:");
                 if (endorsed.Count > 0)
                 {
@@ -232,7 +256,7 @@ namespace NationStatesAPIBot.Commands.Stats
                 }
                 else
                 {
-                    builder.WithDescription("No one so far.");
+                    builder.WithDescription("No one to endorse anymore. Good Job !");
                 }
                 builder.WithFooter(DiscordBotService.FooterString);
                 builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
@@ -242,6 +266,75 @@ namespace NationStatesAPIBot.Commands.Stats
                 {
                     _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
                 }
+                await ReplyAsync(embed: e);
+            }
+            catch (InvalidOperationException ex)
+            {
+                builder.WithDescription(ex.Message);
+                builder.WithFooter(DiscordBotService.FooterString);
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                var e = builder.Build();
+                await ReplyAsync(embed: e);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
+                await ReplyAsync("Something went wrong. Sorry :(");
+            }
+        }
+
+        [Command("nationsdidnotendorse", false), Alias("nde"), Summary("Returns all nations that didn't endorse the specified nation")]
+        public async Task GetNationsWhoDidNotEndorse(params string[] args)
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsWhoDidNotEndorse);
+            string nationName = string.Join(" ", args);
+            var builder = new EmbedBuilder();
+            try
+            {
+                if (DumpDataService.IsUpdating)
+                {
+                    await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
+                    builder.WithTitle($"{Context.User.Mention}/n");
+                }
+                var endorsed = await _dumpDataService.GetNationsWhoDidNotEndorseNation(nationName);
+                if(endorsed == null)
+                {
+                    builder.WithDescription("No such nation.");
+                    builder.WithFooter(DiscordBotService.FooterString);
+                    builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                    await ReplyAsync(embed: builder.Build());
+                    return;
+                }
+                builder.WithTitle($"{builder.Title}{nationName} could be endorsed by {endorsed.Count} more nations:");
+                if (endorsed.Count > 0)
+                {
+                    StringBuilder sBuilder = new StringBuilder();
+                    foreach (var nation in endorsed)
+                    {
+                        sBuilder.Append(nation.NAME + " ; ");
+                    }
+                    builder.WithDescription(sBuilder.ToString());
+                }
+                else
+                {
+                    builder.WithDescription("Everyone has endorsed that one. Hmm... :thinking:");
+                }
+                builder.WithFooter(DiscordBotService.FooterString);
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                //ToDo: Maybe move to embed sender ?
+                var e = builder.Build();
+                if (e.Length >= 2000)
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
+                }
+                await ReplyAsync(embed: e);
+            }
+            catch (InvalidOperationException ex)
+            {
+                builder.WithDescription(ex.Message);
+                builder.WithFooter(DiscordBotService.FooterString);
+                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                var e = builder.Build();
                 await ReplyAsync(embed: e);
             }
             catch (Exception ex)

@@ -26,10 +26,12 @@ namespace NationStatesAPIBot.Services
         private readonly string regionFileName = "regions-dump-latest.xml.gz";
         private readonly string nationFileName = "nations-dump-latest.xml.gz";
         private readonly EventId defaultEventId;
-        public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService)
+        private readonly AppSettings _appconf;
+        public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService, IOptions<AppSettings> config)
         {
             _logger = logger;
             _apiService = apiService;
+            _appconf = config.Value;
             defaultEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.DumpDataServiceAction);
             _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
         }
@@ -427,7 +429,7 @@ namespace NationStatesAPIBot.Services
                 throw new DataUnavailableException("No data available that could be accessed.");
             }
         }
-#endregion
+        #endregion
         private REGION GetRegionInternal(string name)
         {
             return _regions.FirstOrDefault(r => r.NAME == name);
@@ -459,7 +461,7 @@ namespace NationStatesAPIBot.Services
             var region = GetRegionInternal(regionName);
             if (region != null)
             {
-                return region.NATIONS.Where(n => n.WAMEMBER).ToList();
+                return region.WANATIONS.ToList();
             }
             else
             {
@@ -478,17 +480,25 @@ namespace NationStatesAPIBot.Services
             _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
             await WaitForDataAvailabilityAsync();
             var nation = GetNationInternal(BaseApiService.ToID(nationName));
-            if(nation != null)
+            if (nation != null)
             {
+                if (!nation.WAMEMBER)
+                {
+                    throw new InvalidOperationException("Not a WA Member.");
+                }
                 var region = nation.REGION;
-                if(region != null)
+                if (region != null && region.NAME == BaseApiService.ToID(_appconf.NationStatesRegionName))
                 {
                     return region.NATIONS.Where(n => n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
                 }
-                else
+                else if (region == null)
                 {
                     _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"This nation does not reside in {_appconf.NationStatesRegionName}");
                 }
             }
             else
@@ -505,15 +515,56 @@ namespace NationStatesAPIBot.Services
             var nation = GetNationInternal(BaseApiService.ToID(nationName));
             if (nation != null)
             {
-                var region = nation.REGION;
-                if (region != null)
+                if (!nation.WAMEMBER)
                 {
-                    return region.NATIONS.Where(n => n.WAMEMBER && !n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                    throw new InvalidOperationException("Not a WA Member.");
                 }
-                else
+                var region = nation.REGION;
+                if (region != null && region.NAME == BaseApiService.ToID(_appconf.NationStatesRegionName))
+                {
+                    return region.WANATIONS.Where(n => !n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                }
+                else if (region == null)
                 {
                     _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"This nation does not reside in {_appconf.NationStatesRegionName}");
+                }
+            }
+            else
+            {
+                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                return null;
+            }
+        }
+
+        public async Task<List<NATION>> GetNationsWhoDidNotEndorseNation(string nationName)
+        {
+            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsWhoDidNotEndorseNation {nationName} requested."));
+            await WaitForDataAvailabilityAsync();
+            var nation = GetNationInternal(BaseApiService.ToID(nationName));
+            if (nation != null)
+            {
+                if (!nation.WAMEMBER)
+                {
+                    throw new InvalidOperationException("Not a WA Member.");
+                }
+                var region = nation.REGION;
+                if (region != null && region.NAME == BaseApiService.ToID(_appconf.NationStatesRegionName))
+                {
+                    return region.WANATIONS.Except(region.NATIONS.Where(n => nation.ENDORSEMENTS.Contains(n.NAME))).ToList();
+                }
+                else if(region == null)
+                {
+                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    return null;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"This nation does not reside in {_appconf.NationStatesRegionName}");
                 }
             }
             else

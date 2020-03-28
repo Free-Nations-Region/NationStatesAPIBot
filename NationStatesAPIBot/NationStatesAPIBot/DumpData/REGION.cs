@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace NationStatesAPIBot.DumpData
@@ -11,6 +12,13 @@ namespace NationStatesAPIBot.DumpData
         public int NUMNATIONS { get; set; }
         public HashSet<string> NATIONNAMES { get; set; }
         public HashSet<NATION> NATIONS { get; set; }
+        public IEnumerable<NATION> WANATIONS
+        {
+            get
+            {
+                return NATIONS.Where(n => n.WAMEMBER);
+            }
+        }
         public string DELEGATE { get; set; }
         public int DELEGATEVOTES { get; set; }
         public string DELEGATEAUTH { get; set; }
