@@ -522,7 +522,9 @@ namespace NationStatesAPIBot.Services
                 var region = nation.REGION;
                 if (region != null && region.NAME == BaseApiService.ToID(_appconf.NationStatesRegionName))
                 {
-                    return region.WANATIONS.Where(n => !n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                    var list = region.WANATIONS.Where(n => !n.ENDORSEMENTS.Contains(BaseApiService.ToID(nationName))).ToList();
+                    list.Remove(nation);
+                    return list;
                 }
                 else if (region == null)
                 {

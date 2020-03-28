@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NationStatesAPIBot.Services;
+using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
 
@@ -11,7 +12,18 @@ namespace NationStatesAPIBot.DumpData
         public string FULLNAME { get; set; }
         public string MOTTO { get; set; }
         public string CATEGORY { get; set; }
-        public bool WAMEMBER { get; set; }
+        bool isWA = false;
+        public bool WAMEMBER
+        {
+            get
+            {
+                return isWA || (region != null && region.DELEGATE == BaseApiService.ToID(NAME));
+            }
+            set
+            {
+                isWA = value;
+            }
+        }
         public List<string> ENDORSEMENTS { get; set; }
         public FREEDOM FREEDOM { get; set; }
         private REGION region;
