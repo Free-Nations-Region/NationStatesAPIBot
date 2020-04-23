@@ -256,8 +256,8 @@ namespace NationStatesAPIBot.Commands.Stats
                         }
                         else
                         {
-                            var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations - Part {responsecounter}:", sBuilder.ToString());
-                            await ReplyAsync(embed: builder.Build());
+                            var partbuilder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations - Part {responsecounter}:", sBuilder.ToString());
+                            await ReplyAsync(embed: partbuilder.Build());
                             responsecounter++;
                             length = 0;
                             sBuilder.Clear();
