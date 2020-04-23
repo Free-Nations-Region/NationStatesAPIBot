@@ -41,6 +41,20 @@ namespace NationStatesAPIBot.Services
         public static bool DataAvailable { get; private set; } = false;
         public static DateTime LastDumpUpdateTimeUtc { get; private set; } = DateTime.UnixEpoch;
 
+        public static TimeSpan NextDumpDataUpdate
+        {
+            get
+            {
+                var next = LastDumpUpdateTimeUtc.Add(new TimeSpan(1, 0, 0, 0, 0));
+                if(next.TimeOfDay.Hours > 7 || (next.TimeOfDay.Hours == 7 && next.TimeOfDay.Minutes > 31))
+                {
+                    next = new DateTime(next.Year, next.Month, next.Day, 7, 31, 0);
+                }
+                var timespan = next.Subtract(DateTime.UtcNow);
+                return timespan;
+            }
+        }
+
         private string GetLogMessage(string message)
         {
             return LogMessageBuilder.Build(defaultEventId, message);
@@ -559,7 +573,7 @@ namespace NationStatesAPIBot.Services
                 {
                     return region.WANATIONS.Except(region.NATIONS.Where(n => nation.ENDORSEMENTS.Contains(n.NAME))).ToList();
                 }
-                else if(region == null)
+                else if (region == null)
                 {
                     _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;

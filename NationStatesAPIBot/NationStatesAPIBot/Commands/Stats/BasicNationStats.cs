@@ -227,54 +227,62 @@ namespace NationStatesAPIBot.Commands.Stats
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsNotEndorsed);
             string nationName = string.Join(" ", args);
-            var builder = new EmbedBuilder();
+            bool mention = false;
             try
             {
                 if (DumpDataService.IsUpdating)
                 {
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
-                    builder.WithTitle($"{Context.User.Mention}/n");
+                    mention = true;
                 }
                 var endorsed = await _dumpDataService.GetNationsNotEndorsedBy(nationName);
                 if (endorsed == null)
                 {
-                    builder.WithDescription("No such nation.");
-                    builder.WithFooter(DiscordBotService.FooterString);
-                    builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
-                    await ReplyAsync(embed: builder.Build());
+                    await ReplyAsync(embed: CouldEndorseEmbedBuilder("","No such nation").Build());
                     return;
                 }
-                builder.WithTitle($"{builder.Title}{nationName} could endorse {endorsed.Count} more nations:");
                 if (endorsed.Count > 0)
                 {
                     StringBuilder sBuilder = new StringBuilder();
+                    int length = 0;
+                    int responsecounter = 1;
                     foreach (var nation in endorsed)
                     {
-                        sBuilder.Append(nation.NAME + " ; ");
+                        var toappend = nation.NAME + " ; ";
+                        length += toappend.Length;
+                        if (length < 1500)
+                        {
+                            sBuilder.Append(toappend);
+                        }
+                        else
+                        {
+                            var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations - Part {responsecounter}:", sBuilder.ToString());
+                            await ReplyAsync(embed: builder.Build());
+                            responsecounter++;
+                            length = 0;
+                            sBuilder.Clear();
+                        }
                     }
-                    builder.WithDescription(sBuilder.ToString());
+                    if (responsecounter > 1)
+                    {
+                        var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations - Part {responsecounter}:", sBuilder.ToString());
+                        await ReplyAsync(embed: builder.Build());
+                    }
                 }
                 else
                 {
-                    builder.WithDescription("No one to endorse anymore. Good Job !");
+                    var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations:", "No one to endorse anymore. Good Job !");
+                    await ReplyAsync(embed: builder.Build());
                 }
-                builder.WithFooter(DiscordBotService.FooterString);
-                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
-                //ToDo: Maybe move to embed sender ?
-                var e = builder.Build();
-                if (e.Length >= 2000)
+                if (mention)
                 {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Embeded has a length of {e.Length}"));
+                    await ReplyAsync($"{Context.User.Mention}");
                 }
-                await ReplyAsync(embed: e);
             }
             catch (InvalidOperationException ex)
             {
-                builder.WithDescription(ex.Message);
-                builder.WithFooter(DiscordBotService.FooterString);
-                builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
-                var e = builder.Build();
-                await ReplyAsync(embed: e);
+                var e = CouldEndorseEmbedBuilder("I'm not gonna do that :P", ex.Message);
+                await ReplyAsync(embed: e.Build());
             }
             catch (Exception ex)
             {
@@ -282,6 +290,20 @@ namespace NationStatesAPIBot.Commands.Stats
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }
+
+        private EmbedBuilder CouldEndorseEmbedBuilder(string title, string description)
+        {
+            var builder = new EmbedBuilder();
+            builder.WithTitle(title);
+            builder.WithDescription(description);
+            builder.AddField("Datasource", "Dump", true);
+            builder.AddField("As of", DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago", true);
+            builder.AddField("Next Update in", DumpDataService.NextDumpDataUpdate.ToString("h'h 'm'm 's's'"), true);
+            builder.WithFooter(DiscordBotService.FooterString);
+            builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+            return builder;
+        }
+
 
         [Command("nationsdidnotendorse", false), Alias("nde"), Summary("Returns all nations that didn't endorse the specified nation")]
         public async Task GetNationsWhoDidNotEndorse(params string[] args)
@@ -297,7 +319,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     builder.WithTitle($"{Context.User.Mention}/n");
                 }
                 var endorsed = await _dumpDataService.GetNationsWhoDidNotEndorseNation(nationName);
-                if(endorsed == null)
+                if (endorsed == null)
                 {
                     builder.WithDescription("No such nation.");
                     builder.WithFooter(DiscordBotService.FooterString);
