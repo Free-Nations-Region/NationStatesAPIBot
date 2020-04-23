@@ -238,7 +238,7 @@ namespace NationStatesAPIBot.Commands.Stats
                 var endorsed = await _dumpDataService.GetNationsNotEndorsedBy(nationName);
                 if (endorsed == null)
                 {
-                    await ReplyAsync(embed: CouldEndorseEmbedBuilder("","No such nation").Build());
+                    await ReplyAsync(embed: CouldEndorseEmbedBuilder("", "No such nation").Build());
                     return;
                 }
                 if (endorsed.Count > 0)
@@ -263,11 +263,8 @@ namespace NationStatesAPIBot.Commands.Stats
                             sBuilder.Clear();
                         }
                     }
-                    if (responsecounter > 1)
-                    {
-                        var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations - Part {responsecounter}:", sBuilder.ToString());
-                        await ReplyAsync(embed: builder.Build());
-                    }
+                    var builder = CouldEndorseEmbedBuilder($"{nationName} could endorse {endorsed.Count} more nations {(responsecounter > 1 ? $"- Part {responsecounter}:" : "")}", sBuilder.ToString());
+                    await ReplyAsync(embed: builder.Build());
                 }
                 else
                 {
