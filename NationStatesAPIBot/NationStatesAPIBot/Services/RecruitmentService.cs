@@ -189,12 +189,12 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<bool> WouldReceiveTelegram(string nationName)
+        public async Task<bool> WouldReceiveTelegram(string nationName, bool recruitment = true)
         {
-            XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName);
+            XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName, recruitment);
             if (result != null)
             {
-                XmlNodeList canRecruitNodeList = result.GetElementsByTagName("TGCANRECRUIT");
+                XmlNodeList canRecruitNodeList = result.GetElementsByTagName(recruitment ? "TGCANRECRUIT" : "TGCANCAMPAIGN");
                 return canRecruitNodeList[0].InnerText == "1";
             }
             else

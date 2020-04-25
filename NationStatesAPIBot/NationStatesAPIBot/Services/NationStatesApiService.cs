@@ -91,12 +91,16 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<XmlDocument> GetWouldReceiveTelegramAsync(string nationName)
+        public async Task<XmlDocument> GetWouldReceiveTelegramAsync(string nationName, bool recruitment = true)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
             _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.WouldReceiveRecruitmentTelegram);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(_config.NationStatesRegionName)}");
+            if (!recruitment)
+            {
+                url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcancampaign");
+            }
             return await ExecuteRequestWithXmlResult(url, id);
         }
 
@@ -104,7 +108,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
             await WaitForAction(NationStatesApiRequestType.GetRegionStats);
-            var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+power+founder+delegate+flag+tags");
+            var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+delegate+census;mode=score;scale=65");
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 
@@ -178,11 +182,11 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<XmlDocument> GetFullNationNameAsync(string nationName, EventId eventId)
+        public async Task<XmlDocument> GetNationNameAsync(string nationName, EventId eventId)
         {
-            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
+            _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(Name)-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
-            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname");
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=name");
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 
@@ -190,7 +194,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
             await WaitForAction(NationStatesApiRequestType.GetNationStats);
-            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=fullname+influence+census;mode=score;scale=65+66");
+            var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=name+influence+census;mode=score;scale=65+66");
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 

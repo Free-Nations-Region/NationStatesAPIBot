@@ -144,7 +144,6 @@ namespace NationStatesAPIBot.Services
 
         private async Task InitialUpdate()
         {
-            _logger.LogInformation("--- Updating NATION and REGION collections from dumps ---");
             IsUpdating = true;
             DataAvailable = false;
             _logger.LogDebug(defaultEventId, GetLogMessage("No Dumpdata available"));
@@ -203,8 +202,8 @@ namespace NationStatesAPIBot.Services
                 fsn?.Close();
                 nationStream?.Close();
                 regionStream?.Close();
-                fsr.Close();
-                fsn.Close();
+                fsr?.Dispose();
+                fsn?.Dispose();
                 nationStream?.Dispose();
                 regionStream?.Dispose();
             }
@@ -277,7 +276,6 @@ namespace NationStatesAPIBot.Services
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
             return xml.Descendants("REGION").Select(m =>
-
                 new REGION
                 {
                     NAME = BaseApiService.ToID(m.Element("NAME").Value),
@@ -482,6 +480,11 @@ namespace NationStatesAPIBot.Services
                 _logger.LogWarning(defaultEventId, GetLogMessage($"region {regionName} was null"));
                 return null;
             }
+        }
+
+        public async Task<IEnumerable<NATION>> GetAllWa()
+        {
+            return await Task.FromResult(_nations.Where(n => n.WAMEMBER));
         }
 
         /// <summary>

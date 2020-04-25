@@ -10,6 +10,8 @@ using System.Xml;
 using NationStatesAPIBot.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.IO;
+using System.Diagnostics;
 
 namespace NationStatesAPIBot.Commands.Stats
 {
@@ -20,13 +22,14 @@ namespace NationStatesAPIBot.Commands.Stats
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
         private readonly CultureInfo _locale;
-
-        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config)
+        readonly RecruitmentService _recruitmentService;
+        public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config, RecruitmentService recruitmentService)
         {
             _logger = logger;
             _apiDataService = apiService;
             _dumpDataService = dumpDataService;
             _locale = config.Value.Locale;
+            _recruitmentService = recruitmentService;
         }
 
         [Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
@@ -79,11 +82,11 @@ namespace NationStatesAPIBot.Commands.Stats
                         $"Founded {founded} | " +
                         $"Last active {lastActivity}");
                     builder.AddField("Region",
-                        $"[{region}]({regionUrl}) ");
+                        $"[{region}]({regionUrl}) ", true);
                     int residencyDays = (int)(residencyDbl % 365.242199);
                     builder.AddField("Residency", $"Resident for " +
                         $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
-                        $"{residencyDays} { (residencyDays != 1 ? $"days" : "day")}"
+                        $"{residencyDays} { (residencyDays != 1 ? $"days" : "day")}", true
                         );
                     builder.AddField(category, $"C: {civilStr} ({civilRights}) | E: {economyStr} ({economy}) | P: {politicalStr} ({politicalFreedom})");
                     var waVoteString = "";
@@ -100,7 +103,7 @@ namespace NationStatesAPIBot.Commands.Stats
                             waVoteString += $"SC Vote: {scVote} | ";
                         }
                     }
-                    builder.AddField(wa, $"{waVoteString} {endorsementCount} endorsements | {influenceValue} Influence ({Influence})");
+                    builder.AddField(wa, $"{waVoteString} {endorsementCount} endorsements | {influenceValue} Influence ({Influence})", true);
                     builder.WithFooter(DiscordBotService.FooterString);
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                     await ReplyAsync(embed: builder.Build());
@@ -278,7 +281,7 @@ namespace NationStatesAPIBot.Commands.Stats
             }
             catch (InvalidOperationException ex)
             {
-                var e = CouldEndorseEmbedBuilder("I'm not gonna do that :P", ex.Message);
+                var e = CouldEndorseEmbedBuilder("", ex.Message);
                 await ReplyAsync(embed: e.Build());
             }
             catch (Exception ex)
@@ -361,6 +364,63 @@ namespace NationStatesAPIBot.Commands.Stats
                 _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured."));
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
+        }
+        [Command("wa", false, RunMode = RunMode.Async), Alias("wa"), Summary("Returns all nations that didn't endorse the specified nation")]
+        public async Task GetWa()
+        {
+            var wa = await _dumpDataService.GetAllWa();
+            var nations = await _dumpDataService.GetWAOfRegion("the_free_nations_region");
+            var strings = nations.Select(n => n.NAME);
+            var region = await _dumpDataService.GetRegionAsync("the_free_nations_region");
+            
+            var delegateNation = await _dumpDataService.GetNationAsync(region.DELEGATE);
+            //var elig = delegateNation.ENDORSEMENTS;
+            //elig.Add(region.DELEGATE);
+            var res = string.Join(":", region.NATIONNAMES);
+            Console.WriteLine(res);
+            //await ReplyAsync("Got all WA Nations");
+            Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
+            //int start = 4500;
+            //StringBuilder builder = new StringBuilder();
+            //int writecounter = 0;
+            //for (int i = start; i < strings.Count; i++)
+            //{
+            //    var currentString = strings.ElementAt(i);
+            //    using (StreamWriter writer = new StreamWriter("wareceiver.txt", true))
+            //    {
+            //        var tickspernation = (i - start) > 0 ? TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / (i - start)) : TimeSpan.Zero;
+            //        var totalinticks = tickspernation.Multiply(strings.Count - start);
+            //        var finishIn = totalinticks.Subtract(stopwatch.Elapsed);
+            //        if (i > start && i % 500 == 0)
+            //        {
+
+            //            string info = $"Checked {i} / {strings.Count}. Expect finish in: {finishIn}, Avg. Time per check: {tickspernation}, Total estimate: {totalinticks}";
+            //            try
+            //            {
+            //                await ReplyAsync(info);
+            //            }
+            //            catch (Exception e)
+            //            {
+            //                _logger.LogCritical(e, "Error :(");
+            //                _logger.LogWarning(info);
+            //            }
+            //        }
+            //        if (await _recruitmentService.WouldReceiveTelegram(currentString, false))
+            //        {
+            //            writecounter++;
+            //            builder.Append($"{currentString}, ");
+            //            if (writecounter % 8 == 0)
+            //            {
+            //                await writer.WriteLineAsync(builder.ToString());
+            //                writecounter = 0;
+            //                builder.Clear();
+            //                _logger.LogInformation($"Line completed: {i} / {strings.Count - start} Expect finish in: {finishIn}, Avg. Time per check: {tickspernation}, Total estimate: {totalinticks}");
+            //            }
+
+            //        }
+            //    }
+            //}
         }
     }
 
