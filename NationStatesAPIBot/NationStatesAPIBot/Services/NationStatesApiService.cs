@@ -108,7 +108,7 @@ namespace NationStatesAPIBot.Services
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
             await WaitForAction(NationStatesApiRequestType.GetRegionStats);
-            var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+delegate+census;mode=score;scale=65");
+            var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+delegate+census+power;mode=score;scale=65");
             return await ExecuteRequestWithXmlResult(url, eventId);
         }
 

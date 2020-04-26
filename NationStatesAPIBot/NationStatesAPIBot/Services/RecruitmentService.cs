@@ -332,7 +332,7 @@ namespace NationStatesAPIBot.Services
             List<string> nationsToAdd = new List<string>();
             foreach (var res in nationNames)
             {
-                if (await IsNationRecruitableAsync(res, id))
+                if (await IsNationRecruitableAsync(res, id) == 1)
                 {
                     nationsToAdd.Add(res);
                 }
