@@ -152,27 +152,47 @@ namespace NationStatesAPIBot.Services
             if (nation != null)
             {
                 var result = await IsNationRecruitableAsync(nation.Name, id);
-                if (!result)
+                if (result == 0)
                 {
                     await NationManager.SetNationStatusToAsync(nation, "skipped");
                 }
-                return result;
+                else if (result == 2)
+                {
+                    await NationManager.SetNationStatusToAsync(nation, "failed");
+                }
+                else
+                {
+                    return true;
+                }
             }
             return false;
         }
 
-        private async Task<bool> IsNationRecruitableAsync(string nationName, EventId id)
+        private async Task<int> IsNationRecruitableAsync(string nationName, EventId id)
         {
             if (!string.IsNullOrWhiteSpace(nationName))
             {
-                if (!await DoesNationFitCriteriaAsync(nationName) || !await WouldReceiveTelegram(nationName))
+                var apiResponse = await WouldReceiveTelegram(nationName);
+                var criteriaFit = await DoesNationFitCriteriaAsync(nationName);
+                if (!criteriaFit || apiResponse == 0)
                 {
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped"));
-                    return false;
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped."));
+                    return 0;
                 }
-                return true;
+                else if (criteriaFit && apiResponse == 1)
+                {
+                    return 1;
+                }
+                else
+                {
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nationName} failed."));
+                    return 2;
+                }
             }
-            return false;
+            else
+            {
+                return 0;
+            }
         }
 
         private async Task<bool> DoesNationFitCriteriaAsync(string nationName)
@@ -189,19 +209,27 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<bool> WouldReceiveTelegram(string nationName, bool recruitment = true)
+        public async Task<int> WouldReceiveTelegram(string nationName)
         {
-            XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName, recruitment);
-            if (result != null)
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
+            try
             {
-                XmlNodeList canRecruitNodeList = result.GetElementsByTagName(recruitment ? "TGCANRECRUIT" : "TGCANCAMPAIGN");
-                return canRecruitNodeList[0].InnerText == "1";
+                XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName);
+                if (result != null)
+                {
+                    XmlNodeList canRecruitNodeList = result.GetElementsByTagName("TGCANRECRUIT");
+                    return canRecruitNodeList[0].InnerText == "1" ? 1 : 0;
+                }
+                else
+                {
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Result of GetWouldReceiveTelegramAsync '{nationName}' were null. Result 2."));
+                    return 0;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
-                _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Result of GetWouldReceiveTelegramAsync '{nationName}' were null"));
-                return false;
+                _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"GetWouldReceiveTelegramAsync '{nationName}' failed. Result 3."));
+                return 2;
             }
         }
 
@@ -251,7 +279,7 @@ namespace NationStatesAPIBot.Services
                         var nationId = _rnd.Next(region.NATIONNAMES.Count);
                         nationName = region.NATIONNAMES.ElementAt(nationId);
                     }
-                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || !await IsNationRecruitableAsync(nationName, id));
+                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || await IsNationRecruitableAsync(nationName, id) != 1);
                     var nation = await NationManager.GetNationAsync(nationName);
                     if (nation != null)
                     {

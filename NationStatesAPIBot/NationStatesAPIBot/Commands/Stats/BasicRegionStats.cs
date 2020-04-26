@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     var founder = region.FOUNDER;
                     var founded = regionStats.GetElementsByTagName("FOUNDED").Item(0)?.InnerText;
                     var flagUrl = region.FLAG;
-                    var power = region.POWER;
+                    var power = regionStats.GetElementsByTagName("POWER").Item(0)?.InnerText; ;
                     var waNationCount = region.WANATIONS.Count();
                     var endoCount = region.WANATIONS.Sum(n => n.ENDORSEMENTS.Count);
                     var census = regionStats.GetElementsByTagName("CENSUS").Item(0)?.ChildNodes;
@@ -92,7 +92,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         builder.AddField("Regional Power", $"{power}", true);
                     }
                     var endoCountString = endoCount > 1000 ? (endoCount / 1000.0).ToString("0.000", locale) + "k" : endoCount.ToString(locale);
-                    builder.AddField("World Assembly", $"{waNationCount} member{(waNationCount > 1 ? "s" : string.Empty)} | {endoCountString} endos", true);
+                    builder.AddField("World Assembly*", $"{waNationCount} member{(waNationCount > 1 ? "s" : string.Empty)} | {endoCountString} endos", true);
                     if (!string.IsNullOrWhiteSpace(wadelegate) && wadelegate != "0")
                     {
                         var delegatetuple = await GetDelegateNationString(wadelegate, id);
@@ -100,6 +100,9 @@ namespace NationStatesAPIBot.Commands.Stats
                     }
                     builder.WithFooter(DiscordBotService.FooterString);
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
+                    builder.AddField("Datasource", "API, * Dump", true);
+                    builder.AddField("As of", "Just now, * " + DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago", true);
+                    builder.AddField("Next Update in","On demand, * " + DumpDataService.NextDumpDataUpdate.ToString("h'h 'm'm 's's'"), true);
                     await ReplyAsync(embed: builder.Build());
                 }
                 else
