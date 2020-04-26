@@ -68,7 +68,6 @@ namespace NationStatesAPIBot.Services
                     var context = new SocketCommandContext(DiscordClient, socketMsg);
                     if (Reactive)
                     {
-                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{socketMsg.Author.Username} in {socketMsg.Channel.Name}: {socketMsg.Content}"));
                         if (await IsRelevantAsync(message, context.User))
                         {
                             //Disables Reactiveness of the bot to commands. Ignores every command until waked up using the /wakeup command.
