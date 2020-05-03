@@ -172,21 +172,29 @@ namespace NationStatesAPIBot.Services
         {
             if (!string.IsNullOrWhiteSpace(nationName))
             {
-                var apiResponse = await WouldReceiveTelegram(nationName);
                 var criteriaFit = await DoesNationFitCriteriaAsync(nationName);
-                if (!criteriaFit || apiResponse == 0)
+                if (criteriaFit)
                 {
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped."));
-                    return 0;
-                }
-                else if (criteriaFit && apiResponse == 1)
-                {
-                    return 1;
+                    var apiResponse = await WouldReceiveTelegram(nationName);
+                    if (apiResponse == 0)
+                    {
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} wouldn't receive a telegram and is therefore skipped."));
+                        return 0;
+                    }
+                    else if (apiResponse == 1)
+                    {
+                        return 1;
+                    }
+                    else
+                    {
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nationName} failed."));
+                        return 2;
+                    }
                 }
                 else
                 {
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nationName} failed."));
-                    return 2;
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped."));
+                    return 0;
                 }
             }
             else
@@ -200,6 +208,7 @@ namespace NationStatesAPIBot.Services
             if (_config.CriteriaCheckOnNations)
             {
                 var res = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
+                res = res && !nationName.Contains("puppet", StringComparison.InvariantCultureIgnoreCase);
                 _logger.LogDebug($"{nationName} criteria fit: {res}");
                 return await Task.FromResult(res);
             }
