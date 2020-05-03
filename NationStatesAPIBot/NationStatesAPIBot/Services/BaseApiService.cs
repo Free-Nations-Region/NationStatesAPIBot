@@ -52,6 +52,10 @@ namespace NationStatesAPIBot.Services
                     {
                         _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Retry in {response.Headers.RetryAfter.Delta} seconds."));
                     }
+                    if (((int)response.StatusCode).ToString().StartsWith("5"))
+                    {
+                        throw new ApplicationException($"Server Side Error while Executing Request => {(int)response.StatusCode}: {response.ReasonPhrase}");
+                    }
                     return response;
                 }
             }
