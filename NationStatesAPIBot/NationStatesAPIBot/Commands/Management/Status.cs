@@ -11,9 +11,11 @@ namespace NationStatesAPIBot.Commands.Management
     public class Status : ModuleBase<SocketCommandContext>
     {
         private readonly AppSettings _config;
+        private Random random;
         public Status(IOptions<AppSettings> config)
         {
             _config = config.Value;
+            random = new Random();
         }
 
         [Command("status"), Summary("Returns some status information.")]
@@ -82,7 +84,14 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("ping"), Summary("Does reply Pong on receiving Ping")]
         public async Task DoPing()
         {
-            await ReplyAsync("Pong !");
+            if (random.Next(0, 100) < 6)
+            {
+                await ReplyAsync("HA! Ponged!");
+            }
+            else
+            {
+                await ReplyAsync("Pong !");
+            }
         }
     }
 }
