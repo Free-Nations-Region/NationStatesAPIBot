@@ -8,10 +8,15 @@ using NationStatesAPIBot.Services;
 
 namespace NationStatesAPIBot.Commands.Management
 {
+    public static class PingPongStats
+    {
+        public static int Pong { get; set; } = 1;
+        public static int Ping { get; set; } = 1;
+    }
     public class Status : ModuleBase<SocketCommandContext>
     {
         private readonly AppSettings _config;
-        private Random random;
+        private readonly Random random;
         public Status(IOptions<AppSettings> config)
         {
             _config = config.Value;
@@ -81,16 +86,43 @@ namespace NationStatesAPIBot.Commands.Management
             await ReplyAsync(embed: builder.Build());
         }
 
-        [Command("ping"), Summary("Does reply Pong on receiving Ping")]
+        [Command("ping")]
         public async Task DoPing()
         {
-            if (random.Next(0, 100) < 6)
+            if (random.Next(1, 101) < 6)
             {
-                await ReplyAsync("HA! Ponged!");
+                await ReplyAsync("HA! Ponged! <:dab:566238284989202433>");
+                PingPongStats.Ping = 1;
+            }
+            else if (random.Next(1, 101) < 51 && PingPongStats.Ping % 20 == 0)
+            {
+                PingPongStats.Ping = 1;
+                await ReplyAsync("<:pinged:534361662795546624> <:angrythonker:554677045322579969> <:Ban:570405775017508864>");
             }
             else
             {
-                await ReplyAsync("Pong !");
+                await ReplyAsync($"Pong ! - {PingPongStats.Ping}");
+                PingPongStats.Ping += 1;
+            }
+        }
+
+        [Command("pong")]
+        public async Task DoPong()
+        {
+            if (random.Next(1, 101) < 6)
+            {
+                PingPongStats.Pong = 1;
+                await ReplyAsync("<:amusing_2:695739982899576842> HA! You just got pinged! <:Amusing:685604446159503408>");
+            }
+            else if (random.Next(1, 101) < 51 && PingPongStats.Pong % 20 == 0)
+            {
+                PingPongStats.Pong = 1;
+                await ReplyAsync("<:angryping:554676847766667294> <:spam:534360406496509952>");
+            }
+            else
+            {
+                await ReplyAsync($"Ping ! - {PingPongStats.Pong}");
+                PingPongStats.Pong += 1;
             }
         }
     }

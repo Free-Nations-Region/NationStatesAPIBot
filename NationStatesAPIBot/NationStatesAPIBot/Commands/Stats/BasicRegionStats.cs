@@ -58,7 +58,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     var founder = region.FOUNDER;
                     var founded = regionStats.GetElementsByTagName("FOUNDED").Item(0)?.InnerText;
                     var flagUrl = region.FLAG;
-                    var power = regionStats.GetElementsByTagName("POWER").Item(0)?.InnerText; ;
+                    var power = regionStats.GetElementsByTagName("POWER").Item(0)?.InnerText;
                     var waNationCount = region.WANATIONS.Count();
                     var endoCount = region.WANATIONS.Sum(n => n.ENDORSEMENTS.Count);
                     var census = regionStats.GetElementsByTagName("CENSUS").Item(0)?.ChildNodes;
@@ -136,16 +136,22 @@ namespace NationStatesAPIBot.Commands.Stats
         private async Task<string> GetFullNationName(string name, EventId eventId)
         {
             XmlDocument nationStats = await _dataService.GetNationNameAsync(name, eventId);
-
-            var fullNameRaw = nationStats.GetElementsByTagName("NAME");
-            if (fullNameRaw.Count < 1)
+            if (nationStats != null)
             {
-                return "Unknown";
+                var fullNameRaw = nationStats.GetElementsByTagName("NAME");
+                if (fullNameRaw.Count < 1)
+                {
+                    return "Unknown";
+                }
+                else
+                {
+                    var fullName = fullNameRaw.Item(0)?.InnerText;
+                    return fullName;
+                }
             }
             else
             {
-                var fullName = fullNameRaw.Item(0)?.InnerText;
-                return fullName;
+                return "Unknown";
             }
         }
 
