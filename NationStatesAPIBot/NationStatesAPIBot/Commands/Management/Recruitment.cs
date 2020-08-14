@@ -77,122 +77,69 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
         public async Task DoGetRecruitableNationsAsync([Remainder, Summary("Number of nations to be returned")] int number)
         {
-            await ReplyAsync("The /rn command needed to be disabled because of major issues with the manual recruitment system. Drehtisch will fix those issue asap. Sorry :(");
-
-            //var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
-            //List<Nation> returnNations = new List<Nation>();
-            //try
-            //{
-            //    if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
-            //    {
-            //        if (!_recruitmentService.IsReceivingRecruitableNations)
-            //        {
-            //            if (number <= 120)
-            //            {
-            //                var currentRN = new RNStatus
-            //                {
-            //                    IssuedBy = Context.User.Username,
-            //                    FinalCount = number,
-            //                    StartedAt = DateTimeOffset.UtcNow,
-            //                    AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
-            //                };
-            //                var channel = await Context.User.GetOrCreateDMChannelAsync();
-
-            //                _recruitmentService.StartReceiveRecruitableNations(currentRN);
-            //                await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
-            //                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
-            //                returnNations = await _recruitmentService.GetRecruitableNationsAsync(number, false);
-            //                foreach (var nation in returnNations)
-            //                {
-            //                    await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
-            //                }
-            //                StringBuilder builder = new StringBuilder();
-            //                builder.AppendLine("-----");
-            //                var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {returnNations.Count} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
-            //                int replyCount = (number / 40) + (number % 40 != 0 ? 1 : 0);
-
-            //                int currentReply = 1;
-            //                for (int i = 1; i <= returnNations.Count; i++)
-            //                {
-            //                    var nation = returnNations[i - 1];
-            //                    if (i % 8 == 0)
-            //                    {
-            //                        builder.AppendLine($"{nation.Name}");
-            //                        builder.AppendLine("-----");
-            //                    }
-            //                    else
-            //                    {
-            //                        builder.Append($"{nation.Name}, ");
-            //                    }
-            //                    if (i % 40 == 0)
-            //                    {
-            //                        if (i / 40 == 1)
-            //                        {
-            //                            await channel.SendMessageAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-            //                        }
-            //                        else
-            //                        {
-            //                            await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-            //                        }
-            //                        builder.Clear();
-            //                        currentReply++;
-            //                    }
-            //                }
-            //                if (returnNations.Count < 40)
-            //                {
-            //                    await channel.SendMessageAsync($"{firstReplyStart}{builder.ToString()}");
-            //                }
-            //                else
-            //                {
-            //                    if (number % 40 != 0)
-            //                    {
-            //                        await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-            //                    }
-            //                }
-            //                if(returnNations.Count < number)
-            //                {
-            //                    await ReplyAsync($"{Environment.NewLine}- - - - -{Environment.NewLine}WARNING: No more nations in pending nations pool.");
-            //                }
-            //            }
-            //            else
-            //            {
-            //                await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
-            //            }
-            //        }
-            //        else
-            //        {
-            //            await ReplyAsync($"There is already a /rn command running. Try again later.");
-            //        }
-            //    }
-            //    else
-            //    {
-            //        await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
-            //    await ReplyAsync($"Something went wrong :( ");
-            //    foreach (var nation in returnNations)
-            //    {
-            //        await NationManager.SetNationStatusToAsync(nation, "pending");
-            //    }
-            //}
-            //finally
-            //{
-            //    _recruitmentService.StopReceiveRecruitableNations();
-            //}
-        }
-
-        [Command("rns"), Summary("Returns the status of an /rn command")]
-        public async Task DoGetRNStatusAsync()
-        {
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNSCommand);
+            //await ReplyAsync("The /rn command needed to be disabled because of major issues with the manual recruitment system. Drehtisch will fix those issue asap. Sorry :(");
+            Console.ResetColor();
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
+            List<Nation> returnNations = new List<Nation>();
             try
             {
                 if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
                 {
-                    await ReplyAsync(_recruitmentService.GetRNStatus());
+                    if (!_recruitmentService.IsReceivingRecruitableNations)
+                    {
+                        try
+                        {
+                            if (number <= 120)
+                            {
+                                var currentRN = new RNStatus
+                                {
+                                    IssuedBy = Context.User.Username,
+                                    FinalCount = number,
+                                    StartedAt = DateTimeOffset.UtcNow,
+                                    AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
+                                };
+                                var channel = await Context.User.GetOrCreateDMChannelAsync();
+
+                                _recruitmentService.StartReceiveRecruitableNations(currentRN);
+                                await ReplyAsync($"{_actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn():mm\\:ss}");
+                                StringBuilder builder = new StringBuilder();
+                                var counter = 0;
+                                await foreach (var nation in _recruitmentService.GetRecruitableNationsAsync(number, false, id))
+                                {
+                                    counter++;
+                                    builder.Append($"{nation.Name}, ");
+                                    if (counter % 8 == 0)
+                                    {
+                                        await channel.SendMessageAsync(builder.ToString());
+                                        builder.Clear();
+                                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Dispatched {counter}/{number} nations to {Context.User.Username}"));
+                                    }
+                                    await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
+                                }
+                                if (builder.Length > 0)
+                                {
+                                    await channel.SendMessageAsync(builder.ToString());
+                                    _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Dispatched {counter}/{number} nations to {Context.User.Username}"));
+                                }
+                                if (counter < number)
+                                {
+                                    await ReplyAsync($"Something went wrong didn't received as much nations as requested.");
+                                }
+                            }
+                            else
+                            {
+                                await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
+                            }
+                        }
+                        finally
+                        {
+                            _recruitmentService.StopReceiveRecruitableNations();
+                        }
+                    }
+                    else
+                    {
+                        await ReplyAsync($"There is already a /rn command running. Try again later.");
+                    }
                 }
                 else
                 {
@@ -201,7 +148,22 @@ namespace NationStatesAPIBot.Commands.Management
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured"));
+                await ReplyAsync($"Something went wrong. Sorry :( ");
+            }
+        }
+
+        [Command("rns"), Summary("Returns the status of an /rn command")]
+        public async Task DoGetRNStatusAsync()
+        {
+            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNSCommand);
+            try
+            {
+                await ReplyAsync(_recruitmentService.GetRNStatus());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "A critical error occured"));
                 await ReplyAsync($"Something went wrong :( ");
             }
         }

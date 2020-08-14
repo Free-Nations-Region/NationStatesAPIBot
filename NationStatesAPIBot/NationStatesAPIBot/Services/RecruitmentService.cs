@@ -61,7 +61,7 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public bool IsReceivingRecruitableNations { get; internal set; }
+        public bool IsReceivingRecruitableNations { get; private set; }
         public static bool IsRecruiting { get; private set; }
         public static string RecruitmentStatus { get; private set; } = "Not Running";
         public static string PoolStatus { get; private set; } = "Waiting for new nations";
@@ -99,110 +99,95 @@ namespace NationStatesAPIBot.Services
             IsReceivingRecruitableNations = false;
         }
 
-        public async Task<List<Nation>> GetRecruitableNationsAsync(int number, bool isAPI)
+        public async IAsyncEnumerable<Nation> GetRecruitableNationsAsync(int number, bool isAPI, EventId id)
         {
-            List<Nation> returnNations = new List<Nation>();
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRecruitableNations);
-            try
+            _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested"));
+            var pendingCount = NationManager.GetNationCountByStatusName("pending");
+            _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Pending: {pendingCount}"));
+            if (number > pendingCount)
             {
-                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested"));
-                List<Nation> pendingNations = new List<Nation>();
-                if (pendingNations.Count == 0)
+                number = pendingCount;
+            }
+            for (int i = 0; i < number; i++)
+            {
+                if (currentRNStatus != null && currentRNStatus.CurrentCount > currentRNStatus.FinalCount)
                 {
-                    pendingNations = NationManager.GetNationsByStatusName("pending");
+                    break;
                 }
-                while (returnNations.Count < number)
+                if (IsReceivingRecruitableNations && !isAPI)
                 {
-                    var picked = pendingNations.Take(1);
-                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (nation != null)
+                    currentRNStatus.CurrentCount++;
+                }
+                var nation = await GetRecruitableNationAsync(id, isAPI);
+                if (nation == null)
+                {
+                    break;
+                }
+                yield return nation;
+            }
+        }
+
+        public async Task<Nation> GetRecruitableNationAsync(EventId id, bool isAPI)
+        {
+            bool found = false;
+            Nation result = null;
+            do
+            {
+                var nation = await NationManager.GetNationByStatusNameAsync("pending");
+                if (nation != null)
+                {
+                    found = await IsNationRecruitableAsync(nation, id);
+                    if (found)
                     {
-                        if (await IsNationRecruitableAsync(nation, id))
-                        {
-                            returnNations.Add(nation);
-                            if (IsReceivingRecruitableNations && !isAPI)
-                            {
-                                currentRNStatus.CurrentCount++;
-                            }
-                        }
-                        pendingNations.Remove(nation);
-                        returnNations = returnNations.Distinct().ToList();
+                        result = nation;
                     }
                     else
                     {
-                        if (pendingNations.Count == 0)
+                        if (IsReceivingRecruitableNations && !isAPI)
                         {
-                            _logger.LogCritical(id, "No more nations in pending pool !");
-                            return returnNations;
-                        }
-                        else
-                        {
-                            _logger.LogCritical(id, "Picked nation was null !");
+                            currentRNStatus.SkippedCount++;
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
-            }
-            return returnNations;
+                else
+                {
+                    _logger.LogCritical(id, "Picked nation was null !");
+                    break;
+                }
+            } while (!found);
+            return result;
         }
 
         private async Task<bool> IsNationRecruitableAsync(Nation nation, EventId id)
         {
             if (nation != null)
             {
-                var result = await IsNationRecruitableAsync(nation.Name, id);
-                if (result == 0)
-                {
-                    await NationManager.SetNationStatusToAsync(nation, "skipped");
-                }
-                else if (result == 2)
-                {
-                    await NationManager.SetNationStatusToAsync(nation, "failed");
-                }
-                else
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private async Task<int> IsNationRecruitableAsync(string nationName, EventId id)
-        {
-            if (!string.IsNullOrWhiteSpace(nationName))
-            {
-                var criteriaFit = await DoesNationFitCriteriaAsync(nationName);
+                var criteriaFit = await DoesNationFitCriteriaAsync(nation.Name);
                 if (criteriaFit)
                 {
-                    var apiResponse = await WouldReceiveTelegramAsync(nationName);
+                    var apiResponse = await WouldReceiveTelegramAsync(nation, id);
                     if (apiResponse == 0)
                     {
-                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} wouldn't receive a telegram and is therefore skipped."));
-                        return 0;
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} - No receive."));
                     }
                     else if (apiResponse == 1)
                     {
-                        return 1;
+                        return true;
                     }
                     else
                     {
-                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nationName} failed."));
-                        return 2;
+                        _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nation.Name} failed."));
+                        await NationManager.SetNationStatusToAsync(nation, "failed");
+                        return false;
                     }
                 }
                 else
                 {
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} does not fit criteria and is therefore skipped."));
-                    return 0;
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped."));
                 }
             }
-            else
-            {
-                return 0;
-            }
+            await NationManager.SetNationStatusToAsync(nation, "skipped");
+            return false;
         }
 
         private async Task<bool> DoesNationFitCriteriaAsync(string nationName)
@@ -211,6 +196,13 @@ namespace NationStatesAPIBot.Services
             {
                 var res = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
                 res = res && !nationName.Contains("puppet", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("founder", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("shit", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("damn", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("facist", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("facism", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("nazi", StringComparison.InvariantCultureIgnoreCase);
+                res = res && !nationName.Contains("hitler", StringComparison.InvariantCultureIgnoreCase);
                 _logger.LogDebug($"{nationName} criteria fit: {res}");
                 return await Task.FromResult(res);
             }
@@ -220,12 +212,22 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<int> WouldReceiveTelegramAsync(string nationName)
+        public async Task<int> WouldReceiveTelegramAsync(Nation nation, EventId id)
         {
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
             try
             {
-                XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nationName);
+                await _dumpDataService.WaitForDataAvailabilityAsync();
+                if (nation.StatusTime < DumpDataService.LastDumpUpdateTimeUtc)
+                {
+                    var exists = await _dumpDataService.DoesNationExistInDumpAsync(nation.Name);
+                    if (!exists)
+                    {
+                        _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Nation {nation.Name} probably CTEd according to Dump. Skipped."));
+                        return 0;
+                    }
+                }
+
+                XmlDocument result = await _apiService.GetWouldReceiveTelegramAsync(nation.Name);
                 if (result != null)
                 {
                     XmlNodeList canRecruitNodeList = result.GetElementsByTagName("TGCANRECRUIT");
@@ -233,13 +235,13 @@ namespace NationStatesAPIBot.Services
                 }
                 else
                 {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Result of GetWouldReceiveTelegramAsync '{nationName}' were null. Result 2."));
+                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $" WouldReceive -> '{nation.Name}' => null. Skipped."));
                     return 0;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"GetWouldReceiveTelegramAsync '{nationName}' failed. Result 3."));
+                _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"GetWouldReceiveTelegramAsync '{nation.Name}' failed."));
                 return 2;
             }
         }
@@ -290,7 +292,7 @@ namespace NationStatesAPIBot.Services
                         var nationId = _rnd.Next(region.NATIONNAMES.Count);
                         nationName = region.NATIONNAMES.ElementAt(nationId);
                     }
-                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || await IsNationRecruitableAsync(nationName, id) != 1);
+                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || await IsNationRecruitableAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow }, id));
                     var nation = await NationManager.GetNationAsync(nationName);
                     if (nation != null)
                     {
@@ -343,7 +345,7 @@ namespace NationStatesAPIBot.Services
             List<string> nationsToAdd = new List<string>();
             foreach (var res in nationNames)
             {
-                if (await IsNationRecruitableAsync(res, id) == 1)
+                if (await DoesNationFitCriteriaAsync(res))
                 {
                     nationsToAdd.Add(res);
                 }
@@ -374,7 +376,10 @@ namespace NationStatesAPIBot.Services
                         if (pendingNations.Count < 10)
                         {
                             var numberToRequest = 10 - pendingNations.Count;
-                            pendingNations = await GetRecruitableNationsAsync(numberToRequest, true);
+                            await foreach (var resNation in GetRecruitableNationsAsync(numberToRequest, true, _defaulEventId))
+                            {
+                                pendingNations.Add(resNation);
+                            }
                             if (pendingNations.Count < numberToRequest)
                             {
                                 RecruitmentStatus = "Throttled: lack of of nations";
@@ -431,14 +436,7 @@ namespace NationStatesAPIBot.Services
 
         internal string GetRNStatus()
         {
-            if (IsReceivingRecruitableNations)
-            {
-                return currentRNStatus.ToString();
-            }
-            else
-            {
-                return "No /rn command currently running.";
-            }
+            return IsReceivingRecruitableNations ? currentRNStatus.ToString() : "No /rn command currently running.";
         }
 
         public async Task UpdateRecruitmentStatsAsync()

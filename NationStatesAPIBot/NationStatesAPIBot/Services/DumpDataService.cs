@@ -427,17 +427,18 @@ namespace NationStatesAPIBot.Services
             };
         }
 
-        private async Task WaitForDataAvailabilityAsync()
+        public async Task WaitForDataAvailabilityAsync()
         {
             if (DataAvailable && !IsUpdating)
+            {
                 return;
+            }
             if (IsUpdating)
             {
                 while (IsUpdating && !_tokenSource.Token.IsCancellationRequested)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(500, _tokenSource.Token);
                 }
-                _tokenSource.Token.ThrowIfCancellationRequested();
             }
             else if (!DataAvailable)
             {
@@ -455,6 +456,12 @@ namespace NationStatesAPIBot.Services
         private NATION GetNationInternal(string name)
         {
             return _nations.FirstOrDefault(n => n.NAME == name);
+        }
+
+        public async Task<bool> DoesNationExistInDumpAsync(string name)
+        {
+            await WaitForDataAvailabilityAsync();
+            return _nations.Any(n => n.NAME == name);
         }
 
         public async Task<NATION> GetNationAsync(string name)

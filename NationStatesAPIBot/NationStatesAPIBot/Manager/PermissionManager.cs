@@ -16,6 +16,7 @@ namespace NationStatesAPIBot.Managers
     {
         private readonly AppSettings _config;
         private readonly ILogger<PermissionManager> _logger;
+
         public PermissionManager(ILogger<PermissionManager> logger, IOptions<AppSettings> config)
         {
             _config = config.Value;
@@ -39,7 +40,7 @@ namespace NationStatesAPIBot.Managers
 
         public async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
+            var user = await dbContext.Users.AsQueryable().FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
             if (user == null)
             {
                 var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
@@ -82,25 +83,24 @@ namespace NationStatesAPIBot.Managers
 
         public Task<IEnumerable<Permission>> GetRolePermissionsAsync(long roleId, BotDbContext dbContext)
         {
-            var result = dbContext.Roles.Where(r => r.Id == roleId).SelectMany(r => r.RolePermissions).Select(p => p.Permission).AsEnumerable();
+            var result = dbContext.Roles.AsQueryable().Where(r => r.Id == roleId).SelectMany(r => r.RolePermissions).Select(p => p.Permission).AsEnumerable();
             return Task.FromResult(result);
         }
 
         public Task<IEnumerable<Permission>> GetRolePermissionsExceptAsync(Role role, IEnumerable<Permission> Except, BotDbContext dbContext)
         {
-            var result = dbContext.Roles.Where(r => r == role).SelectMany(r => r.RolePermissions).Select(p => p.Permission).Except(Except).AsEnumerable();
-            return Task.FromResult(result);
+            return Task.FromResult<IEnumerable<Permission>>(new List<Permission>() { new Permission() { Id = 1, Name = "ExecuteCommands" } });
         }
 
         public Task<IEnumerable<Role>> GetRolesAsync(string discordUserId, BotDbContext dbContext)
         {
-            var result = dbContext.Users.Where(u => u.DiscordUserId == discordUserId).SelectMany(u => u.Roles).Select(r => r.Role).AsEnumerable();
+            var result = dbContext.Users.AsQueryable().Where(u => u.DiscordUserId == discordUserId).SelectMany(u => u.Roles).Select(r => r.Role).AsEnumerable();
             return Task.FromResult(result);
         }
 
         public Task<IEnumerable<Permission>> GetUserPermissionsAsync(string discordUserId, BotDbContext dbContext)
         {
-            var result = dbContext.Users.Where(u => u.DiscordUserId == discordUserId).SelectMany(u => u.UserPermissions).Select(p => p.Permission).AsEnumerable();
+            var result = dbContext.Users.AsQueryable().Where(u => u.DiscordUserId == discordUserId).SelectMany(u => u.UserPermissions).Select(p => p.Permission).AsEnumerable();
             return Task.FromResult(result);
         }
 
@@ -115,7 +115,7 @@ namespace NationStatesAPIBot.Managers
                 using (var dbContext = new BotDbContext(_config))
                 {
                     var perms = await GetAllPermissionsToAUserAsync(user.Id.ToString(), dbContext);
-                    var result = perms.Select(p => p.Id).Contains((long)permissionType);
+                    var result = perms.Select(p => p.Id).Contains((long) permissionType);
                     if (!result)
                     {
                         var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.PermissionDenied);
@@ -123,7 +123,6 @@ namespace NationStatesAPIBot.Managers
                     }
                     return result;
                 }
-
             }
         }
 

@@ -11,6 +11,7 @@ namespace NationStatesAPIBot.Manager
     public class NationManager
     {
         private static AppSettings _config;
+
         public static void Initialize(AppSettings config)
         {
             _config = config;
@@ -20,16 +21,23 @@ namespace NationStatesAPIBot.Manager
         {
             using (var dbContext = new BotDbContext(_config))
             {
-                return await dbContext.Nations.FirstOrDefaultAsync(n => n.Name == nationName);
+                return await dbContext.Nations.AsQueryable().FirstOrDefaultAsync(n => n.Name == nationName);
             }
         }
-
 
         public static List<Nation> GetNationsByStatusName(string name)
         {
             using (var dbContext = new BotDbContext(_config))
             {
-                return dbContext.Nations.Where(n => n.Status.Name == name).OrderByDescending(n => n.StatusTime).ToList();
+                return dbContext.Nations.AsQueryable().Where(n => n.Status.Name == name).OrderByDescending(n => n.StatusTime).ToList();
+            }
+        }
+
+        public static async Task<Nation> GetNationByStatusNameAsync(string name)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return await dbContext.Nations.AsQueryable().Where(n => n.Status.Name == name).OrderByDescending(n => n.StatusTime).FirstOrDefaultAsync();
             }
         }
 
@@ -62,7 +70,7 @@ namespace NationStatesAPIBot.Manager
             using (var dbContext = new BotDbContext(_config))
             {
                 var current = nation.Status;
-                var status = await dbContext.NationStatuses.FirstOrDefaultAsync(n => n.Name == statusName);
+                var status = await dbContext.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == statusName);
                 if (status == null)
                 {
                     status = new NationStatus() { Name = statusName };
@@ -82,7 +90,7 @@ namespace NationStatesAPIBot.Manager
             int counter = 0;
             using (var context = new BotDbContext(_config))
             {
-                var status = await context.NationStatuses.FirstOrDefaultAsync(n => n.Name == "pending");
+                var status = await context.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == "pending");
                 if (status == null)
                 {
                     status = new NationStatus() { Name = "pending" };
@@ -91,12 +99,10 @@ namespace NationStatesAPIBot.Manager
                 }
                 foreach (string nationName in newNations)
                 {
-
-                    
-                    if (await context.Nations.FirstOrDefaultAsync(n => n.Name == nationName) == null)
+                    if (await context.Nations.AsQueryable().FirstOrDefaultAsync(n => n.Name == nationName) == null)
                     {
                         var time = sourceDumps ? TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTimeUtc, TimeZoneInfo.Local) : DateTime.UtcNow;
-                        await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time , Status = status, StatusId = status.Id });
+                        await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time, Status = status, StatusId = status.Id });
                         await context.SaveChangesAsync();
                         counter++;
                     }

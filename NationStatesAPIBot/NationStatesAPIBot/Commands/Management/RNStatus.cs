@@ -9,7 +9,9 @@ namespace NationStatesAPIBot.Commands.Management
         internal DateTimeOffset StartedAt { get; set; }
         internal TimeSpan AvgTimePerFoundNation { get; set; }
         internal int FinalCount { get; set; }
-        int current = 0;
+        internal int SkippedCount { get; set; }
+        private int current = 0;
+
         internal int CurrentCount
         {
             get
@@ -24,6 +26,7 @@ namespace NationStatesAPIBot.Commands.Management
                 AvgTimePerFoundNation = timespend.Divide(CurrentCount);
             }
         }
+
         internal TimeSpan ExpectedIn()
         {
             var remaining = FinalCount - CurrentCount;
@@ -35,10 +38,11 @@ namespace NationStatesAPIBot.Commands.Management
             StringBuilder builder = new StringBuilder();
             builder.AppendLine($"--- Status of current /rn command ---");
             builder.AppendLine($"Issued by: {IssuedBy}");
-            builder.AppendLine($"Time spend (mm:ss): {DateTimeOffset.UtcNow.Subtract(StartedAt).ToString(@"mm\:ss")}");
+            builder.AppendLine($"Time spend (mm:ss): {DateTimeOffset.UtcNow.Subtract(StartedAt):mm\\:ss}");
             builder.AppendLine($"Current status: {CurrentCount}/{FinalCount}");
-            builder.AppendLine($"Avg. Time per found nation (mm:ss): {AvgTimePerFoundNation.ToString(@"mm\:ss")}");
-            builder.AppendLine($"Finish expected in approx. (mm:ss): {ExpectedIn().ToString(@"mm\:ss")}");
+            builder.AppendLine($"Nations skipped: {SkippedCount}");
+            builder.AppendLine($"Avg. Time per found nation (mm:ss): {AvgTimePerFoundNation:mm\\:ss}");
+            builder.AppendLine($"Finish expected in approx. (mm:ss): {ExpectedIn():mm\\:ss}");
             builder.AppendLine($"--- End of status ---");
             return builder.ToString();
         }

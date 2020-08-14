@@ -2,11 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using NationStatesAPIBot.Entities;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using NationStatesAPIBot.Interfaces;
 using Microsoft.Extensions.Options;
+using System.Threading;
+using System.Linq;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -29,7 +30,7 @@ namespace NationStatesAPIBot.Commands.Management
                 using (var dbContext = new BotDbContext(_config))
                 {
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
-                    var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == Context.User.Id.ToString());
+                    var user = await dbContext.Users.AsQueryable().FirstOrDefaultAsync<User>(u => u.DiscordUserId == Context.User.Id.ToString(), CancellationToken.None);
                     if (user == null)
                     {
                         await channel.SendMessageAsync("User not found");
@@ -66,7 +67,7 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 using (var dbContext = new BotDbContext(_config))
                 {
-                    var perm = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == id);
+                    var perm = await dbContext.Permissions.AsQueryable().FirstOrDefaultAsync(p => p.Id == id);
                     var channel = await Context.User.GetOrCreateDMChannelAsync();
                     if (perm == null)
                     {
@@ -75,7 +76,7 @@ namespace NationStatesAPIBot.Commands.Management
                     else
                     {
                         string permissions = "Users: ";
-                        var users = dbContext.Permissions.Where(p => p.Id == id).SelectMany(u => u.UserPermissions).Select(p => p.User);
+                        var users = dbContext.Permissions.AsQueryable().Where(p => p.Id == id).SelectMany(u => u.UserPermissions).Select(p => p.User);
                         if (users.Count() > 0)
                         {
                             foreach (var user in users)
@@ -119,8 +120,8 @@ namespace NationStatesAPIBot.Commands.Management
                     using (var dbContext = new BotDbContext(_config))
                     {
                         var channel = await Context.User.GetOrCreateDMChannelAsync();
-                        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
-                        var permission = await dbContext.Permissions.FirstOrDefaultAsync(p => p.Id == permissionId);
+                        var user = await dbContext.Users.AsQueryable().FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
+                        var permission = await dbContext.Permissions.AsQueryable().FirstOrDefaultAsync(p => p.Id == permissionId);
                         if (permission != null)
                         {
                             if (user == null)
@@ -163,7 +164,7 @@ namespace NationStatesAPIBot.Commands.Management
 
         private async Task GrantPermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext, IDMChannel channel)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
+            var user = await dbContext.Users.AsQueryable().FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
             user.UserPermissions.Add(new UserPermissions() { PermissionId = permission.Id, UserId = user.Id, User = user, Permission = permission });
             dbContext.Update(user);
             await dbContext.SaveChangesAsync();
