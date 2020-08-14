@@ -22,18 +22,19 @@ namespace NationStatesAPIBot.Services
         private HashSet<NATION> _nations;
         private HashSet<REGION> _regions;
         private bool isDumpUpdateCycleRunning = false;
-        private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
-        private readonly string regionFileName = "regions-dump-latest.xml.gz";
-        private readonly string nationFileName = "nations-dump-latest.xml.gz";
-        private readonly EventId defaultEventId;
+        private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private readonly string _regionFileName = "regions-dump-latest.xml.gz";
+        private readonly string _nationFileName = "nations-dump-latest.xml.gz";
+        private readonly EventId _defaultEventId;
         private readonly AppSettings _appconf;
+
         public DumpDataService(ILogger<DumpDataService> logger, NationStatesApiService apiService, IOptions<AppSettings> config)
         {
             _logger = logger;
             _apiService = apiService;
             _appconf = config.Value;
-            defaultEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.DumpDataServiceAction);
-            _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService started ---"));
+            _defaultEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.DumpDataServiceAction);
+            _logger.LogInformation(_defaultEventId, GetLogMessage("--- DumpDataService started ---"));
         }
 
         public static bool IsUpdating { get; private set; } = false;
@@ -46,7 +47,7 @@ namespace NationStatesAPIBot.Services
             get
             {
                 var next = LastDumpUpdateTimeUtc.Add(new TimeSpan(1, 0, 0, 0, 0));
-                if(next.TimeOfDay.Hours > 7 || (next.TimeOfDay.Hours == 7 && next.TimeOfDay.Minutes > 31))
+                if (next.TimeOfDay.Hours > 7 || (next.TimeOfDay.Hours == 7 && next.TimeOfDay.Minutes > 31))
                 {
                     next = new DateTime(next.Year, next.Month, next.Day, 7, 31, 0);
                 }
@@ -57,38 +58,40 @@ namespace NationStatesAPIBot.Services
 
         private string GetLogMessage(string message)
         {
-            return LogMessageBuilder.Build(defaultEventId, message);
+            return LogMessageBuilder.Build(_defaultEventId, message);
         }
+
         #region Management & Parsing
+
         public void StartDumpUpdateCycle()
         {
             isDumpUpdateCycleRunning = true;
-            Task.Run(async () => await UpdateCycle());
+            Task.Run(async () => await UpdateCycleAsync());
         }
 
         public void StopDumpUpdateCycle()
         {
             isDumpUpdateCycleRunning = false;
-            tokenSource.Cancel();
+            _tokenSource.Cancel();
         }
 
-        private async Task UpdateCycle()
+        private async Task UpdateCycleAsync()
         {
-            _logger.LogInformation(defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been started ---"));
+            _logger.LogInformation(_defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been started ---"));
             while (isDumpUpdateCycleRunning)
             {
-                await UpdateData();
+                await UpdateDataAsync();
             }
-            _logger.LogWarning(defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been stopped ---"));
+            _logger.LogWarning(_defaultEventId, GetLogMessage("--- DumpDataService Update Cycle has been stopped ---"));
         }
 
         private bool IsLocalDataAvailable()
         {
-            var existence = File.Exists(regionFileName) && File.Exists(nationFileName);
+            var existence = File.Exists(_regionFileName) && File.Exists(_nationFileName);
             if (existence)
             {
-                var fileInfoRegions = new FileInfo(regionFileName);
-                var fileInfoNations = new FileInfo(nationFileName);
+                var fileInfoRegions = new FileInfo(_regionFileName);
+                var fileInfoNations = new FileInfo(_nationFileName);
                 var outdated = fileInfoNations.LastWriteTimeUtc.Date != DateTime.UtcNow.Date || fileInfoRegions.LastWriteTimeUtc.Date != DateTime.UtcNow.Date;
                 if (DateTime.UtcNow.TimeOfDay < new TimeSpan(7, 0, 0) && outdated)
                 {
@@ -112,29 +115,29 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task UpdateData()
+        private async Task UpdateDataAsync()
         {
             try
             {
                 if (LastDumpUpdateTimeUtc == DateTime.UnixEpoch)
                 {
-                    await InitialUpdate();
+                    await InitialUpdateAsync();
                 }
                 else
                 {
-                    await _apiService.WaitForAction(NationStatesApiRequestType.DownloadDumps, TimeSpan.FromMinutes(30), tokenSource.Token);
-                    if (!tokenSource.Token.IsCancellationRequested)
+                    await _apiService.WaitForActionAsync(NationStatesApiRequestType.DownloadDumps, TimeSpan.FromMinutes(30), _tokenSource.Token);
+                    if (!_tokenSource.Token.IsCancellationRequested)
                     {
                         IsUpdating = true;
-                        _logger.LogInformation(defaultEventId, GetLogMessage("--- Updating NATION and REGION collections from dumps ---"));
+                        _logger.LogInformation(_defaultEventId, GetLogMessage("--- Updating NATION and REGION collections from dumps ---"));
                         await DowloadAndReadDumpsAsync();
                     }
                 }
-                _logger.LogInformation(defaultEventId, GetLogMessage("--- Dump Data Update Finished ---"));
+                _logger.LogInformation(_defaultEventId, GetLogMessage("--- Dump Data Update Finished ---"));
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(defaultEventId, ex, GetLogMessage("A critical error occurred while processing of Dump Update"));
+                _logger.LogCritical(_defaultEventId, ex, GetLogMessage("A critical error occurred while processing of Dump Update"));
             }
             finally
             {
@@ -142,19 +145,19 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task InitialUpdate()
+        private async Task InitialUpdateAsync()
         {
             IsUpdating = true;
             DataAvailable = false;
-            _logger.LogDebug(defaultEventId, GetLogMessage("No Dumpdata available"));
+            _logger.LogDebug(_defaultEventId, GetLogMessage("No Dumpdata available"));
             if (IsLocalDataAvailable())
             {
-                _logger.LogDebug(defaultEventId, GetLogMessage("Reading Dumps from local Filesystem"));
+                _logger.LogDebug(_defaultEventId, GetLogMessage("Reading Dumps from local Filesystem"));
                 ReadDumpsFromLocalFileSystem();
             }
             else
             {
-                _logger.LogDebug(defaultEventId, GetLogMessage("Downloading and Reading Dumps"));
+                _logger.LogDebug(_defaultEventId, GetLogMessage("Downloading and Reading Dumps"));
                 await DowloadAndReadDumpsAsync();
             }
         }
@@ -164,11 +167,11 @@ namespace NationStatesAPIBot.Services
             Stopwatch stopWatch = Stopwatch.StartNew();
             _regions = GetRegionsFromStream(regionsStream);
             stopWatch.Stop();
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Parsing regions took {stopWatch.Elapsed} to complete."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Parsing regions took {stopWatch.Elapsed} to complete."));
             stopWatch.Restart();
             _nations = GetNationsFromStream(nationsStream);
             stopWatch.Stop();
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Parsing nations took {stopWatch.Elapsed} to complete."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Parsing nations took {stopWatch.Elapsed} to complete."));
             DataAvailable = true;
         }
 
@@ -181,18 +184,18 @@ namespace NationStatesAPIBot.Services
             try
             {
                 Stopwatch stopWatch = Stopwatch.StartNew();
-                fsr = new FileStream(regionFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fsr = new FileStream(_regionFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
                 regionStream = new GZipStream(fsr, CompressionMode.Decompress);
 
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Reading region dump from local cache took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Reading region dump from local cache took {stopWatch.Elapsed} to complete."));
                 stopWatch.Restart();
-                fsn = new FileStream(nationFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fsn = new FileStream(_nationFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
                 nationStream = new GZipStream(fsn, CompressionMode.Decompress);
 
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
-                var fileInfoNations = new FileInfo(nationFileName);
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Reading nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                var fileInfoNations = new FileInfo(_nationFileName);
                 LastDumpUpdateTimeUtc = fileInfoNations.LastWriteTimeUtc;
                 LoadDumpsFromStream(regionStream, nationStream);
             }
@@ -216,21 +219,21 @@ namespace NationStatesAPIBot.Services
             try
             {
                 Stopwatch stopWatch = Stopwatch.StartNew();
-                regionsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Regions);
+                regionsStream = await _apiService.GetNationStatesDumpStreamAsync(NationStatesDumpType.Regions);
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Download region dump as stream took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Download region dump as stream took {stopWatch.Elapsed} to complete."));
                 stopWatch.Restart();
-                nationsStream = await _apiService.GetNationStatesDumpStream(NationStatesDumpType.Nations);
+                nationsStream = await _apiService.GetNationStatesDumpStreamAsync(NationStatesDumpType.Nations);
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Download nation dump as stream took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Download nation dump as stream took {stopWatch.Elapsed} to complete."));
                 stopWatch.Restart();
                 await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Regions, regionsStream);
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing region dump to local cache took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Writing region dump to local cache took {stopWatch.Elapsed} to complete."));
                 stopWatch.Restart();
                 await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
                 stopWatch.Stop();
-                _logger.LogDebug(defaultEventId, GetLogMessage($"Writing nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Writing nation dump from local cache took {stopWatch.Elapsed} to complete."));
                 ReadDumpsFromLocalFileSystem();
             }
             finally
@@ -246,7 +249,7 @@ namespace NationStatesAPIBot.Services
         {
             if (!(dumpType == NationStatesDumpType.Nations || dumpType == NationStatesDumpType.Regions))
                 throw new ArgumentException("Unknown DumpType");
-            string fileName = dumpType == NationStatesDumpType.Nations ? nationFileName : regionFileName;
+            string fileName = dumpType == NationStatesDumpType.Nations ? _nationFileName : _regionFileName;
             using (var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
                 using (var newCompressed = new GZipStream(fs, CompressionMode.Compress))
@@ -258,17 +261,17 @@ namespace NationStatesAPIBot.Services
 
         private HashSet<REGION> GetRegionsFromStream(Stream stream)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting stream to REGION Collection"));
+            _logger.LogDebug(_defaultEventId, GetLogMessage("Extracting stream to REGION Collection"));
             var result = ParseRegionsFromStream(stream);
-            _logger.LogDebug(defaultEventId, GetLogMessage("REGION Collection extracted successfully."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage("REGION Collection extracted successfully."));
             return result;
         }
 
         private HashSet<NATION> GetNationsFromStream(Stream stream)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage("Extracting stream to NATION Collection"));
+            _logger.LogDebug(_defaultEventId, GetLogMessage("Extracting stream to NATION Collection"));
             var result = ParseNationsFromStream(stream);
-            _logger.LogDebug(defaultEventId, GetLogMessage("NATION Collection extracted successfully."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage("NATION Collection extracted successfully."));
             return result;
         }
 
@@ -280,16 +283,16 @@ namespace NationStatesAPIBot.Services
                 {
                     NAME = BaseApiService.ToID(m.Element("NAME").Value),
                     DumpPosition = m.NodesBeforeSelf().Count(),
-                    NUMNATIONS = (int)m.Element("NUMNATIONS"),
+                    NUMNATIONS = (int) m.Element("NUMNATIONS"),
                     NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToHashSet(),
                     DELEGATE = m.Element("DELEGATE").Value,
-                    DELEGATEVOTES = (int)m.Element("DELEGATEVOTES"),
+                    DELEGATEVOTES = (int) m.Element("DELEGATEVOTES"),
                     DELEGATEAUTH = m.Element("DELEGATEAUTH").Value,
                     FOUNDER = m.Element("FOUNDER").Value,
                     FOUNDERAUTH = m.Element("FOUNDERAUTH").Value,
                     POWER = m.Element("POWER").Value,
                     FLAG = m.Element("FLAG").Value,
-                    LASTUPDATE = DateTimeOffset.FromUnixTimeSeconds((int)m.Element("LASTUPDATE")),
+                    LASTUPDATE = DateTimeOffset.FromUnixTimeSeconds((int) m.Element("LASTUPDATE")),
                     OFFICERS = BuildOfficers(m),
                     EMBASSIES = m.Element("EMBASSIES").Descendants("EMBASSY").Select(e => e.Value).ToList(),
                     WABADGES = BuildWABadges(m)
@@ -303,9 +306,9 @@ namespace NationStatesAPIBot.Services
                 NATION = o.Element("NATION").Value,
                 BY = o.Element("BY").Value,
                 OFFICE = o.Element("OFFICE").Value,
-                ORDER = (int)o.Element("ORDER"),
+                ORDER = (int) o.Element("ORDER"),
                 AUTHORITY = o.Element("AUTHORITY").Value,
-                TIME = DateTimeOffset.FromUnixTimeSeconds((long)o.Element("TIME")),
+                TIME = DateTimeOffset.FromUnixTimeSeconds((long) o.Element("TIME")),
             }).ToList();
         }
 
@@ -355,8 +358,8 @@ namespace NationStatesAPIBot.Services
                 GOVTPRIORITY = m.Element("GOVTPRIORITY").Value,
                 GOVT = BuildGOVT(m),
                 FOUNDED = m.Element("FOUNDED").Value,
-                FIRSTLOGIN = DateTimeOffset.FromUnixTimeSeconds((int)m.Element("FIRSTLOGIN")),
-                LASTLOGIN = DateTimeOffset.FromUnixTimeSeconds((int)m.Element("LASTLOGIN")),
+                FIRSTLOGIN = DateTimeOffset.FromUnixTimeSeconds((int) m.Element("FIRSTLOGIN")),
+                LASTLOGIN = DateTimeOffset.FromUnixTimeSeconds((int) m.Element("LASTLOGIN")),
                 LASTACTIVITY = m.Element("LASTACTIVITY").Value,
                 INFLUENCE = m.Element("INFLUENCE").Value,
                 PUBLICSECTOR = Convert.ToDouble(m.Element("PUBLICSECTOR").Value),
@@ -430,18 +433,20 @@ namespace NationStatesAPIBot.Services
                 return;
             if (IsUpdating)
             {
-                while (IsUpdating && !tokenSource.Token.IsCancellationRequested)
+                while (IsUpdating && !_tokenSource.Token.IsCancellationRequested)
                 {
                     await Task.Delay(1000);
                 }
-                tokenSource.Token.ThrowIfCancellationRequested();
+                _tokenSource.Token.ThrowIfCancellationRequested();
             }
             else if (!DataAvailable)
             {
                 throw new DataUnavailableException("No data available that could be accessed.");
             }
         }
-        #endregion
+
+        #endregion Management & Parsing
+
         private REGION GetRegionInternal(string name)
         {
             return _regions.FirstOrDefault(r => r.NAME == name);
@@ -454,21 +459,21 @@ namespace NationStatesAPIBot.Services
 
         public async Task<NATION> GetNationAsync(string name)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Nation {name} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data for Nation {name} requested."));
             await WaitForDataAvailabilityAsync();
             return GetNationInternal(name);
         }
 
         public async Task<REGION> GetRegionAsync(string name)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data for Region {name} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data for Region {name} requested."));
             await WaitForDataAvailabilityAsync();
             return GetRegionInternal(name);
         }
 
-        public async Task<List<NATION>> GetWAOfRegion(string regionName)
+        public async Task<List<NATION>> GetWAOfRegionAsync(string regionName)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: WA nations of region {regionName} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data: WA nations of region {regionName} requested."));
             await WaitForDataAvailabilityAsync();
             var region = GetRegionInternal(regionName);
             if (region != null)
@@ -477,12 +482,12 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage($"region {regionName} was null"));
+                _logger.LogWarning(_defaultEventId, GetLogMessage($"region {regionName} was null"));
                 return null;
             }
         }
 
-        public async Task<IEnumerable<NATION>> GetAllWa()
+        public async Task<IEnumerable<NATION>> GetAllWaAsync()
         {
             return await Task.FromResult(_nations.Where(n => n.WAMEMBER));
         }
@@ -492,9 +497,9 @@ namespace NationStatesAPIBot.Services
         /// </summary>
         /// <param name="nationName">specific nation name</param>
         /// <returns>List of Nations</returns>
-        public async Task<List<NATION>> GetNationsEndorsedBy(string nationName)
+        public async Task<List<NATION>> GetNationsEndorsedByAsync(string nationName)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data: GetNationsEndorsedBy {nationName} requested."));
             await WaitForDataAvailabilityAsync();
             var nation = GetNationInternal(BaseApiService.ToID(nationName));
             if (nation != null)
@@ -510,7 +515,7 @@ namespace NationStatesAPIBot.Services
                 }
                 else if (region == null)
                 {
-                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    _logger.LogWarning(_defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
                 }
                 else
@@ -520,14 +525,14 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                _logger.LogWarning(_defaultEventId, GetLogMessage($"nation {nationName} was null"));
                 return null;
             }
         }
 
-        public async Task<List<NATION>> GetNationsNotEndorsedBy(string nationName)
+        public async Task<List<NATION>> GetNationsNotEndorsedByAsync(string nationName)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsNotEndorsedBy {nationName} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data: GetNationsNotEndorsedBy {nationName} requested."));
             await WaitForDataAvailabilityAsync();
             var nation = GetNationInternal(BaseApiService.ToID(nationName));
             if (nation != null)
@@ -545,7 +550,7 @@ namespace NationStatesAPIBot.Services
                 }
                 else if (region == null)
                 {
-                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    _logger.LogWarning(_defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
                 }
                 else
@@ -555,14 +560,14 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                _logger.LogWarning(_defaultEventId, GetLogMessage($"nation {nationName} was null"));
                 return null;
             }
         }
 
-        public async Task<List<NATION>> GetNationsWhoDidNotEndorseNation(string nationName)
+        public async Task<List<NATION>> GetNationsWhoDidNotEndorseNationAsync(string nationName)
         {
-            _logger.LogDebug(defaultEventId, GetLogMessage($"Dump Data: GetNationsWhoDidNotEndorseNation {nationName} requested."));
+            _logger.LogDebug(_defaultEventId, GetLogMessage($"Dump Data: GetNationsWhoDidNotEndorseNation {nationName} requested."));
             await WaitForDataAvailabilityAsync();
             var nation = GetNationInternal(BaseApiService.ToID(nationName));
             if (nation != null)
@@ -578,7 +583,7 @@ namespace NationStatesAPIBot.Services
                 }
                 else if (region == null)
                 {
-                    _logger.LogWarning(defaultEventId, GetLogMessage($"region of {nation} was null"));
+                    _logger.LogWarning(_defaultEventId, GetLogMessage($"region of {nation} was null"));
                     return null;
                 }
                 else
@@ -588,7 +593,7 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
-                _logger.LogWarning(defaultEventId, GetLogMessage($"nation {nationName} was null"));
+                _logger.LogWarning(_defaultEventId, GetLogMessage($"nation {nationName} was null"));
                 return null;
             }
         }

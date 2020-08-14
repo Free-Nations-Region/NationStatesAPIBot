@@ -12,7 +12,7 @@ namespace NationStatesAPIBot.Commands.Management
     public class Codes : ModuleBase<SocketCommandContext>
     {
         [Command("ovc"), Summary("Returns an Ownership Verification Code")]
-        public async Task DoGenerateOVC(string nationName)
+        public async Task DoGenerateOVCAsync(string nationName)
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
             if (await permManager.IsAllowedAsync(Types.PermissionType.GenerateOVCCodes, Context.User))
@@ -26,12 +26,12 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
 
         [Command("evc"), Summary("Returns an number of election verification codes")]
-        public async Task DoGenerateEvc(int count)
+        public async Task DoGenerateEvcAsync(int count)
         {
             var permManager = Program.ServiceProvider.GetService<IPermissionManager>();
             if (await permManager.IsBotAdminAsync(Context.User) && Context.IsPrivate)
@@ -40,19 +40,18 @@ namespace NationStatesAPIBot.Commands.Management
                 for (int i = 1; i <= count; i++)
                 {
                     stringBuilder.AppendLine(GenerateCode());
-                    if(i % 25 == 0)
+                    if (i % 25 == 0)
                     {
                         await ReplyAsync(stringBuilder.ToString());
                         stringBuilder.Clear();
                     }
                 }
-                if(count < 25 || count % 25 != 0)
+                if (count < 25 || count % 25 != 0)
                 {
                     await ReplyAsync(stringBuilder.ToString());
                 }
             }
         }
-
 
         public string GenerateCode()
         {
@@ -68,7 +67,6 @@ namespace NationStatesAPIBot.Commands.Management
                 }
             }
             return resultBuilder.ToString();
-
         }
     }
 
@@ -86,7 +84,8 @@ namespace NationStatesAPIBot.Commands.Management
         /// <returns></returns>
         public static string Encode(long input)
         {
-            if (input < 0) throw new ArgumentOutOfRangeException("input", input, "input cannot be negative");
+            if (input < 0)
+                throw new ArgumentOutOfRangeException("input", input, "input cannot be negative");
 
             char[] clistarr = CharList.ToCharArray();
             var result = new Stack<char>();
@@ -110,7 +109,7 @@ namespace NationStatesAPIBot.Commands.Management
             int pos = 0;
             foreach (char c in reversed)
             {
-                result += CharList.IndexOf(c) * (long)Math.Pow(36, pos);
+                result += CharList.IndexOf(c) * (long) Math.Pow(36, pos);
                 pos++;
             }
             return result;

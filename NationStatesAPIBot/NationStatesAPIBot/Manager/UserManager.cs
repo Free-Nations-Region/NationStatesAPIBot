@@ -8,25 +8,28 @@ using NationStatesAPIBot.Types;
 namespace NationStatesAPIBot.Manager
 {
     //This class isn't static because of the requirement of using it as type for receiving logger
-    public class UserManager 
+    public class UserManager
     {
         private static AppSettings _config;
         private static ILogger<UserManager> logger;
+
         public static void Initialize(AppSettings config)
         {
             _config = config;
             logger = Program.ServiceProvider.GetService<ILogger<UserManager>>();
         }
-        public static async Task<bool> IsUserInDb(string userId)
+
+        public static async Task<bool> IsUserInDbAsync(string userId)
         {
             using (var context = new BotDbContext(_config))
             {
                 return await context.Users.FirstOrDefaultAsync(u => u.DiscordUserId == userId) != null;
             }
         }
+
         public static async Task AddUserToDbAsync(string userId)
         {
-            if (!await IsUserInDb(userId)) //check
+            if (!await IsUserInDbAsync(userId)) //check
             {
                 var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserDbAction);
                 using (var dbContext = new BotDbContext(_config))
@@ -49,6 +52,7 @@ namespace NationStatesAPIBot.Manager
                 }
             }
         }
+
         public static async Task RemoveUserFromDbAsync(string userId)
         {
             using (var dbContext = new BotDbContext(_config))
@@ -63,7 +67,5 @@ namespace NationStatesAPIBot.Manager
                 }
             }
         }
-
-
     }
 }

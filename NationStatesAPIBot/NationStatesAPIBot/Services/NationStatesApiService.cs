@@ -22,11 +22,12 @@ namespace NationStatesAPIBot.Services
         public const long REQUEST_NEW_NATIONS_INTERVAL = 18000000000; //30 m 18000000000
         public const long REQUEST_REGION_NATIONS_INTERVAL = 432000000000; //12 h 432000000000
 
-        public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger) { }
+        public NationStatesApiService(IOptions<AppSettings> config, ILogger<NationStatesApiService> logger) : base(config, logger)
+        {
+        }
 
         public DateTime LastAPIRequest { get => lastAPIRequest; private set => lastAPIRequest = value; }
         public DateTime LastTelegramSending { get => lastTelegramSending; private set => lastTelegramSending = value; }
-
 
         public DateTime LastAutomaticNewNationsRequest { get => lastAutomaticNewNationsRequest; private set => lastAutomaticNewNationsRequest = value; }
         public DateTime LastAutomaticRegionNationsRequest { get => lastAutomaticRegionNationsRequest; private set => lastAutomaticRegionNationsRequest = value; }
@@ -52,7 +53,7 @@ namespace NationStatesAPIBot.Services
             else if (type == NationStatesApiRequestType.DownloadDumps)
             {
                 /*
-                 * Dump update time according to documentation around 22:30 PDT 
+                 * Dump update time according to documentation around 22:30 PDT
                  * source: https://www.nationstates.net/pages/api#dumps
                  * Add some tolerance of 30 Minutes to it, if it maybe takes longer sometimes
                  * And have a time window of 31 Minutes to it gets definitely hit by the 30 Minute interval of WaitForAction
@@ -66,20 +67,21 @@ namespace NationStatesAPIBot.Services
                 return Task.FromResult(false);
             }
         }
-        public async Task WaitForAction(NationStatesApiRequestType requestType)
+
+        public async Task WaitForActionAsync(NationStatesApiRequestType requestType)
         {
-            await WaitForAction(requestType, TimeSpan.FromTicks(API_REQUEST_INTERVAL));
+            await WaitForActionAsync(requestType, TimeSpan.FromTicks(API_REQUEST_INTERVAL));
         }
 
-        public async Task WaitForAction(NationStatesApiRequestType requestType, TimeSpan interval)
+        public async Task WaitForActionAsync(NationStatesApiRequestType requestType, TimeSpan interval)
         {
             while (!await IsNationStatesApiActionReadyAsync(requestType, true))
             {
-                await Task.Delay((int)interval.TotalMilliseconds);
+                await Task.Delay((int) interval.TotalMilliseconds);
             }
         }
 
-        public async Task WaitForAction(NationStatesApiRequestType requestType, TimeSpan interval, CancellationToken cancellationToken)
+        public async Task WaitForActionAsync(NationStatesApiRequestType requestType, TimeSpan interval, CancellationToken cancellationToken)
         {
             while (!await IsNationStatesApiActionReadyAsync(requestType, true))
             {
@@ -87,7 +89,7 @@ namespace NationStatesAPIBot.Services
                 {
                     return;
                 }
-                await Task.Delay((int)interval.TotalMilliseconds, cancellationToken);
+                await Task.Delay((int) interval.TotalMilliseconds, cancellationToken);
             }
         }
 
@@ -95,29 +97,29 @@ namespace NationStatesAPIBot.Services
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
             _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for WouldReceiveTelegram-Request: {nationName}"));
-            await WaitForAction(NationStatesApiRequestType.WouldReceiveRecruitmentTelegram);
+            await WaitForActionAsync(NationStatesApiRequestType.WouldReceiveRecruitmentTelegram);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcanrecruit&from={ToID(_config.NationStatesRegionName)}");
             if (!recruitment)
             {
                 url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=tgcancampaign");
             }
-            return await ExecuteRequestWithXmlResult(url, id);
+            return await ExecuteRequestWithXmlResultAsync(url, id);
         }
 
         public async Task<XmlDocument> GetRegionStatsAsync(string regionName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for RegionStats-Request: {regionName}"));
-            await WaitForAction(NationStatesApiRequestType.GetRegionStats);
+            await WaitForActionAsync(NationStatesApiRequestType.GetRegionStats);
             var url = BuildApiRequestUrl($"region={ToID(regionName)}&q=name+numnations+founded+delegate+census+power;mode=score;scale=65");
-            return await ExecuteRequestWithXmlResult(url, eventId);
+            return await ExecuteRequestWithXmlResultAsync(url, eventId);
         }
 
         public async Task<XmlDocument> GetNationStatsAsync(string nationName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats-Request: {nationName}"));
-            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            await WaitForActionAsync(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=flag+wa+gavote+scvote+fullname+freedom+demonym2plural+category+population+region+founded+influence+lastactivity+census;mode=score;scale=0+1+2+65+66+80");
-            return await ExecuteRequestWithXmlResult(url, eventId);
+            return await ExecuteRequestWithXmlResultAsync(url, eventId);
         }
 
         public async Task<bool> SendRecruitmentTelegramAsync(string nationName)
@@ -131,21 +133,20 @@ namespace NationStatesAPIBot.Services
             try
             {
                 _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Waiting for SendRecruitmentTelegram-Request: {nationName}"));
-                await WaitForAction(NationStatesApiRequestType.SendRecruitmentTelegram);
+                await WaitForActionAsync(NationStatesApiRequestType.SendRecruitmentTelegram);
                 _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Sending Telegram to {nationName}."));
                 var url = BuildApiRequestUrl($"a=sendTG" +
                     $"&client={_config.ClientKey}" +
                     $"&tgid={_config.TelegramId}" +
                     $"&key={_config.TelegramSecretKey}" +
                     $"&to={ToID(nationName)}");
-                var response = await ExecuteGetRequest(url, id);
+                var response = await ExecuteGetRequestAsync(url, id);
                 lastTelegramSending = DateTime.UtcNow;
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                    _logger.LogWarning(id, LogMessageBuilder.Build(id, $"SendRecruitmentTelegram failed with StatusCode {(int) response.StatusCode}: {response.ReasonPhrase}"));
                 }
                 return response.IsSuccessStatusCode;
-
             }
             catch (Exception ex)
             {
@@ -157,9 +158,9 @@ namespace NationStatesAPIBot.Services
         public async Task<List<string>> GetNewNationsAsync(EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetNewNations-Request"));
-            await WaitForAction(NationStatesApiRequestType.GetNewNations);
+            await WaitForActionAsync(NationStatesApiRequestType.GetNewNations);
             var url = BuildApiRequestUrl("q=happenings;filter=founding&limit=200");
-            XmlDocument foundingsXML = await ExecuteRequestWithXmlResult(url, eventId);
+            XmlDocument foundingsXML = await ExecuteRequestWithXmlResultAsync(url, eventId);
             if (foundingsXML != null)
             {
                 lastAutomaticNewNationsRequest = DateTime.UtcNow;
@@ -185,25 +186,25 @@ namespace NationStatesAPIBot.Services
         public async Task<XmlDocument> GetNationNameAsync(string nationName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(Name)-Request: {nationName}"));
-            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            await WaitForActionAsync(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=name");
-            return await ExecuteRequestWithXmlResult(url, eventId);
+            return await ExecuteRequestWithXmlResultAsync(url, eventId);
         }
 
-        public async Task<XmlDocument> GetDelegateString(string nationName, EventId eventId)
+        public async Task<XmlDocument> GetDelegateStringAsync(string nationName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for NationStats(FullName)-Request: {nationName}"));
-            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            await WaitForActionAsync(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=name+influence+census;mode=score;scale=65+66");
-            return await ExecuteRequestWithXmlResult(url, eventId);
+            return await ExecuteRequestWithXmlResultAsync(url, eventId);
         }
 
-        public async Task<XmlDocument> GetEndorsements(string nationName, EventId eventId)
+        public async Task<XmlDocument> GetEndorsementsAsync(string nationName, EventId eventId)
         {
             _logger.LogDebug(eventId, LogMessageBuilder.Build(eventId, $"Waiting for GetEndorsements-Request: {nationName}"));
-            await WaitForAction(NationStatesApiRequestType.GetNationStats);
+            await WaitForActionAsync(NationStatesApiRequestType.GetNationStats);
             var url = BuildApiRequestUrl($"nation={ToID(nationName)}&q=endorsements");
-            return await ExecuteRequestWithXmlResult(url, eventId);
+            return await ExecuteRequestWithXmlResultAsync(url, eventId);
         }
     }
 }

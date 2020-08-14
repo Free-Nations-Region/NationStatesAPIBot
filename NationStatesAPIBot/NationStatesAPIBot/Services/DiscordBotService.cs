@@ -43,7 +43,7 @@ namespace NationStatesAPIBot.Services
             if (message is SocketUserMessage socketMsg && user is SocketUser socketUser)
             {
                 string userId = socketUser.Id.ToString();
-                if (!UserManager.IsUserInDb(userId).Result)
+                if (!UserManager.IsUserInDbAsync(userId).Result)
                 {
                     await UserManager.AddUserToDbAsync(userId);
                 }
@@ -93,7 +93,7 @@ namespace NationStatesAPIBot.Services
                         }
                         else if (await IsRelevantAsync(message, context.User) && context.Client.Status == UserStatus.DoNotDisturb && !await _permManager.IsBotAdminAsync(context.User))
                         {
-                            await context.Channel.SendMessageAsync(AppSettings.SLEEPTEXT);
+                            await context.Channel.SendMessageAsync(AppSettings._sleepText);
                         }
                     }
                 }

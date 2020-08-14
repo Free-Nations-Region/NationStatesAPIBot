@@ -17,12 +17,12 @@ namespace NationStatesAPIBot.Commands.Management
 {
     public class Recruitment : ModuleBase<SocketCommandContext>
     {
-        readonly IPermissionManager _permManager;
-        readonly ILogger<Recruitment> _logger;
-        readonly RecruitmentService _recruitmentService;
+        private readonly IPermissionManager _permManager;
+        private readonly ILogger<Recruitment> _logger;
+        private readonly RecruitmentService _recruitmentService;
         private readonly CultureInfo _locale;
 
-        static readonly string actionQueued = $"Your action was queued successfully. Please be patient this may take a moment.";
+        private static readonly string _actionQueued = $"Your action was queued successfully. Please be patient this may take a moment.";
 
         public Recruitment(IPermissionManager permissionManager, ILogger<Recruitment> logger, RecruitmentService recruitmentService, IOptions<AppSettings> config)
         {
@@ -33,7 +33,7 @@ namespace NationStatesAPIBot.Commands.Management
         }
 
         [Command("startRecruitment"), Summary("Starts the recruitment process")]
-        public async Task DoStartRecruitment()
+        public async Task DoStartRecruitmentAsync()
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
@@ -49,12 +49,12 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
 
         [Command("stopRecruitment"), Summary("Stops the recruitment process")]
-        public async Task DoStopRecruitment()
+        public async Task DoStopRecruitmentAsync()
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
@@ -70,122 +70,122 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
 
         [Command("rn"), Summary("Returns a list of nations which would receive an recruitment telegram")]
-        public async Task DoGetRecruitableNations([Remainder, Summary("Number of nations to be returned")]int number)
+        public async Task DoGetRecruitableNationsAsync([Remainder, Summary("Number of nations to be returned")] int number)
         {
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
-            List<Nation> returnNations = new List<Nation>();
-            try
-            {
-                if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
-                {
-                    if (!_recruitmentService.IsReceivingRecruitableNations)
-                    {
-                        if (number <= 120)
-                        {
-                            var currentRN = new RNStatus
-                            {
-                                IssuedBy = Context.User.Username,
-                                FinalCount = number,
-                                StartedAt = DateTimeOffset.UtcNow,
-                                AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
-                            };
-                            var channel = await Context.User.GetOrCreateDMChannelAsync();
-                            
-                            _recruitmentService.StartReceiveRecruitableNations(currentRN);
-                            await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
-                            _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
-                            returnNations = await _recruitmentService.GetRecruitableNationsAsync(number, false);
-                            foreach (var nation in returnNations)
-                            {
-                                await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
-                            }
-                            StringBuilder builder = new StringBuilder();
-                            builder.AppendLine("-----");
-                            var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {returnNations.Count} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
-                            int replyCount = (number / 40) + (number % 40 != 0 ? 1 : 0);
+            await ReplyAsync("The /rn command needed to be disabled because of major issues with the manual recruitment system. Drehtisch will fix those issue asap. Sorry :(");
 
-                            int currentReply = 1;
-                            for (int i = 1; i <= returnNations.Count; i++)
-                            {
+            //var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNCommand);
+            //List<Nation> returnNations = new List<Nation>();
+            //try
+            //{
+            //    if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
+            //    {
+            //        if (!_recruitmentService.IsReceivingRecruitableNations)
+            //        {
+            //            if (number <= 120)
+            //            {
+            //                var currentRN = new RNStatus
+            //                {
+            //                    IssuedBy = Context.User.Username,
+            //                    FinalCount = number,
+            //                    StartedAt = DateTimeOffset.UtcNow,
+            //                    AvgTimePerFoundNation = TimeSpan.FromSeconds(2)
+            //                };
+            //                var channel = await Context.User.GetOrCreateDMChannelAsync();
 
-                                var nation = returnNations[i - 1];
-                                if (i % 8 == 0)
-                                {
-                                    builder.AppendLine($"{nation.Name}");
-                                    builder.AppendLine("-----");
-                                }
-                                else
-                                {
-                                    builder.Append($"{nation.Name}, ");
-                                }
-                                if (i % 40 == 0)
-                                {
-                                    if (i / 40 == 1)
-                                    {
-                                        await channel.SendMessageAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-                                    }
-                                    else
-                                    {
-                                        await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-                                    }
-                                    builder.Clear();
-                                    currentReply++;
-                                }
-                            }
-                            if (returnNations.Count < 40)
-                            {
-                                await channel.SendMessageAsync($"{firstReplyStart}{builder.ToString()}");
-                            }
-                            else
-                            {
-                                if (number % 40 != 0)
-                                {
-                                    await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
-                                }
-                            }
-                            if(returnNations.Count < number)
-                            {
-                                await ReplyAsync($"{Environment.NewLine}- - - - -{Environment.NewLine}WARNING: No more nations in pending nations pool.");
-                            }
-                        }
-                        else
-                        {
-                            await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
-                        }
-                    }
-                    else
-                    {
-                        await ReplyAsync($"There is already a /rn command running. Try again later.");
-                    }
-                }
-                else
-                {
-                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
-                }
-            }
-            catch (Exception ex)
-            {
+            //                _recruitmentService.StartReceiveRecruitableNations(currentRN);
+            //                await ReplyAsync($"{actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn().ToString(@"mm\:ss")}");
+            //                _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{number} recruitable nations requested."));
+            //                returnNations = await _recruitmentService.GetRecruitableNationsAsync(number, false);
+            //                foreach (var nation in returnNations)
+            //                {
+            //                    await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
+            //                }
+            //                StringBuilder builder = new StringBuilder();
+            //                builder.AppendLine("-----");
+            //                var firstReplyStart = $"<@{Context.User.Id}> Your action just finished.{Environment.NewLine}Changed status of {returnNations.Count} nations from 'pending' to 'reserved_manual'.{Environment.NewLine}Recruitable Nations are (each segment for 1 telegram):{Environment.NewLine}";
+            //                int replyCount = (number / 40) + (number % 40 != 0 ? 1 : 0);
 
-                _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
-                await ReplyAsync($"Something went wrong :( ");
-                foreach (var nation in returnNations)
-                {
-                    await NationManager.SetNationStatusToAsync(nation, "pending");
-                }
-            }
-            finally
-            {
-                _recruitmentService.StopReceiveRecruitableNations();
-            }
+            //                int currentReply = 1;
+            //                for (int i = 1; i <= returnNations.Count; i++)
+            //                {
+            //                    var nation = returnNations[i - 1];
+            //                    if (i % 8 == 0)
+            //                    {
+            //                        builder.AppendLine($"{nation.Name}");
+            //                        builder.AppendLine("-----");
+            //                    }
+            //                    else
+            //                    {
+            //                        builder.Append($"{nation.Name}, ");
+            //                    }
+            //                    if (i % 40 == 0)
+            //                    {
+            //                        if (i / 40 == 1)
+            //                        {
+            //                            await channel.SendMessageAsync($"{firstReplyStart} Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+            //                        }
+            //                        else
+            //                        {
+            //                            await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+            //                        }
+            //                        builder.Clear();
+            //                        currentReply++;
+            //                    }
+            //                }
+            //                if (returnNations.Count < 40)
+            //                {
+            //                    await channel.SendMessageAsync($"{firstReplyStart}{builder.ToString()}");
+            //                }
+            //                else
+            //                {
+            //                    if (number % 40 != 0)
+            //                    {
+            //                        await channel.SendMessageAsync($"Reply {currentReply}/{replyCount}{Environment.NewLine}{builder.ToString()}");
+            //                    }
+            //                }
+            //                if(returnNations.Count < number)
+            //                {
+            //                    await ReplyAsync($"{Environment.NewLine}- - - - -{Environment.NewLine}WARNING: No more nations in pending nations pool.");
+            //                }
+            //            }
+            //            else
+            //            {
+            //                await ReplyAsync($"{number} exceeds the maximum of 120 Nations (15 Telegrams a 8 recipients) to be returned.");
+            //            }
+            //        }
+            //        else
+            //        {
+            //            await ReplyAsync($"There is already a /rn command running. Try again later.");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogCritical(id, ex, LogMessageBuilder.Build(id, "An critical error occured"));
+            //    await ReplyAsync($"Something went wrong :( ");
+            //    foreach (var nation in returnNations)
+            //    {
+            //        await NationManager.SetNationStatusToAsync(nation, "pending");
+            //    }
+            //}
+            //finally
+            //{
+            //    _recruitmentService.StopReceiveRecruitableNations();
+            //}
         }
 
         [Command("rns"), Summary("Returns the status of an /rn command")]
-        public async Task DoGetRNStatus()
+        public async Task DoGetRNStatusAsync()
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.RNSCommand);
             try
@@ -196,7 +196,7 @@ namespace NationStatesAPIBot.Commands.Management
                 }
                 else
                 {
-                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings._permissionDeniedResponse);
                 }
             }
             catch (Exception ex)
@@ -205,16 +205,16 @@ namespace NationStatesAPIBot.Commands.Management
                 await ReplyAsync($"Something went wrong :( ");
             }
         }
-        
+
         [Command("rstat"), Summary("Returns statistics to determine the effectiveness of recruitment")]
-        public async Task DoGetRecruitmentStats()
+        public async Task DoGetRecruitmentStatsAsync()
         {
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
                 await _recruitmentService.UpdateRecruitmentStatsAsync();
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"Recruitment statistics:");
-                builder.WithDescription($"-- DataSource DB : Last updated just now --{Environment.NewLine}" + 
+                builder.WithDescription($"-- DataSource DB : Last updated just now --{Environment.NewLine}" +
                                         $"Sent (API): {_recruitmentService.ApiSent}{Environment.NewLine}" +
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
@@ -226,12 +226,12 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"{Environment.NewLine}" +
                                         $"Recruits which CTE'd or left the region are excluded.");
                 builder.WithFooter(DiscordBotService.FooterString);
-                
+
                 await ReplyAsync(embed: builder.Build());
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
     }

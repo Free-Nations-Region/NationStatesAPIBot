@@ -18,15 +18,17 @@ namespace NationStatesAPIBot.Services
         protected DateTime lastTelegramSending;
         protected DateTime lastAutomaticNewNationsRequest;
         protected DateTime lastAutomaticRegionNationsRequest;
+
         public BaseApiService(IOptions<AppSettings> config, ILogger<BaseApiService> logger)
         {
             _logger = logger;
             _config = config.Value;
         }
-        protected async Task<HttpResponseMessage> ExecuteGetRequest(string url, EventId? eventId)
+
+        protected async Task<HttpResponseMessage> ExecuteGetRequestAsync(string url, EventId? eventId)
         {
             bool releaseId = false;
-            var logId = eventId != null ? (EventId)eventId : LogEventIdProvider.GetRandomLogEventId();
+            var logId = eventId != null ? (EventId) eventId : LogEventIdProvider.GetRandomLogEventId();
             lastAPIRequest = DateTime.UtcNow;
             if (eventId == null)
             {
@@ -42,19 +44,19 @@ namespace NationStatesAPIBot.Services
                     var response = await client.GetAsync(url);
                     if (!response.IsSuccessStatusCode)
                     {
-                        _logger.LogError(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                        _logger.LogError(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int) response.StatusCode}: {response.ReasonPhrase}"));
                     }
                     else
                     {
-                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int)response.StatusCode}: {response.ReasonPhrase}"));
+                        _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Request finished with response: {(int) response.StatusCode}: {response.ReasonPhrase}"));
                     }
-                    if ((int)response.StatusCode == 429)
+                    if ((int) response.StatusCode == 429)
                     {
                         _logger.LogDebug(logId, LogMessageBuilder.Build(logId, $"Retry in {response.Headers.RetryAfter.Delta} seconds."));
                     }
-                    if (((int)response.StatusCode).ToString().StartsWith("5"))
+                    if (((int) response.StatusCode).ToString().StartsWith("5"))
                     {
-                        throw new ApplicationException($"Server Side Error while Executing Request => {(int)response.StatusCode}: {response.ReasonPhrase}");
+                        throw new ApplicationException($"Server Side Error while Executing Request => {(int) response.StatusCode}: {response.ReasonPhrase}");
                     }
                     return response;
                 }
@@ -68,23 +70,16 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        protected async Task<Stream> ExecuteRequestWithStreamResult(string url, EventId? eventId)
+        protected async Task<Stream> ExecuteRequestWithStreamResultAsync(string url, EventId? eventId)
         {
-            var response = await ExecuteGetRequest(url, eventId);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsStreamAsync();
-            }
-            else
-            {
-                return null;
-            }
+            var response = await ExecuteGetRequestAsync(url, eventId);
+
+            return response.IsSuccessStatusCode ? await response.Content.ReadAsStreamAsync() : null;
         }
 
-        protected async Task<XmlDocument> ExecuteRequestWithXmlResult(string url, EventId eventId)
+        protected async Task<XmlDocument> ExecuteRequestWithXmlResultAsync(string url, EventId eventId)
         {
-            using (var stream = await ExecuteRequestWithStreamResult(url, eventId))
+            using (var stream = await ExecuteRequestWithStreamResultAsync(url, eventId))
             {
                 try
                 {
@@ -112,12 +107,11 @@ namespace NationStatesAPIBot.Services
             return $"http://www.nationstates.net/cgi-bin/api.cgi?{parameters}&v={AppSettings.API_VERSION}";
         }
 
-        public async Task<GZipStream> GetNationStatesDumpStream(NationStatesDumpType type)
+        public async Task<GZipStream> GetNationStatesDumpStreamAsync(NationStatesDumpType type)
         {
             var eventId = LogEventIdProvider.GetRandomLogEventId();
             try
             {
-
                 string url = "https://www.nationstates.net/pages/";
                 if (type == NationStatesDumpType.Nations)
                 {
@@ -133,10 +127,9 @@ namespace NationStatesAPIBot.Services
                 {
                     throw new NotImplementedException($"Retrieval for DumpType {type} not implemented yet.");
                 }
-                var stream = await ExecuteRequestWithStreamResult(url, eventId);
-                var compressed = new GZipStream(stream,CompressionMode.Decompress);
+                var stream = await ExecuteRequestWithStreamResultAsync(url, eventId);
+                var compressed = new GZipStream(stream, CompressionMode.Decompress);
                 return compressed;
-                
             }
             finally
             {

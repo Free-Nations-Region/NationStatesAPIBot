@@ -11,20 +11,27 @@ using System.Threading.Tasks;
 
 namespace NationStatesAPIBot
 {
-    class Program
+    internal class Program
     {
         public static IServiceProvider ServiceProvider { get; private set; }
         public static DateTime StartTime { get; private set; }
-        static async Task Main(string[] args)
+
+        private static async Task Main(string[] args)
         {
+            if (args is null)
+            {
+                throw new ArgumentNullException(nameof(args));
+            }
+
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
 
             ServiceProvider = serviceCollection.BuildServiceProvider();
-            Console.CancelKeyPress += Console_CancelKeyPress;
+            Console.CancelKeyPress += Console_CancelKeyPressAsync;
             StartTime = DateTime.UtcNow;
-            await ServiceProvider.GetService<App>().Run();
+            await ServiceProvider.GetService<App>().RunAsync();
         }
+
         private static void ConfigureServices(ServiceCollection serviceCollection)
         {
             string configurationName = "production";
@@ -61,7 +68,7 @@ namespace NationStatesAPIBot
             serviceCollection.AddTransient<App>();
         }
 
-        private static async void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static async void Console_CancelKeyPressAsync(object sender, ConsoleCancelEventArgs e)
         {
             Console.ResetColor();
             await ServiceProvider.GetService<IBotService>().ShutdownAsync();

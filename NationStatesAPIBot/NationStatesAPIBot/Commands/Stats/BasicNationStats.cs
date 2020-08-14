@@ -22,7 +22,8 @@ namespace NationStatesAPIBot.Commands.Stats
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
         private readonly CultureInfo _locale;
-        readonly RecruitmentService _recruitmentService;
+        private readonly RecruitmentService _recruitmentService;
+
         public BasicNationStats(ILogger<BasicNationStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config, RecruitmentService recruitmentService)
         {
             _logger = logger;
@@ -33,7 +34,7 @@ namespace NationStatesAPIBot.Commands.Stats
         }
 
         [Command("nation", false), Alias("n"), Summary("Returns Basic Stats about a specific nation")]
-        public async Task GetBasicStats(params string[] args)
+        public async Task GetBasicStatsAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationStats);
             try
@@ -67,7 +68,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     var endorsementCount = census[4].ChildNodes[0].InnerText;
                     var residency = census[5].ChildNodes[0].InnerText;
                     var residencyDbl = Convert.ToDouble(residency, _locale);
-                    var residencyYears = (int)(residencyDbl / 365.242199);
+                    var residencyYears = (int) (residencyDbl / 365.242199);
 
                     var populationdbl = Convert.ToDouble(population);
 
@@ -83,7 +84,7 @@ namespace NationStatesAPIBot.Commands.Stats
                         $"Last active {lastActivity}");
                     builder.AddField("Region",
                         $"[{region}]({regionUrl}) ", true);
-                    int residencyDays = (int)(residencyDbl % 365.242199);
+                    int residencyDays = (int) (residencyDbl % 365.242199);
                     builder.AddField("Residency", $"Resident for " +
                         $"{(residencyYears < 1 ? "" : $"{residencyYears} year" + $"{(residencyYears > 1 ? "s" : "")}")} " +
                         $"{residencyDays} { (residencyDays != 1 ? $"days" : "day")}", true
@@ -124,16 +125,17 @@ namespace NationStatesAPIBot.Commands.Stats
         }
 
         [Command("whoendorsed", false), Alias("we"), Summary("Returns all nations who endorsed the specified nation")]
-        public async Task GetEndorsements(params string[] args)
+        public async Task GetEndorsementsAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
             try
             {
                 string nationName = string.Join(" ", args);
-                XmlDocument nationStats = await _apiDataService.GetEndorsements(nationName, id);
+                XmlDocument nationStats = await _apiDataService.GetEndorsementsAsync(nationName, id);
                 var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
                 var builder = new EmbedBuilder();
-                var nations = endorsements.Split(",").ToList(); ;
+                var nations = endorsements.Split(",").ToList();
+                ;
                 if (!string.IsNullOrWhiteSpace(endorsements))
                 {
                     builder.WithTitle($"{nationName} was endorsed by {nations.Count} nations:");
@@ -166,7 +168,7 @@ namespace NationStatesAPIBot.Commands.Stats
         }
 
         [Command("endorsedby", false), Alias("eb"), Summary("Returns all nations that where endorsed by the specified nation")]
-        public async Task GetNationsendorsedby(params string[] args)
+        public async Task GetNationsendorsedbyAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetEndorsedBy);
             string nationName = string.Join(" ", args);
@@ -178,7 +180,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
                     builder.WithTitle($"{Context.User.Mention}/n");
                 }
-                var endorsed = await _dumpDataService.GetNationsEndorsedBy(nationName);
+                var endorsed = await _dumpDataService.GetNationsEndorsedByAsync(nationName);
                 if (endorsed == null)
                 {
                     builder.WithDescription("No such nation.");
@@ -225,8 +227,9 @@ namespace NationStatesAPIBot.Commands.Stats
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }
+
         [Command("couldendorse", false), Alias("ce"), Summary("Returns all nations that could be endorsed by the specified nation")]
-        public async Task GetNationsNotEndorsedby(params string[] args)
+        public async Task GetNationsNotEndorsedbyAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsNotEndorsed);
             string nationName = string.Join(" ", args);
@@ -238,7 +241,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
                     mention = true;
                 }
-                var endorsed = await _dumpDataService.GetNationsNotEndorsedBy(nationName);
+                var endorsed = await _dumpDataService.GetNationsNotEndorsedByAsync(nationName);
                 if (endorsed == null)
                 {
                     await ReplyAsync(embed: CouldEndorseEmbedBuilder("", "No such nation").Build());
@@ -304,9 +307,8 @@ namespace NationStatesAPIBot.Commands.Stats
             return builder;
         }
 
-
         [Command("nationsdidnotendorse", false), Alias("nde"), Summary("Returns all nations that didn't endorse the specified nation")]
-        public async Task GetNationsWhoDidNotEndorse(params string[] args)
+        public async Task GetNationsWhoDidNotEndorseAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNationsWhoDidNotEndorse);
             string nationName = string.Join(" ", args);
@@ -318,7 +320,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     await ReplyAsync("Currently updating nation information. This may take a few minutes. You will be pinged once the information is available.");
                     builder.WithTitle($"{Context.User.Mention}/n");
                 }
-                var endorsed = await _dumpDataService.GetNationsWhoDidNotEndorseNation(nationName);
+                var endorsed = await _dumpDataService.GetNationsWhoDidNotEndorseNationAsync(nationName);
                 if (endorsed == null)
                 {
                     builder.WithDescription("No such nation.");
@@ -365,18 +367,19 @@ namespace NationStatesAPIBot.Commands.Stats
                 await ReplyAsync("Something went wrong. Sorry :(");
             }
         }
-        [Command("wa", false, RunMode = RunMode.Async), Alias("wa"), Summary("Returns all nations that didn't endorse the specified nation")]
-        public async Task GetWa()
+
+        //[Command("wa", false, RunMode = RunMode.Async), Alias("wa"), Summary("Returns all nations that didn't endorse the specified nation")]
+        public async Task GetWaAsync()
         {
-            var wa = await _dumpDataService.GetAllWa();
-            var nations = await _dumpDataService.GetWAOfRegion("the_free_nations_region");
-            var strings = nations.Select(n => n.NAME);
+            //var wa = await _dumpDataService.GetAllWa();
+            //var nations = await _dumpDataService.GetWAOfRegion("the_free_nations_region");
             var region = await _dumpDataService.GetRegionAsync("the_free_nations_region");
-            
+            var strings = region.NATIONS.Select(n => n.NAME);
+
             var delegateNation = await _dumpDataService.GetNationAsync(region.DELEGATE);
-            //var elig = delegateNation.ENDORSEMENTS;
-            //elig.Add(region.DELEGATE);
-            var res = string.Join(":", region.NATIONNAMES);
+            var elig = delegateNation.ENDORSEMENTS;
+            elig.Add(region.DELEGATE);
+            var res = string.Join(Environment.NewLine, elig);
             Console.WriteLine(res);
             //await ReplyAsync("Got all WA Nations");
             Stopwatch stopwatch = new Stopwatch();
@@ -394,7 +397,6 @@ namespace NationStatesAPIBot.Commands.Stats
             //        var finishIn = totalinticks.Subtract(stopwatch.Elapsed);
             //        if (i > start && i % 500 == 0)
             //        {
-
             //            string info = $"Checked {i} / {strings.Count}. Expect finish in: {finishIn}, Avg. Time per check: {tickspernation}, Total estimate: {totalinticks}";
             //            try
             //            {
@@ -423,6 +425,4 @@ namespace NationStatesAPIBot.Commands.Stats
             //}
         }
     }
-
 }
-

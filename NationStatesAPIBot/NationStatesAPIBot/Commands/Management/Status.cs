@@ -13,18 +13,20 @@ namespace NationStatesAPIBot.Commands.Management
         public static int Pong { get; set; } = 1;
         public static int Ping { get; set; } = 1;
     }
+
     public class Status : ModuleBase<SocketCommandContext>
     {
         private readonly AppSettings _config;
-        private readonly Random random;
+        private readonly Random _random;
+
         public Status(IOptions<AppSettings> config)
         {
             _config = config.Value;
-            random = new Random();
+            _random = new Random();
         }
 
         [Command("status"), Summary("Returns some status information.")]
-        public async Task GetStatus()
+        public async Task GetStatusAsync()
         {
             var builder = new EmbedBuilder();
             builder.WithTitle("Bot Status");
@@ -87,14 +89,14 @@ namespace NationStatesAPIBot.Commands.Management
         }
 
         [Command("ping")]
-        public async Task DoPing()
+        public async Task DoPingAsync()
         {
-            if (random.Next(1, 101) < 6)
+            if (_random.Next(1, 101) < 6)
             {
                 await ReplyAsync("HA! Ponged! <:dab:566238284989202433>");
                 PingPongStats.Ping = 1;
             }
-            else if (random.Next(1, 101) < 51 && PingPongStats.Ping % 20 == 0)
+            else if (_random.Next(1, 101) < 51 && PingPongStats.Ping % 20 == 0)
             {
                 PingPongStats.Ping = 1;
                 await ReplyAsync("<:pinged:534361662795546624> <:angrythonker:554677045322579969> <:Ban:570405775017508864>");
@@ -107,14 +109,14 @@ namespace NationStatesAPIBot.Commands.Management
         }
 
         [Command("pong")]
-        public async Task DoPong()
+        public async Task DoPongAsync()
         {
-            if (random.Next(1, 101) < 6)
+            if (_random.Next(1, 101) < 6)
             {
                 PingPongStats.Pong = 1;
                 await ReplyAsync("<:amusing_2:695739982899576842> HA! You just got pinged! <:Amusing:685604446159503408>");
             }
-            else if (random.Next(1, 101) < 51 && PingPongStats.Pong % 20 == 0)
+            else if (_random.Next(1, 101) < 51 && PingPongStats.Pong % 20 == 0)
             {
                 PingPongStats.Pong = 1;
                 await ReplyAsync("<:angryping:554676847766667294> <:spam:534360406496509952>");

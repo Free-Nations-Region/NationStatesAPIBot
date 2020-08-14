@@ -19,19 +19,20 @@ namespace NationStatesAPIBot.Commands.Stats
         private readonly NationStatesApiService _dataService;
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd = new Random();
-        private readonly string defaultRegionName;
-        private readonly CultureInfo locale;
+        private readonly string _defaultRegionName;
+        private readonly CultureInfo _locale;
+
         public BasicRegionStats(ILogger<BasicRegionStats> logger, NationStatesApiService apiService, DumpDataService dumpDataService, IOptions<AppSettings> config)
         {
             _logger = logger;
             _dataService = apiService;
             _dumpDataService = dumpDataService;
-            defaultRegionName = config.Value.NationStatesRegionName;
-            locale = config.Value.Locale;
+            _defaultRegionName = config.Value.NationStatesRegionName;
+            _locale = config.Value.Locale;
         }
 
         [Command("region", false), Alias("r"), Summary("Returns Basic Stats about a specific nation")]
-        public async Task GetBasicStats(params string[] args)
+        public async Task GetBasicStatsAsync(params string[] args)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetRegionStats);
             try
@@ -39,7 +40,7 @@ namespace NationStatesAPIBot.Commands.Stats
                 string regionName = string.Join(" ", args);
                 if (string.IsNullOrWhiteSpace(regionName))
                 {
-                    regionName = defaultRegionName;
+                    regionName = _defaultRegionName;
                 }
                 var mention = false;
                 if (DumpDataService.IsUpdating)
@@ -73,7 +74,7 @@ namespace NationStatesAPIBot.Commands.Stats
                     };
                     if (!string.IsNullOrWhiteSpace(founder) && founder != "0")
                     {
-                        string founderString = await GetFounderString(id, founder);
+                        string founderString = await GetFounderStringAsync(id, founder);
                         builder.AddField("Founder", $"{founderString}", true);
                     }
                     if (!string.IsNullOrWhiteSpace(founded) && founded != "0")
@@ -81,28 +82,28 @@ namespace NationStatesAPIBot.Commands.Stats
                         builder.AddField("Founded", $"{founded}", true);
                     }
                     builder.AddField("Nations", $"[{numnations}]({regionUrl}/page=list_nations)", true);
-                    if (!string.IsNullOrWhiteSpace(regionalAvgInfluence) && double.TryParse(regionalAvgInfluence, NumberStyles.Number, locale, out double avgInfluenceValue) && int.TryParse(numnations, out int numnationsValue))
+                    if (!string.IsNullOrWhiteSpace(regionalAvgInfluence) && double.TryParse(regionalAvgInfluence, NumberStyles.Number, _locale, out double avgInfluenceValue) && int.TryParse(numnations, out int numnationsValue))
                     {
                         var powerValue = avgInfluenceValue * numnationsValue;
-                        var powerValueString = powerValue > 1000 ? (powerValue / 1000.0).ToString("0.000", locale) + "k" : powerValue.ToString(locale);
+                        var powerValueString = powerValue > 1000 ? (powerValue / 1000.0).ToString("0.000", _locale) + "k" : powerValue.ToString(_locale);
                         builder.AddField("Regional Power", $"{power} | {powerValueString} Points", true);
                     }
                     else
                     {
                         builder.AddField("Regional Power", $"{power}", true);
                     }
-                    var endoCountString = endoCount > 1000 ? (endoCount / 1000.0).ToString("0.000", locale) + "k" : endoCount.ToString(locale);
+                    var endoCountString = endoCount > 1000 ? (endoCount / 1000.0).ToString("0.000", _locale) + "k" : endoCount.ToString(_locale);
                     builder.AddField("World Assembly*", $"{waNationCount} member{(waNationCount > 1 ? "s" : string.Empty)} | {endoCountString} endos", true);
                     if (!string.IsNullOrWhiteSpace(wadelegate) && wadelegate != "0")
                     {
-                        var delegatetuple = await GetDelegateNationString(wadelegate, id);
+                        var delegatetuple = await GetDelegateNationStringAsync(wadelegate, id);
                         builder.AddField($"WA Delegate", $"[{delegatetuple.Item1}](https://www.nationstates.net/nation={BaseApiService.ToID(wadelegate)}) | {delegatetuple.Item2}");
                     }
                     builder.WithFooter(DiscordBotService.FooterString);
                     builder.WithColor(new Color(_rnd.Next(0, 256), _rnd.Next(0, 256), _rnd.Next(0, 256)));
                     builder.AddField("Datasource", "API, * Dump", true);
                     builder.AddField("As of", "Just now, * " + DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'") + " ago", true);
-                    builder.AddField("Next Update in","On demand, * " + DumpDataService.NextDumpDataUpdate.ToString("h'h 'm'm 's's'"), true);
+                    builder.AddField("Next Update in", "On demand, * " + DumpDataService.NextDumpDataUpdate.ToString("h'h 'm'm 's's'"), true);
                     await ReplyAsync(embed: builder.Build());
                 }
                 else
@@ -116,7 +117,6 @@ namespace NationStatesAPIBot.Commands.Stats
                 {
                     await ReplyAsync($"{Context.User.Mention}");
                 }
-
             }
             catch (Exception ex)
             {
@@ -125,15 +125,15 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        private async Task<string> GetFounderString(EventId id, string founder)
+        private async Task<string> GetFounderStringAsync(EventId id, string founder)
         {
-            var founderName = await GetFullNationName(founder, id);
+            var founderName = await GetFullNationNameAsync(founder, id);
             var founderUrl = $"https://www.nationstates.net/nation={BaseApiService.ToID(founder)}";
             var founderString = $"[{founderName}]({founderUrl})";
             return founderString;
         }
 
-        private async Task<string> GetFullNationName(string name, EventId eventId)
+        private async Task<string> GetFullNationNameAsync(string name, EventId eventId)
         {
             XmlDocument nationStats = await _dataService.GetNationNameAsync(name, eventId);
             if (nationStats != null)
@@ -155,10 +155,9 @@ namespace NationStatesAPIBot.Commands.Stats
             }
         }
 
-        private async Task<Tuple<string, string>> GetDelegateNationString(string name, EventId eventId)
+        private async Task<Tuple<string, string>> GetDelegateNationStringAsync(string name, EventId eventId)
         {
-
-            XmlDocument nationStats = await _dataService.GetDelegateString(name, eventId);
+            XmlDocument nationStats = await _dataService.GetDelegateStringAsync(name, eventId);
             var fullName = nationStats.GetElementsByTagName("NAME").Item(0)?.InnerText;
             var influence = nationStats.GetElementsByTagName("INFLUENCE").Item(0)?.InnerText;
             var census = nationStats.GetElementsByTagName("CENSUS").Item(0)?.ChildNodes;

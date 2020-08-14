@@ -11,13 +11,14 @@ namespace NationStatesAPIBot
     {
         private readonly IBotService _botService;
         private readonly ILogger<App> _logger;
+
         public App(IBotService botService, ILogger<App> logger)
         {
             _botService = botService;
             _logger = logger;
         }
 
-        public async Task Run()
+        public async Task RunAsync()
         {
             try
             {

@@ -10,21 +10,19 @@ using Microsoft.Extensions.Options;
 
 namespace NationStatesAPIBot.Commands.Management
 {
-
     public class PermissionCommands : ModuleBase<SocketCommandContext>
     {
-        readonly IPermissionManager _permManager;
-        readonly AppSettings _config;
+        private readonly IPermissionManager _permManager;
+        private readonly AppSettings _config;
 
         public PermissionCommands(IPermissionManager permManager, IOptions<AppSettings> config)
         {
             _permManager = permManager ?? throw new ArgumentNullException(nameof(permManager));
             _config = config.Value;
-
         }
 
         [Command("checkUser"), Summary("Returns Permission of specified User")]
-        public async Task DoCheckUser(string id)
+        public async Task DoCheckUserAsync(string id)
         {
             if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
@@ -57,12 +55,12 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
 
         [Command("checkPerm"), Summary("Returns all Users who have specified permission")]
-        public async Task DoCheckPerm(long id)
+        public async Task DoCheckPermAsync(long id)
         {
             if (await _permManager.IsAllowedAsync(Types.PermissionType.ManagePermissions, Context.User))
             {
@@ -95,23 +93,23 @@ namespace NationStatesAPIBot.Commands.Management
             }
             else
             {
-                await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
         }
 
         [Command("grantPermission"), Summary("Adds a User to the database")]
-        public async Task DoGrantPermission(string discordUserId, int permissionId)
+        public async Task DoGrantPermissionAsync(string discordUserId, int permissionId)
         {
-            await GrantOrRevokePermission(discordUserId, permissionId, GrantPermission);
+            await GrantOrRevokePermissionAsync(discordUserId, permissionId, GrantPermissionAsync);
         }
-        
+
         [Command("revokePermission"), Summary("Revokes a user's permission")]
-        public async Task DoRevokePermission(string discordUserId, int permissionId)
+        public async Task DoRevokePermissionAsync(string discordUserId, int permissionId)
         {
-            await GrantOrRevokePermission(discordUserId, permissionId, RevokePermission);
+            await GrantOrRevokePermissionAsync(discordUserId, permissionId, RevokePermissionAsync);
         }
-        
-        public async Task GrantOrRevokePermission(string discordUserId, int permissionId, Func<string, Permission, BotDbContext, IDMChannel, Task> GrantOrRevoke)
+
+        public async Task GrantOrRevokePermissionAsync(string discordUserId, int permissionId, Func<string, Permission, BotDbContext, IDMChannel, Task> GrantOrRevoke)
         {
             //TODO: revise that block as it isn't optimal e.g. duplicate command usage is unnecessary
             if (Context.IsPrivate)
@@ -146,7 +144,7 @@ namespace NationStatesAPIBot.Commands.Management
                 }
                 else
                 {
-                    await ReplyAsync(AppSettings.PERMISSION_DENIED_RESPONSE);
+                    await ReplyAsync(AppSettings._permissionDeniedResponse);
                 }
             }
             else
@@ -162,8 +160,8 @@ namespace NationStatesAPIBot.Commands.Management
                     $"Your command was: {content}");
             }
         }
-        
-        private async Task GrantPermission(string discordUserId, Permission permission, BotDbContext dbContext, IDMChannel channel)
+
+        private async Task GrantPermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext, IDMChannel channel)
         {
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
             user.UserPermissions.Add(new UserPermissions() { PermissionId = permission.Id, UserId = user.Id, User = user, Permission = permission });
@@ -171,8 +169,8 @@ namespace NationStatesAPIBot.Commands.Management
             await dbContext.SaveChangesAsync();
             await channel.SendMessageAsync("Granted Permission");
         }
-        
-        private async Task RevokePermission(string discordUserId, Permission permission, BotDbContext dbContext, IDMChannel channel)
+
+        private async Task RevokePermissionAsync(string discordUserId, Permission permission, BotDbContext dbContext, IDMChannel channel)
         {
             await _permManager.RevokePermissionAsync(discordUserId, permission, dbContext);
             await channel.SendMessageAsync("Revoked Permission");

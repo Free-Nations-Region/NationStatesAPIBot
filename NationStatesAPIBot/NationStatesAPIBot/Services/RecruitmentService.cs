@@ -20,7 +20,7 @@ namespace NationStatesAPIBot.Services
         private readonly ILogger<RecruitmentService> _logger;
 
         private RNStatus currentRNStatus;
-        private readonly EventId defaulEventId;
+        private readonly EventId _defaulEventId;
         private readonly AppSettings _config;
         private readonly NationStatesApiService _apiService;
         private readonly DumpDataService _dumpDataService;
@@ -46,13 +46,14 @@ namespace NationStatesAPIBot.Services
         public int RecruitedLastMonthM { get; private set; }
         public double RecruitedLastMonthAvgDA { get; private set; }
         public double RecruitedLastMonthAvgDM { get; private set; }
+
         public RecruitmentService(ILogger<RecruitmentService> logger, IOptions<AppSettings> appSettings, NationStatesApiService apiService, DumpDataService dumpDataService)
         {
             _logger = logger;
             _config = appSettings.Value;
             _apiService = apiService;
             _dumpDataService = dumpDataService;
-            defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
+            _defaulEventId = LogEventIdProvider.GetEventIdByType(LoggingEvent.APIRecruitment);
             _rnd = new Random();
             if (!_config.EnableRecruitment)
             {
@@ -64,17 +65,18 @@ namespace NationStatesAPIBot.Services
         public static bool IsRecruiting { get; private set; }
         public static string RecruitmentStatus { get; private set; } = "Not Running";
         public static string PoolStatus { get; private set; } = "Waiting for new nations";
+
         public void StartRecruitment()
         {
             if (!IsRecruiting)
             {
                 IsRecruiting = true;
                 Task.Run(async () => await GetNewNationsAsync());
-                Task.Run(async () => await EnsurePoolFilled());
+                Task.Run(async () => await EnsurePoolFilledAsync());
                 Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
                 Task.Run(async () => await UpdateRecruitmentStatsAsync());
-                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process started."));
+                _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment process started."));
             }
         }
 
@@ -82,7 +84,7 @@ namespace NationStatesAPIBot.Services
         {
             IsRecruiting = false;
             RecruitmentStatus = "Stopped";
-            _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment process stopped."));
+            _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment process stopped."));
         }
 
         public void StartReceiveRecruitableNations(RNStatus currentRN)
@@ -90,6 +92,7 @@ namespace NationStatesAPIBot.Services
             currentRNStatus = currentRN;
             IsReceivingRecruitableNations = true;
         }
+
         public void StopReceiveRecruitableNations()
         {
             currentRNStatus = null;
@@ -144,7 +147,6 @@ namespace NationStatesAPIBot.Services
                 _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
             }
             return returnNations;
-
         }
 
         private async Task<bool> IsNationRecruitableAsync(Nation nation, EventId id)
@@ -175,7 +177,7 @@ namespace NationStatesAPIBot.Services
                 var criteriaFit = await DoesNationFitCriteriaAsync(nationName);
                 if (criteriaFit)
                 {
-                    var apiResponse = await WouldReceiveTelegram(nationName);
+                    var apiResponse = await WouldReceiveTelegramAsync(nationName);
                     if (apiResponse == 0)
                     {
                         _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nationName} wouldn't receive a telegram and is therefore skipped."));
@@ -218,7 +220,7 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        public async Task<int> WouldReceiveTelegram(string nationName)
+        public async Task<int> WouldReceiveTelegramAsync(string nationName)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.WouldReceiveTelegram);
             try
@@ -249,7 +251,7 @@ namespace NationStatesAPIBot.Services
             {
                 try
                 {
-                    await _apiService.WaitForAction(NationStatesApiRequestType.GetNewNations);
+                    await _apiService.WaitForActionAsync(NationStatesApiRequestType.GetNewNations);
                     PoolStatus = "Filling up with new nations";
                     var result = await _apiService.GetNewNationsAsync(id);
                     await AddNationToPendingAsync(id, result, false);
@@ -263,10 +265,10 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task EnsurePoolFilled()
+        private async Task EnsurePoolFilledAsync()
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.EnsurePoolFilled);
-            List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFrom(id);
+            List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFromAsync(id);
             while (IsRecruiting)
             {
                 bool fillingUp = false;
@@ -312,7 +314,7 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task<List<REGION>> GetRegionToRecruitFrom(EventId id)
+        private async Task<List<REGION>> GetRegionToRecruitFromAsync(EventId id)
         {
             List<REGION> regionsToRecruitFrom = new List<REGION>();
             var regionNames = _config.RegionsToRecruitFrom.Split(";");
@@ -394,16 +396,16 @@ namespace NationStatesAPIBot.Services
                     {
                         if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
                         {
-                            if (await IsNationRecruitableAsync(nation, defaulEventId))
+                            if (await IsNationRecruitableAsync(nation, _defaulEventId))
                             {
                                 if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
                                 {
                                     await NationManager.SetNationStatusToAsync(nation, "send");
-                                    _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Telegram to {nation.Name} queued successfully."));
+                                    _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Telegram to {nation.Name} queued successfully."));
                                 }
                                 else
                                 {
-                                    _logger.LogWarning(defaulEventId, LogMessageBuilder.Build(defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
+                                    _logger.LogWarning(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
                                     await NationManager.SetNationStatusToAsync(nation, "failed");
                                 }
                             }
@@ -412,18 +414,18 @@ namespace NationStatesAPIBot.Services
                     }
                     else
                     {
-                        _logger.LogCritical(defaulEventId, LogMessageBuilder.Build(defaulEventId, "No nation to recruit found."));
+                        _logger.LogCritical(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "No nation to recruit found."));
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "An error occured."));
+                    _logger.LogError(_defaulEventId, ex, LogMessageBuilder.Build(_defaulEventId, "An error occured."));
                 }
                 await Task.Delay(60000);
             }
             if (!_config.EnableRecruitment)
             {
-                _logger.LogWarning(defaulEventId, "Recruitment disabled.");
+                _logger.LogWarning(_defaulEventId, "Recruitment disabled.");
             }
         }
 
@@ -443,7 +445,7 @@ namespace NationStatesAPIBot.Services
         {
             try
             {
-                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Updating Recruitment Stats"));
+                _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Updating Recruitment Stats"));
                 var today = DateTime.Today.Date;
 
                 var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
@@ -460,11 +462,11 @@ namespace NationStatesAPIBot.Services
                 ManualReserved = manual.Count;
                 ManualRecruited = manualRecruited.Count;
                 ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
-                _logger.LogInformation(defaulEventId, LogMessageBuilder.Build(defaulEventId, "Recruitment Stats Updated"));
+                _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment Stats Updated"));
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(defaulEventId, ex, LogMessageBuilder.Build(defaulEventId, "A critical error occured."));
+                _logger.LogCritical(_defaulEventId, ex, LogMessageBuilder.Build(_defaulEventId, "A critical error occured."));
             }
         }
 
