@@ -4,6 +4,7 @@ using NationStatesAPIBot.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NationStatesAPIBot.Manager
@@ -49,6 +50,14 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
+        public static async Task<bool> IsNationInDbAsync(string name)
+        {
+            using (var dbContext = new BotDbContext(_config))
+            {
+                return await dbContext.Nations.AsQueryable().AnyAsync(n => n.Name == name);
+            }
+        }
+
         public static async Task<bool> IsNationPendingSkippedSendOrFailedAsync(string name)
         {
             using (var dbContext = new BotDbContext(_config))
@@ -85,30 +94,40 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
-        public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations, bool sourceDumps)
+        private static ReaderWriterLockSlim addNationLock = new ReaderWriterLockSlim();
+
+        public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations)
         {
-            int counter = 0;
-            using (var context = new BotDbContext(_config))
+            addNationLock.EnterWriteLock();
+            try
             {
-                var status = await context.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == "pending");
-                if (status == null)
+                int counter = 0;
+                using (var context = new BotDbContext(_config))
                 {
-                    status = new NationStatus() { Name = "pending" };
-                    await context.NationStatuses.AddAsync(status);
-                    await context.SaveChangesAsync();
-                }
-                foreach (string nationName in newNations)
-                {
-                    if (await context.Nations.AsQueryable().FirstOrDefaultAsync(n => n.Name == nationName) == null)
+                    var status = await context.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == "pending");
+                    if (status == null)
                     {
-                        var time = sourceDumps ? TimeZoneInfo.ConvertTimeToUtc(DumpDataService.LastDumpUpdateTimeUtc, TimeZoneInfo.Local) : DateTime.UtcNow;
-                        await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time, Status = status, StatusId = status.Id });
+                        status = new NationStatus() { Name = "pending" };
+                        await context.NationStatuses.AddAsync(status);
                         await context.SaveChangesAsync();
-                        counter++;
+                    }
+                    foreach (string nationName in newNations)
+                    {
+                        if (!await context.Nations.AsQueryable().AnyAsync(n => n.Name == nationName))
+                        {
+                            var time = DateTime.UtcNow;
+                            await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time, Status = status, StatusId = status.Id });
+                            await context.SaveChangesAsync();
+                            counter++;
+                        }
                     }
                 }
+                return counter;
             }
-            return counter;
+            finally
+            {
+                addNationLock.ExitWriteLock();
+            }
         }
     }
 }

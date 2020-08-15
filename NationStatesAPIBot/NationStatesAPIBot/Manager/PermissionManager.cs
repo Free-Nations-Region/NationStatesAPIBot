@@ -89,6 +89,12 @@ namespace NationStatesAPIBot.Managers
 
         public Task<IEnumerable<Permission>> GetRolePermissionsExceptAsync(Role role, IEnumerable<Permission> Except, BotDbContext dbContext)
         {
+            //var result = dbContext.Roles
+            //    .AsQueryable().Where(r => r == role);
+            ////.SelectMany(r => r.RolePermissions);
+            ////.Select(p => p.Permission)
+            ////.Except(Except)
+            ////.AsEnumerable();
             return Task.FromResult<IEnumerable<Permission>>(new List<Permission>() { new Permission() { Id = 1, Name = "ExecuteCommands" } });
         }
 

@@ -11,6 +11,7 @@ using NationStatesAPIBot.Types;
 using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Managers;
 using Microsoft.Extensions.DependencyInjection;
+
 namespace NationStatesAPIBot.Services
 {
     public class DiscordBotService : IBotService
@@ -48,16 +49,18 @@ namespace NationStatesAPIBot.Services
                     await UserManager.AddUserToDbAsync(userId);
                 }
                 var value = !string.IsNullOrWhiteSpace(socketMsg.Content) &&
-                    !socketUser.IsBot && 
+                    !socketUser.IsBot &&
                     socketMsg.Content.StartsWith(_config.SeperatorChar) &&
                     await _permManager.IsAllowedAsync(PermissionType.ExecuteCommands, socketUser);
                 return _config.Configuration == "development" ?
-                    await _permManager.IsBotAdminAsync(socketUser) && value 
+                    await _permManager.IsBotAdminAsync(socketUser) || socketUser.Id == 282292866762539010 && value
                     : value;
             }
             return await Task.FromResult(false);
         }
-        bool Reactive = true;
+
+        private bool Reactive = true;
+
         public async Task ProcessMessageAsync(object message)
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.UserMessage);
@@ -121,19 +124,18 @@ namespace NationStatesAPIBot.Services
             await DiscordClient.LoginAsync(TokenType.Bot, _config.DiscordBotLoginToken);
             await DiscordClient.StartAsync();
             IsRunning = true;
-
         }
 
         private void SetUpDiscordEvents()
         {
             DiscordClient.Connected += DiscordClient_Connected;
             DiscordClient.Disconnected += DiscordClient_Disconnected;
-            DiscordClient.MessageReceived += DiscordClient_MessageReceived;
+            DiscordClient.MessageReceived += DiscordClient_MessageReceivedAsync;
             DiscordClient.Log += DiscordClient_Log;
             DiscordClient.LoggedIn += DiscordClient_LoggedIn;
             DiscordClient.LoggedOut += DiscordClient_LoggedOut;
             DiscordClient.Ready += DiscordClient_Ready;
-            DiscordClient.UserBanned += DiscordClient_UserBanned;
+            DiscordClient.UserBanned += DiscordClient_UserBannedAsync;
             DiscordClient.UserJoined += DiscordClient_UserJoined;
             DiscordClient.UserLeft += DiscordClient_UserLeft;
         }
@@ -150,7 +152,7 @@ namespace NationStatesAPIBot.Services
             return Task.CompletedTask;
         }
 
-        private async Task DiscordClient_UserBanned(SocketUser arg1, SocketGuild arg2)
+        private async Task DiscordClient_UserBannedAsync(SocketUser arg1, SocketGuild arg2)
         {
             _logger.LogInformation($"User {arg1.Username}{arg1.Discriminator} was banned from the {arg2.Name} server.");
             await UserManager.RemoveUserFromDbAsync(arg1.Id.ToString());
@@ -183,15 +185,19 @@ namespace NationStatesAPIBot.Services
                 case LogSeverity.Critical:
                     _logger.LogCritical(id, message);
                     break;
+
                 case LogSeverity.Error:
                     _logger.LogError(id, message);
                     break;
+
                 case LogSeverity.Warning:
                     _logger.LogWarning(id, message);
                     break;
+
                 case LogSeverity.Info:
                     _logger.LogInformation(id, message);
                     break;
+
                 default:
                     _logger.LogDebug(id, $"Severity: {arg.Severity.ToString()} {message}");
                     break;
@@ -199,7 +205,7 @@ namespace NationStatesAPIBot.Services
             return Task.CompletedTask;
         }
 
-        private async Task DiscordClient_MessageReceived(SocketMessage arg)
+        private async Task DiscordClient_MessageReceivedAsync(SocketMessage arg)
         {
             await ProcessMessageAsync(arg);
         }

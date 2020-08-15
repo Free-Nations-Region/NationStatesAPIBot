@@ -1,0 +1,15 @@
+Ok let me summarize (a little bit adjusted):
+- I add as much as possible new nations to the pool
+- I add all WA nations from the pacifics that have a residency less than 7 days to the pool
+If the pool size is < minimum:
+- I randomly pick WA nations from all GCRs with residency less than 7 days and add them to the pool
+- If that isn't enough: I randomly pick any non WA nations from all GCRs with residency less than 7 days and add them to the pool
+
+I filter out:
+- Any nations with numbers in the pool
+- Any nations with "founder" in the pool
+
+I remove from pool:
+- If a nation cted (to be determined via dumps - check after dump update)
+- If a nation already moved to another UCR (to be determined via dumps - check after dump update)
+- If a nations residency is larger then 3 days (to be determined via dumps - check after dump update)

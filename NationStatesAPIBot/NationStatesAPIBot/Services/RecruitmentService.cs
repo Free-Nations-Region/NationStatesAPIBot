@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,6 @@ using NationStatesAPIBot.DumpData;
 using NationStatesAPIBot.Entities;
 using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Types;
-using Newtonsoft.Json.Linq;
 
 namespace NationStatesAPIBot.Services
 {
@@ -25,6 +24,7 @@ namespace NationStatesAPIBot.Services
         private readonly NationStatesApiService _apiService;
         private readonly DumpDataService _dumpDataService;
         private readonly Random _rnd;
+        private readonly string _romanNumberFilter = "^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$";
         public int ApiSent { get; private set; }
         public int ApiPending { get; private set; }
         public int ApiSkipped { get; private set; }
@@ -73,9 +73,9 @@ namespace NationStatesAPIBot.Services
                 IsRecruiting = true;
                 Task.Run(async () => await GetNewNationsAsync());
                 Task.Run(async () => await EnsurePoolFilledAsync());
-                Task.Run(async () => await RecruitAsync());
+                //Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
-                Task.Run(async () => await UpdateRecruitmentStatsAsync());
+                //Task.Run(async () => await UpdateRecruitmentStatsAsync());
                 _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment process started."));
             }
         }
@@ -162,7 +162,7 @@ namespace NationStatesAPIBot.Services
         {
             if (nation != null)
             {
-                var criteriaFit = await DoesNationFitCriteriaAsync(nation.Name);
+                var criteriaFit = DoesNationFitCriteria(nation.Name);
                 if (criteriaFit)
                 {
                     var apiResponse = await WouldReceiveTelegramAsync(nation, id);
@@ -190,26 +190,33 @@ namespace NationStatesAPIBot.Services
             return false;
         }
 
-        private async Task<bool> DoesNationFitCriteriaAsync(string nationName)
+        private bool DoesNationFitCriteria(string nationName)
         {
             if (_config.CriteriaCheckOnNations)
             {
-                var res = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
-                res = res && !nationName.Contains("puppet", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("founder", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("shit", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("damn", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("facist", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("facism", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("nazi", StringComparison.InvariantCultureIgnoreCase);
-                res = res && !nationName.Contains("hitler", StringComparison.InvariantCultureIgnoreCase);
-                _logger.LogDebug($"{nationName} criteria fit: {res}");
-                return await Task.FromResult(res);
+                var isValid = !nationName.Contains("puppet", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("founder", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("shit", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("damn", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("facist", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("facism", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("nazi", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("hitler", StringComparison.InvariantCultureIgnoreCase);
+                isValid = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
+                isValid = isValid && !ContainsRomanNumber(nationName);
+                //_logger.LogDebug($"{nationName} criteria fit: {isValid}");
+                return isValid;
             }
             else
             {
-                return await Task.FromResult(true);
+                return true;
             }
+        }
+
+        private bool ContainsRomanNumber(string nationName)
+        {
+            var parts = nationName.Split("_");
+            return parts.Any(n => Regex.IsMatch(n, _romanNumberFilter, RegexOptions.IgnoreCase));
         }
 
         public async Task<int> WouldReceiveTelegramAsync(Nation nation, EventId id)
@@ -256,7 +263,7 @@ namespace NationStatesAPIBot.Services
                     await _apiService.WaitForActionAsync(NationStatesApiRequestType.GetNewNations);
                     PoolStatus = "Filling up with new nations";
                     var result = await _apiService.GetNewNationsAsync(id);
-                    await AddNationToPendingAsync(id, result, false);
+                    await AddNationToPendingAsync(id, result);
                     PoolStatus = "Waiting for new nations";
                 }
                 catch (Exception ex)
@@ -273,46 +280,27 @@ namespace NationStatesAPIBot.Services
             List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFromAsync(id);
             while (IsRecruiting)
             {
-                bool fillingUp = false;
-                int counter = 0;
                 int pendingCount = NationManager.GetNationCountByStatusName("pending");
                 while (pendingCount < _config.MinimumRecruitmentPoolSize)
                 {
-                    if (!fillingUp)
+                    try
                     {
-                        fillingUp = true;
-                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {pendingCount} to {_config.MinimumRecruitmentPoolSize}"));
-                    }
-                    PoolStatus = "Filling up with random nations";
-                    var regionId = _rnd.Next(regionsToRecruitFrom.Count);
-                    var region = regionsToRecruitFrom.ElementAt(regionId);
-                    string nationName;
-                    do
-                    {
-                        var nationId = _rnd.Next(region.NATIONNAMES.Count);
-                        nationName = region.NATIONNAMES.ElementAt(nationId);
-                    }
-                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || await IsNationRecruitableAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow }, id));
-                    var nation = await NationManager.GetNationAsync(nationName);
-                    if (nation != null)
-                    {
-                        await NationManager.SetNationStatusToAsync(nation, "pending");
-                    }
-                    else
-                    {
-                        await NationManager.AddUnknownNationsAsPendingAsync(new List<string>() { nationName }, true);
-                    }
-                    counter++;
-                    pendingCount = NationManager.GetNationCountByStatusName("pending");
-                    _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Added nation '{nationName}' to pending. Now at {pendingCount} from minimum {_config.MinimumRecruitmentPoolSize}."));
-                }
-                if (fillingUp)
-                {
-                    _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filled up pending pool to minimum. (Added {counter} nations to pending.)"));
-                    PoolStatus = "Waiting for new nations";
-                }
+                        PoolStatus = "Filling up with nations from regions to recruit from";
+                        var regionId = _rnd.Next(regionsToRecruitFrom.Count);
+                        var region = regionsToRecruitFrom.ElementAt(regionId);
 
-                await Task.Delay(1800000); //30 min
+                        var recentlyFoundedNations = region.NATIONS.Where(n => n.LASTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)) && DoesNationFitCriteria(n.NAME)).ToList();
+                        var neededNationsCount = _config.MinimumRecruitmentPoolSize - pendingCount;
+                        var potentialRecruitmentTargets = recentlyFoundedNations.Take(neededNationsCount).Select(n => n.NAME).ToList();
+                        await AddNationToPendingAsync(id, potentialRecruitmentTargets);
+                        pendingCount = NationManager.GetNationCountByStatusName("pending");
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(id, e, "Error:");
+                    }
+                }
+                await Task.Delay(600000);
             }
         }
 
@@ -340,17 +328,29 @@ namespace NationStatesAPIBot.Services
             return regionsToRecruitFrom;
         }
 
-        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames, bool isSourceDumps)
+        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames)
+        {
+            await AddNationToPendingAsync(id, nationNames, false);
+        }
+
+        private async Task AddNationToPendingAsync(EventId id, List<string> nationNames, bool skipCriteriaCheck)
         {
             List<string> nationsToAdd = new List<string>();
-            foreach (var res in nationNames)
+            if (!skipCriteriaCheck)
             {
-                if (await DoesNationFitCriteriaAsync(res))
+                foreach (var res in nationNames)
                 {
-                    nationsToAdd.Add(res);
+                    if (DoesNationFitCriteria(res))
+                    {
+                        nationsToAdd.Add(res);
+                    }
                 }
             }
-            var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd, isSourceDumps);
+            else
+            {
+                nationsToAdd = nationNames;
+            }
+            var counter = await NationManager.AddUnknownNationsAsPendingAsync(nationsToAdd);
             if (counter > 0)
             {
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"{counter} nations added to pending"));
