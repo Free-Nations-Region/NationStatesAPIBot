@@ -89,7 +89,7 @@ namespace NationStatesAPIBot.Commands.Management
                     {
                         try
                         {
-                            if (number <= 120)
+                            if (number <= 120 && number > 0)
                             {
                                 var currentRN = new RNStatus
                                 {

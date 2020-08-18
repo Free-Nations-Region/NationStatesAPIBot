@@ -278,7 +278,7 @@ namespace NationStatesAPIBot.Services
         private HashSet<REGION> ParseRegionsFromStream(Stream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
-            return xml.Descendants("REGION").Select(m =>
+            return xml.Descendants("REGION").AsParallel().Select(m =>
                 new REGION
                 {
                     NAME = BaseApiService.ToID(m.Element("NAME").Value),
@@ -314,22 +314,8 @@ namespace NationStatesAPIBot.Services
 
         private HashSet<NATION> ParseNationsFromStream(Stream stream)
         {
-            HashSet<NATION> nations = new HashSet<NATION>();
-
-            XmlReader reader = XmlReader.Create(stream);
-            reader.ReadToDescendant("NATIONS");
-            reader.ReadToDescendant("NATION");
-            do
-            {
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(reader.ReadOuterXml());
-                XElement nation = XElement.Load(doc.DocumentElement.CreateNavigator().ReadSubtree());  // convert xmlnode to xelement
-                nations.Add(BuildNation(nation));
-            }
-            while (reader.ReadToNextSibling("NATION"));
-            reader.Close();
-            reader.Dispose();
-            return nations;
+            var xml = XDocument.Load(stream, LoadOptions.None);
+            return xml.Descendants("NATION").AsParallel().Select(m => BuildNation(m)).ToHashSet();
         }
 
         private NATION BuildNation(XElement m)

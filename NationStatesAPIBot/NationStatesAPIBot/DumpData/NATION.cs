@@ -12,7 +12,8 @@ namespace NationStatesAPIBot.DumpData
         public string FULLNAME { get; set; }
         public string MOTTO { get; set; }
         public string CATEGORY { get; set; }
-        bool isWA = false;
+        private bool isWA = false;
+
         public bool WAMEMBER
         {
             get
@@ -24,10 +25,13 @@ namespace NationStatesAPIBot.DumpData
                 isWA = value;
             }
         }
+
         public List<string> ENDORSEMENTS { get; set; }
         public FREEDOM FREEDOM { get; set; }
         private REGION region;
-        public REGION REGION {
+
+        public REGION REGION
+        {
             get
             {
                 return region;
@@ -35,17 +39,18 @@ namespace NationStatesAPIBot.DumpData
             set
             {
                 region = value;
-        
-                if(region != null)
+
+                if (region != null)
                 {
                     if (region.NATIONS == null)
                     {
-                        region.NATIONS = new HashSet<NATION>();
+                        region.NATIONS = new HashSet<NATION>(region.NATIONNAMES.Count);
                     }
                     region.NATIONS.Add(this);
                 }
             }
         }
+
         public string REGIONNAME { get; set; }
         public double POPULATION { get; set; }
         public double TAX { get; set; }
@@ -154,6 +159,4 @@ namespace NationStatesAPIBot.DumpData
             return hash.ToHashCode();
         }
     }
-
-
 }

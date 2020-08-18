@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
@@ -11,7 +12,8 @@ namespace NationStatesAPIBot.DumpData
         public int DumpPosition { get; set; }
         public int NUMNATIONS { get; set; }
         public HashSet<string> NATIONNAMES { get; set; }
-        public HashSet<NATION> NATIONS { get; set; }
+        public ConcurrentBag<NATION> NATIONS { get; set; }
+
         public IEnumerable<NATION> WANATIONS
         {
             get
@@ -19,6 +21,7 @@ namespace NationStatesAPIBot.DumpData
                 return NATIONS.Where(n => n.WAMEMBER);
             }
         }
+
         public string DELEGATE { get; set; }
         public int DELEGATEVOTES { get; set; }
         public string DELEGATEAUTH { get; set; }
@@ -38,7 +41,7 @@ namespace NationStatesAPIBot.DumpData
                    DumpPosition == region.DumpPosition &&
                    NUMNATIONS == region.NUMNATIONS &&
                    EqualityComparer<HashSet<string>>.Default.Equals(NATIONNAMES, region.NATIONNAMES) &&
-                   EqualityComparer<HashSet<NATION>>.Default.Equals(NATIONS, region.NATIONS) &&
+                   EqualityComparer<ConcurrentBag<NATION>>.Default.Equals(NATIONS, region.NATIONS) &&
                    DELEGATE == region.DELEGATE &&
                    DELEGATEVOTES == region.DELEGATEVOTES &&
                    DELEGATEAUTH == region.DELEGATEAUTH &&

@@ -11,6 +11,7 @@ using NationStatesAPIBot.Types;
 using NationStatesAPIBot.Manager;
 using NationStatesAPIBot.Managers;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace NationStatesAPIBot.Services
 {
@@ -69,6 +70,7 @@ namespace NationStatesAPIBot.Services
                 if (message is SocketUserMessage socketMsg)
                 {
                     var context = new SocketCommandContext(DiscordClient, socketMsg);
+                    //await DeleteSpamMessagesAsync(socketMsg);
                     if (Reactive)
                     {
                         if (await IsRelevantAsync(message, context.User))
@@ -107,10 +109,26 @@ namespace NationStatesAPIBot.Services
             }
         }
 
+        private async Task DeleteSpamMessagesAsync(SocketUserMessage message)
+        {
+            var trimmed = RemoveWhitespace(message.Content);
+            if (trimmed.Count(c => c == '*') == trimmed.Length)
+            {
+                await message.DeleteAsync();
+            }
+        }
+
+        public static string RemoveWhitespace(string input)
+        {
+            return new string(input.ToCharArray()
+                .Where(c => !char.IsWhiteSpace(c))
+                .ToArray());
+        }
+
         public async Task RunAsync()
         {
             _logger.LogInformation($"--- DiscordBotService started ---");
-            NationManager.Initialize(_config);
+            await NationManager.InitializeAsync(_config);
             UserManager.Initialize(_config);
             DiscordClient = new DiscordSocketClient();
             commandService = new CommandService(new CommandServiceConfig

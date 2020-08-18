@@ -4,6 +4,7 @@ using NationStatesAPIBot.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,10 +13,32 @@ namespace NationStatesAPIBot.Manager
     public class NationManager
     {
         private static AppSettings _config;
+        private static ReaderWriterLockSlim nationLock = new ReaderWriterLockSlim();
+        private static HashSet<string> nationCache = new HashSet<string>();
 
-        public static void Initialize(AppSettings config)
+        public static async Task InitializeAsync(AppSettings config)
         {
             _config = config;
+            await LoadCacheAsync();
+        }
+
+        public static async Task LoadCacheAsync()
+        {
+            nationLock.EnterReadLock();
+            try
+            {
+                using (var dbContext = new BotDbContext(_config))
+                {
+                    await foreach (var nation in dbContext.Nations.AsQueryable().ToAsyncEnumerable())
+                    {
+                        nationCache.Add(nation.Name);
+                    }
+                }
+            }
+            finally
+            {
+                nationLock.ExitReadLock();
+            }
         }
 
         public static async Task<Nation> GetNationAsync(string nationName)
@@ -50,11 +73,16 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
-        public static async Task<bool> IsNationInDbAsync(string name)
+        public static bool IsNationInDb(string name)
         {
-            using (var dbContext = new BotDbContext(_config))
+            nationLock.EnterReadLock();
+            try
             {
-                return await dbContext.Nations.AsQueryable().AnyAsync(n => n.Name == name);
+                return nationCache.Contains(name);
+            }
+            finally
+            {
+                nationLock.ExitReadLock();
             }
         }
 
@@ -94,11 +122,9 @@ namespace NationStatesAPIBot.Manager
             }
         }
 
-        private static ReaderWriterLockSlim addNationLock = new ReaderWriterLockSlim();
-
         public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations)
         {
-            addNationLock.EnterWriteLock();
+            nationLock.EnterWriteLock();
             try
             {
                 int counter = 0;
@@ -113,20 +139,21 @@ namespace NationStatesAPIBot.Manager
                     }
                     foreach (string nationName in newNations)
                     {
-                        if (!await context.Nations.AsQueryable().AnyAsync(n => n.Name == nationName))
+                        if (!nationCache.Contains(nationName))
                         {
                             var time = DateTime.UtcNow;
                             await context.Nations.AddAsync(new Nation() { Name = nationName, StatusTime = time, Status = status, StatusId = status.Id });
-                            await context.SaveChangesAsync();
+                            nationCache.Add(nationName);
                             counter++;
                         }
                     }
+                    await context.SaveChangesAsync();
                 }
                 return counter;
             }
             finally
             {
-                addNationLock.ExitWriteLock();
+                nationLock.ExitWriteLock();
             }
         }
     }

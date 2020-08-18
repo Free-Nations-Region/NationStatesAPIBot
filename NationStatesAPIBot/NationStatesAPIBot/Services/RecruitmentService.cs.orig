@@ -72,7 +72,7 @@ namespace NationStatesAPIBot.Services
             {
                 IsRecruiting = true;
                 Task.Run(async () => await GetNewNationsAsync());
-                //Task.Run(async () => await EnsurePoolFilledAsync());
+                Task.Run(async () => await EnsurePoolFilledAsync());
                 //Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
                 //Task.Run(async () => await UpdateRecruitmentStatsAsync());
@@ -270,7 +270,7 @@ namespace NationStatesAPIBot.Services
                 {
                     _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
                 }
-                await Task.Delay(600000);
+                await Task.Delay(300000);
             }
         }
 
@@ -285,16 +285,35 @@ namespace NationStatesAPIBot.Services
                 {
                     try
                     {
+<<<<<<< Updated upstream
                         PoolStatus = "Filling up with nations from regions to recruit from";
                         var regionId = _rnd.Next(regionsToRecruitFrom.Count);
                         var region = regionsToRecruitFrom.ElementAt(regionId);
 
-                        var recentlyFoundedNations = region.NATIONS.Where(n => n.LASTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)) && !NationManager.IsNationInDb(n.NAME) && DoesNationFitCriteria(n.NAME)).ToList();
+                        var recentlyFoundedNations = region.NATIONS.Where(n => n.LASTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)) && DoesNationFitCriteria(n.NAME)).ToList();
                         var neededNationsCount = _config.MinimumRecruitmentPoolSize - pendingCount;
-                        return;
                         var potentialRecruitmentTargets = recentlyFoundedNations.Take(neededNationsCount).Select(n => n.NAME).ToList();
-                        await AddNationToPendingAsync(id, potentialRecruitmentTargets, false);
+                        await AddNationToPendingAsync(id, potentialRecruitmentTargets);
                         pendingCount = NationManager.GetNationCountByStatusName("pending");
+=======
+                        fillingUp = true;
+                        _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Filling up pending pool now from {pendingCount} to {_config.MinimumRecruitmentPoolSize}"));
+                    }
+                    PoolStatus = "Filling up with random nations";
+                    var regionId = _rnd.Next(regionsToRecruitFrom.Count);
+                    var region = regionsToRecruitFrom.ElementAt(regionId);
+                    string nationName;
+                    do
+                    {
+                        var nationId = _rnd.Next(region.NATIONNAMES.Count);
+                        nationName = region.NATIONNAMES.ElementAt(nationId);
+                    }
+                    while (await NationManager.IsNationPendingSkippedSendOrFailedAsync(nationName) || !await IsNationRecruitableAsync(new Nation() { Name = nationName, StatusTime = DateTime.UtcNow }, id));
+                    var nation = await NationManager.GetNationAsync(nationName);
+                    if (nation != null)
+                    {
+                        await NationManager.SetNationStatusToAsync(nation, "pending");
+>>>>>>> Stashed changes
                     }
                     catch (Exception e)
                     {
