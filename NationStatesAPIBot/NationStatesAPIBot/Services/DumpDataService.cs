@@ -149,7 +149,6 @@ namespace NationStatesAPIBot.Services
         {
             IsUpdating = true;
             DataAvailable = false;
-            _logger.LogDebug(_defaultEventId, GetLogMessage("No Dumpdata available"));
             if (IsLocalDataAvailable())
             {
                 _logger.LogDebug(_defaultEventId, GetLogMessage("Reading Dumps from local Filesystem"));
@@ -157,6 +156,7 @@ namespace NationStatesAPIBot.Services
             }
             else
             {
+                _logger.LogDebug(_defaultEventId, GetLogMessage("No Dumpdata available"));
                 _logger.LogDebug(_defaultEventId, GetLogMessage("Downloading and Reading Dumps"));
                 await DowloadAndReadDumpsAsync();
             }

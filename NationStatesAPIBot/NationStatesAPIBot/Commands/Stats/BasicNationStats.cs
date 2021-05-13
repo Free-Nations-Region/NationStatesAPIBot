@@ -135,7 +135,7 @@ namespace NationStatesAPIBot.Commands.Stats
                 var endorsements = nationStats.GetElementsByTagName("ENDORSEMENTS")[0].InnerText;
                 var builder = new EmbedBuilder();
                 var nations = endorsements.Split(",").ToList();
-                ;
+
                 if (!string.IsNullOrWhiteSpace(endorsements))
                 {
                     builder.WithTitle($"{nationName} was endorsed by {nations.Count} nations:");

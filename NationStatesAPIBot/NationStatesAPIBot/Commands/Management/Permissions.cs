@@ -68,7 +68,7 @@ namespace NationStatesAPIBot.Commands.Management
                 using (var dbContext = new BotDbContext(_config))
                 {
                     var perm = await dbContext.Permissions.AsQueryable().FirstOrDefaultAsync(p => p.Id == id);
-                    var channel = await Context.User.GetOrCreateDMChannelAsync();
+                    IDMChannel channel = await Context.User.GetOrCreateDMChannelAsync();
                     if (perm == null)
                     {
                         await channel.SendMessageAsync("Permission not found");

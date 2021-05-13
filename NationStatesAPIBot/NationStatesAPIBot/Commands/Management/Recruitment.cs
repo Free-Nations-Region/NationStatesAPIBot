@@ -12,6 +12,7 @@ using NationStatesAPIBot.Services;
 using NationStatesAPIBot.Manager;
 using System.Globalization;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 
 namespace NationStatesAPIBot.Commands.Management
 {
@@ -171,6 +172,8 @@ namespace NationStatesAPIBot.Commands.Management
         [Command("rstat"), Summary("Returns statistics to determine the effectiveness of recruitment")]
         public async Task DoGetRecruitmentStatsAsync()
         {
+            var watch = new Stopwatch();
+            watch.Start();
             if (await _permManager.IsAllowedAsync(PermissionType.ManageRecruitment, Context.User))
             {
                 await _recruitmentService.UpdateRecruitmentStatsAsync();
@@ -181,12 +184,7 @@ namespace NationStatesAPIBot.Commands.Management
                                         $"Pending (API): {_recruitmentService.ApiPending}{Environment.NewLine}" +
                                         $"Failed (API): {_recruitmentService.ApiFailed}{Environment.NewLine}" +
                                         $"Skipped (API) : {_recruitmentService.ApiSkipped}{Environment.NewLine}" +
-                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}{Environment.NewLine}" +
-                                        $"-- DataSource Dump : Last updated {DateTime.UtcNow.Subtract(DumpDataService.LastDumpUpdateTimeUtc).ToString("h'h 'm'm 's's'")} ago --{Environment.NewLine}" +
-                                        $"Recruited (API): {_recruitmentService.ApiRecruited} ({_recruitmentService.ApiRatio.ToString(_locale)}%){Environment.NewLine}" +
-                                        $"Recruited (Manual): {_recruitmentService.ManualRecruited} ({_recruitmentService.ManualRatio.ToString(_locale)}%){Environment.NewLine}" +
-                                        $"{Environment.NewLine}" +
-                                        $"Recruits which CTE'd or left the region are excluded.");
+                                        $"Reserved (Manual): {_recruitmentService.ManualReserved}{Environment.NewLine}{Environment.NewLine}");
                 builder.WithFooter(DiscordBotService.FooterString);
 
                 await ReplyAsync(embed: builder.Build());
@@ -195,6 +193,8 @@ namespace NationStatesAPIBot.Commands.Management
             {
                 await ReplyAsync(AppSettings._permissionDeniedResponse);
             }
+            watch.Stop();
+            Console.WriteLine(watch.Elapsed);
         }
     }
 }

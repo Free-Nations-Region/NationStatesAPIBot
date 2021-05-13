@@ -71,9 +71,9 @@ namespace NationStatesAPIBot.Services
             if (!IsRecruiting)
             {
                 IsRecruiting = true;
-                Task.Run(async () => await GetNewNationsAsync());
+
                 //Task.Run(async () => await EnsurePoolFilledAsync());
-                //Task.Run(async () => await RecruitAsync());
+                Task.Run(async () => await RecruitAsync());
                 RecruitmentStatus = "Started";
                 //Task.Run(async () => await UpdateRecruitmentStatsAsync());
                 _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment process started."));
@@ -253,55 +253,61 @@ namespace NationStatesAPIBot.Services
             }
         }
 
-        private async Task GetNewNationsAsync()
+        public async Task GetNewNationsAsync()
         {
-            var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNewNations);
-            while (IsRecruiting)
+            while (true)
             {
+                var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.GetNewNations);
                 try
                 {
-                    await _apiService.WaitForActionAsync(NationStatesApiRequestType.GetNewNations);
-                    PoolStatus = "Filling up with new nations";
+                    //PoolStatus = "Filling up with new nations";
+                    PoolStatus = "Waiting for new nations";
                     var result = await _apiService.GetNewNationsAsync(id);
                     await AddNationToPendingAsync(id, result);
-                    PoolStatus = "Waiting for new nations";
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(id, ex, LogMessageBuilder.Build(id, "An error occured."));
                 }
-                await Task.Delay(600000);
             }
         }
 
-        private async Task EnsurePoolFilledAsync()
+        public async Task EnsurePoolFilledAsync()
         {
             var id = LogEventIdProvider.GetEventIdByType(LoggingEvent.EnsurePoolFilled);
             List<REGION> regionsToRecruitFrom = await GetRegionToRecruitFromAsync(id);
-            while (IsRecruiting)
+
+            while (true)
             {
                 int pendingCount = NationManager.GetNationCountByStatusName("pending");
-                while (pendingCount < _config.MinimumRecruitmentPoolSize)
+                if (true)
                 {
                     try
                     {
-                        PoolStatus = "Filling up with nations from regions to recruit from";
+                        //PoolStatus = "Filling up with nations from regions to recruit from";
                         var regionId = _rnd.Next(regionsToRecruitFrom.Count);
                         var region = regionsToRecruitFrom.ElementAt(regionId);
-
-                        var recentlyFoundedNations = region.NATIONS.Where(n => n.LASTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)) && !NationManager.IsNationInDb(n.NAME) && DoesNationFitCriteria(n.NAME)).ToList();
+                        var candidates = regionsToRecruitFrom.SelectMany(region => region.NATIONS.Where(n => n.FIRSTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(14)) && !NationManager.IsNationInDb(n.NAME) && DoesNationFitCriteria(n.NAME))).ToList();
+                        var wacandidates = candidates.Where(n => n.WAMEMBER);
+                        //var recentlyFoundedNations = region.NATIONS.Where(n => n.FIRSTLOGIN > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)) && !NationManager.IsNationInDb(n.NAME) && DoesNationFitCriteria(n.NAME)).ToList();
                         var neededNationsCount = _config.MinimumRecruitmentPoolSize - pendingCount;
-                        return;
-                        var potentialRecruitmentTargets = recentlyFoundedNations.Take(neededNationsCount).Select(n => n.NAME).ToList();
-                        await AddNationToPendingAsync(id, potentialRecruitmentTargets, false);
-                        pendingCount = NationManager.GetNationCountByStatusName("pending");
+
+                        var potentialRecruitmentTargets = wacandidates.Take(neededNationsCount).ToList();
+                        if (potentialRecruitmentTargets.Count < neededNationsCount)
+                        {
+                            potentialRecruitmentTargets.AddRange(candidates.Take(neededNationsCount - potentialRecruitmentTargets.Count).ToList());
+                        }
+                        //candidates.Take(neededNationsCount).Select(n => n.NAME).ToList();
+                        _logger.LogInformation($"EnsurePoolFilled would have added {potentialRecruitmentTargets.Count} nations to the pool if properly enabled.");
+                        //await AddNationToPendingAsync(id, candidates.Select(n => n.NAME).ToList(), false);
+                        //pendingCount = NationManager.GetNationCountByStatusName("pending");
                     }
                     catch (Exception e)
                     {
                         _logger.LogError(id, e, "Error:");
                     }
                 }
-                await Task.Delay(600000);
+                await Task.Delay(27000000);
             }
         }
 
@@ -365,70 +371,75 @@ namespace NationStatesAPIBot.Services
             {
                 try
                 {
+                    if (NationManager.GetNationCountByStatusName("pending") == 0)
+                    {
+                        _logger.LogWarning("Delaying API recruitment for 15 minutes due to lack of recruitable nations");
+                        RecruitmentStatus = "Throttled: lack of nations";
+                        await Task.Delay(900000);
+                    }
+                    pendingNations = NationManager.GetNationsByStatusName("reserved_api");
                     if (pendingNations.Count == 0)
                     {
-                        if (NationManager.GetNationCountByStatusName("pending") == 0)
+                        var numberToRequest = 10;
+                        await foreach (var resNation in GetRecruitableNationsAsync(numberToRequest, true, _defaulEventId))
                         {
-                            _logger.LogWarning("Delaying API recruitment for 15 minutes due to lack of recruitable nations");
-                            RecruitmentStatus = "Throttled: lack of nations";
-                            await Task.Delay(900000);
+                            pendingNations.Add(resNation);
                         }
-                        pendingNations = NationManager.GetNationsByStatusName("reserved_api");
-                        if (pendingNations.Count < 10)
+                        if (pendingNations.Count < numberToRequest)
                         {
-                            var numberToRequest = 10 - pendingNations.Count;
-                            await foreach (var resNation in GetRecruitableNationsAsync(numberToRequest, true, _defaulEventId))
+                            RecruitmentStatus = "Throttled: lack of of nations";
+                            _logger.LogWarning("Didn't received enough recruitable nations");
+                        }
+                        else
+                        {
+                            RecruitmentStatus = "Fully operational";
+                        }
+                        foreach (var pendingNation in pendingNations)
+                        {
+                            await NationManager.SetNationStatusToAsync(pendingNation, "reserved_api");
+                        }
+                    }
+
+                    if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
+                    {
+                        bool recruitable = false;
+                        do
+                        {
+                            var picked = pendingNations.Take(1);
+                            var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
+                            recruitable = await IsNationRecruitableAsync(nation, _defaulEventId);
+                            if (nation != null)
                             {
-                                pendingNations.Add(resNation);
-                            }
-                            if (pendingNations.Count < numberToRequest)
-                            {
-                                RecruitmentStatus = "Throttled: lack of of nations";
-                                _logger.LogWarning("Didn't received enough recruitable nations");
+                                if (recruitable)
+                                {
+                                    if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
+                                    {
+                                        await NationManager.SetNationStatusToAsync(nation, "send");
+                                        _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Telegram to {nation.Name} queued successfully."));
+                                    }
+                                    else
+                                    {
+                                        _logger.LogWarning(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
+                                        await NationManager.SetNationStatusToAsync(nation, "failed");
+                                    }
+                                }
+                                pendingNations.Remove(nation);
                             }
                             else
                             {
-                                RecruitmentStatus = "Fully operational";
-                            }
-                            foreach (var pendingNation in pendingNations)
-                            {
-                                await NationManager.SetNationStatusToAsync(pendingNation, "reserved_api");
+                                _logger.LogCritical(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "No nation to recruit found."));
                             }
                         }
-                    }
-                    var picked = pendingNations.Take(1);
-                    var nation = picked.Count() > 0 ? picked.ToArray()[0] : null;
-                    if (nation != null)
-                    {
-                        if (await _apiService.IsNationStatesApiActionReadyAsync(NationStatesApiRequestType.SendRecruitmentTelegram, true))
-                        {
-                            if (await IsNationRecruitableAsync(nation, _defaulEventId))
-                            {
-                                if (await _apiService.SendRecruitmentTelegramAsync(nation.Name))
-                                {
-                                    await NationManager.SetNationStatusToAsync(nation, "send");
-                                    _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Telegram to {nation.Name} queued successfully."));
-                                }
-                                else
-                                {
-                                    _logger.LogWarning(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
-                                    await NationManager.SetNationStatusToAsync(nation, "failed");
-                                }
-                            }
-                            pendingNations.Remove(nation);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogCritical(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "No nation to recruit found."));
+                        while (!recruitable && pendingNations.Count > 0);
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(_defaulEventId, ex, LogMessageBuilder.Build(_defaulEventId, "An error occured."));
                 }
-                await Task.Delay(60000);
+                await Task.Delay(10000);
             }
+
             if (!_config.EnableRecruitment)
             {
                 _logger.LogWarning(_defaulEventId, "Recruitment disabled.");
@@ -440,41 +451,28 @@ namespace NationStatesAPIBot.Services
             return IsReceivingRecruitableNations ? currentRNStatus.ToString() : "No /rn command currently running.";
         }
 
-        public async Task UpdateRecruitmentStatsAsync()
+        public Task UpdateRecruitmentStatsAsync()
         {
             try
             {
                 _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Updating Recruitment Stats"));
-                var today = DateTime.Today.Date;
-
-                var sent = NationManager.GetNationsByStatusName("send").Select(n => n.Name).ToList();
-                var manual = NationManager.GetNationsByStatusName("reserved_manual").Select(n => n.Name).ToList();
-                var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(_config.NationStatesRegionName));
-
-                var apiRecruited = region.NATIONS.Where(n => sent.Any(s => n.NAME == s)).Select(n => n.NAME).ToList();
-                var manualRecruited = region.NATIONS.Where(n => manual.Any(m => n.NAME == m)).Select(n => n.NAME).ToList();
-
                 RStatDbUpdate();
-
-                ApiRecruited = apiRecruited.Count;
-                ApiRatio = Math.Round((100 * ApiRecruited / (sent.Count + ApiFailed + 0.0)), 2);
-                ManualReserved = manual.Count;
-                ManualRecruited = manualRecruited.Count;
-                ManualRatio = Math.Round((100 * ManualRecruited / (manual.Count + 0.0)), 2);
                 _logger.LogInformation(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, "Recruitment Stats Updated"));
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(_defaulEventId, ex, LogMessageBuilder.Build(_defaulEventId, "A critical error occured."));
             }
+            return Task.CompletedTask;
         }
 
         private void RStatDbUpdate()
         {
-            ApiSent = NationManager.GetNationsByStatusName("send").Count;
-            ApiPending = NationManager.GetNationsByStatusName("pending").Count;
-            ApiSkipped = NationManager.GetNationsByStatusName("skipped").Count;
-            ApiFailed = NationManager.GetNationsByStatusName("failed").Count;
+            ApiSent = NationManager.GetNationCountByStatusName("send");
+            ApiPending = NationManager.GetNationCountByStatusName("pending");
+            ApiSkipped = NationManager.GetNationCountByStatusName("skipped");
+            ApiFailed = NationManager.GetNationCountByStatusName("failed");
+            ManualReserved = NationManager.GetNationCountByStatusName("reserved_manual");
         }
     }
 }

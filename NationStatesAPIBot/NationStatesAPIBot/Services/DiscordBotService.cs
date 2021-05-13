@@ -127,7 +127,7 @@ namespace NationStatesAPIBot.Services
 
         public async Task RunAsync()
         {
-            _logger.LogInformation($"--- DiscordBotService started ---");
+            _logger.LogInformation($"--- DiscordBotService starting ---");
             await NationManager.InitializeAsync(_config);
             UserManager.Initialize(_config);
             DiscordClient = new DiscordSocketClient();
@@ -141,7 +141,11 @@ namespace NationStatesAPIBot.Services
             await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), Program.ServiceProvider);
             await DiscordClient.LoginAsync(TokenType.Bot, _config.DiscordBotLoginToken);
             await DiscordClient.StartAsync();
+            var recruitmentService = Program.ServiceProvider.GetService<RecruitmentService>();
+            _ = Task.Run(async () => await recruitmentService.GetNewNationsAsync());
+            //_ = Task.Run(async () => await recruitmentService.EnsurePoolFilledAsync());
             IsRunning = true;
+            _logger.LogInformation($"--- DiscordBotService started ---");
         }
 
         private void SetUpDiscordEvents()

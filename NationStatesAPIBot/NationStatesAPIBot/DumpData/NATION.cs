@@ -1,5 +1,6 @@
 ﻿using NationStatesAPIBot.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Xml.Linq;
 
@@ -44,7 +45,7 @@ namespace NationStatesAPIBot.DumpData
                 {
                     if (region.NATIONS == null)
                     {
-                        region.NATIONS = new HashSet<NATION>(region.NATIONNAMES.Count);
+                        region.NATIONS = new ConcurrentBag<NATION>();
                     }
                     region.NATIONS.Add(this);
                 }
