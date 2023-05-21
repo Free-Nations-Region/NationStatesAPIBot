@@ -198,10 +198,37 @@ namespace NationStatesAPIBot.Services
                 isValid = isValid && !nationName.Contains("founder", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("shit", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("damn", StringComparison.InvariantCultureIgnoreCase);
-                isValid = isValid && !nationName.Contains("facist", StringComparison.InvariantCultureIgnoreCase);
-                isValid = isValid && !nationName.Contains("facism", StringComparison.InvariantCultureIgnoreCase);
+                // Catches facis* like facist(s), facism
+                isValid = isValid && !nationName.Contains("facis", StringComparison.InvariantCultureIgnoreCase);
+                // Catches fascis* like fascist(s), fascism
+                isValid = isValid && !nationName.Contains("fascis", StringComparison.InvariantCultureIgnoreCase);
+                // Catches fascis* like faschist(en), faschismus
+                isValid = isValid && !nationName.Contains("faschis", StringComparison.InvariantCultureIgnoreCase);
+                // Catches racis* like racist(s), racism
+                isValid = isValid && !nationName.Contains("racis", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("homophop", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("transphop", StringComparison.InvariantCultureIgnoreCase);
+                // Catches maois* like maoist(s), maoism
+                isValid = isValid && !nationName.Contains("maois", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("nazi", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("nationalsocial", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("national_social", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("national-social", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("nationalsozial", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("national_sozial", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("national-sozial", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("hitler", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("macht", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("wehr", StringComparison.InvariantCultureIgnoreCase);
+                // Catches preus* like preussen, preusisch, preusisches etc.
+                isValid = isValid && !nationName.Contains("preus", StringComparison.InvariantCultureIgnoreCase);
+                // Catches prus* like prussia, prussian etc.
+                isValid = isValid && !nationName.Contains("prus", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("reich", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("arisch", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("aryan", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("deutsch", StringComparison.InvariantCultureIgnoreCase);
+                isValid = isValid && !nationName.Contains("german", StringComparison.InvariantCultureIgnoreCase);
                 isValid = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
                 isValid = isValid && !ContainsRomanNumber(nationName);
                 //_logger.LogDebug($"{nationName} criteria fit: {isValid}");
@@ -224,7 +251,8 @@ namespace NationStatesAPIBot.Services
             try
             {
                 await _dumpDataService.WaitForDataAvailabilityAsync();
-                if (nation.StatusTime < DumpDataService.LastDumpUpdateTimeUtc)
+                var lastUpdated = DumpDataService.LastDumpUpdateTimeUtc;
+                if (nation.StatusTime < new DateTimeOffset(lastUpdated.Year, lastUpdated.Month, lastUpdated.Day, 6, 30, 0, TimeSpan.Zero).UtcDateTime)
                 {
                     var exists = await _dumpDataService.DoesNationExistInDumpAsync(nation.Name);
                     if (!exists)

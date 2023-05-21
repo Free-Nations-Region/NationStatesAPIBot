@@ -104,22 +104,31 @@ namespace NationStatesAPIBot.Commands.Management
                                 _recruitmentService.StartReceiveRecruitableNations(currentRN);
                                 await ReplyAsync($"{_actionQueued}{Environment.NewLine}{Environment.NewLine}You can request the status of this command using /rns. Finish expected in approx. (mm:ss): {currentRN.ExpectedIn():mm\\:ss}");
                                 StringBuilder builder = new StringBuilder();
+                                StringBuilder linkBuilder = new StringBuilder("https://www.nationstates.net/page=compose_telegram?tgto=");
                                 var counter = 0;
                                 await foreach (var nation in _recruitmentService.GetRecruitableNationsAsync(number, false, id))
                                 {
                                     counter++;
-                                    builder.Append($"{nation.Name}, ");
                                     if (counter % 8 == 0)
                                     {
-                                        await channel.SendMessageAsync(builder.ToString());
+                                        builder.Append($"{nation.Name}");
+                                        linkBuilder.Append($"{nation.Name}");
+                                        await channel.SendMessageAsync(string.Concat("=====", Environment.NewLine, builder.ToString(), Environment.NewLine, Environment.NewLine, "Feeling lazy today? Use the link below.", Environment.NewLine, linkBuilder.ToString()));
                                         builder.Clear();
+                                        linkBuilder.Clear();
+                                        linkBuilder.Append("https://www.nationstates.net/page=compose_telegram?tgto=");
                                         _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Dispatched {counter}/{number} nations to {Context.User.Username}"));
+                                    }
+                                    else
+                                    {
+                                        builder.Append($"{nation.Name}, ");
+                                        linkBuilder.Append($"{nation.Name},");
                                     }
                                     await NationManager.SetNationStatusToAsync(nation, "reserved_manual");
                                 }
                                 if (builder.Length > 0)
                                 {
-                                    await channel.SendMessageAsync(builder.ToString());
+                                    await channel.SendMessageAsync(string.Concat("=====", Environment.NewLine, builder.ToString(), Environment.NewLine, Environment.NewLine, "Feeling lazy today? Use the link below.", Environment.NewLine, linkBuilder.ToString()));
                                     _logger.LogInformation(id, LogMessageBuilder.Build(id, $"Dispatched {counter}/{number} nations to {Context.User.Username}"));
                                 }
                                 if (counter < number)

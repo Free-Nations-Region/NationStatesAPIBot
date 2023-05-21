@@ -111,7 +111,7 @@ namespace NationStatesAPIBot.Commands
                     }
                     if (!int.TryParse(args[1], out int max) && max < 10000001)
                     {
-                        await ReplyAsync($"Whoops... {args[1]} is not a (valid) number. Numbers needs to be between {int.MinValue} and {int.MaxValue}");
+                        await ReplyAsync($"Whoops... {args[1]} is not a (valid) number.  Numbers needs to be between -10000000 and 10000000");
                         return;
                     }
                     if (min < max)

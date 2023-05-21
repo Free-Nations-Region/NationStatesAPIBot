@@ -170,9 +170,9 @@ dotnet_naming_rule.async_should_be_ends_with_async.severity = warning
 dotnet_naming_rule.async_should_be_ends_with_async.symbols = async
 dotnet_naming_rule.async_should_be_ends_with_async.style = ends_with_async
 
-dotnet_naming_rule.readonly_should_be_starts_with___.severity = warning
-dotnet_naming_rule.readonly_should_be_starts_with___.symbols = readonly
-dotnet_naming_rule.readonly_should_be_starts_with___.style = starts_with___
+dotnet_naming_rule.private_should_be_starts_with___.severity = warning
+dotnet_naming_rule.private_should_be_starts_with___.symbols = readonly
+dotnet_naming_rule.private_should_be_starts_with___.style = starts_with___
 
 dotnet_naming_rule.private_should_be_mixed_case.severity = suggestion
 dotnet_naming_rule.private_should_be_mixed_case.symbols = private

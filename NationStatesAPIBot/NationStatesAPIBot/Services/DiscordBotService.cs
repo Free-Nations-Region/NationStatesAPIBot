@@ -54,7 +54,7 @@ namespace NationStatesAPIBot.Services
                     socketMsg.Content.StartsWith(_config.SeperatorChar) &&
                     await _permManager.IsAllowedAsync(PermissionType.ExecuteCommands, socketUser);
                 return _config.Configuration == "development" ?
-                    await _permManager.IsBotAdminAsync(socketUser) || socketUser.Id == 282292866762539010 && value
+                    await _permManager.IsBotAdminAsync(socketUser) || socketUser.Id == 282292866762539010 || socketUser.Id == 209043127795843082 && value
                     : value;
             }
             return await Task.FromResult(false);
@@ -146,6 +146,7 @@ namespace NationStatesAPIBot.Services
             //_ = Task.Run(async () => await recruitmentService.EnsurePoolFilledAsync());
             IsRunning = true;
             _logger.LogInformation($"--- DiscordBotService started ---");
+            recruitmentService.StartRecruitment();
         }
 
         private void SetUpDiscordEvents()
@@ -183,6 +184,7 @@ namespace NationStatesAPIBot.Services
         private Task DiscordClient_Ready()
         {
             _logger.LogInformation("--- Discord Client Ready ---");
+            
             return Task.CompletedTask;
         }
 

@@ -50,18 +50,18 @@ namespace NationStatesAPIBot.Commands.Stats
                 }
                 _logger.LogInformation(id, LogMessageBuilder.Build(id, $"BasicRegionStats for {regionName} requested."));
                 XmlDocument regionStats = await _dataService.GetRegionStatsAsync(regionName, id);
-                var region = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(regionName));
-                if (regionStats != null && region != null)
+                var dumpRegion = await _dumpDataService.GetRegionAsync(BaseApiService.ToID(regionName));
+                if (regionStats != null && dumpRegion != null)
                 {
                     var name = regionStats.GetElementsByTagName("NAME").Item(0)?.InnerText;
                     var numnations = regionStats.GetElementsByTagName("NUMNATIONS").Item(0)?.InnerText;
                     var wadelegate = regionStats.GetElementsByTagName("DELEGATE").Item(0)?.InnerText;
-                    var founder = region.FOUNDER;
+                    var founder = dumpRegion.FOUNDER;
                     var founded = regionStats.GetElementsByTagName("FOUNDED").Item(0)?.InnerText;
-                    var flagUrl = region.FLAG;
+                    var flagUrl = dumpRegion.FLAG;
                     var power = regionStats.GetElementsByTagName("POWER").Item(0)?.InnerText;
-                    var waNationCount = region.WANATIONS.Count();
-                    var endoCount = region.WANATIONS.Sum(n => n.ENDORSEMENTS.Count);
+                    var waNationCount = dumpRegion.WANATIONS.Count();
+                    var endoCount = dumpRegion.WANATIONS.Sum(n => n.ENDORSEMENTS.Count);
                     var census = regionStats.GetElementsByTagName("CENSUS").Item(0)?.ChildNodes;
                     var regionalAvgInfluence = census.Item(0)?.ChildNodes.Item(0)?.InnerText;
 

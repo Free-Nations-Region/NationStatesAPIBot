@@ -127,5 +127,11 @@ namespace NationStatesAPIBot.Commands.Management
                 PingPongStats.Pong += 1;
             }
         }
+
+        [Command("guf")]
+        public async Task DoLolAsync()
+        {
+            await ReplyAsync("lol");
+        }
     }
 }

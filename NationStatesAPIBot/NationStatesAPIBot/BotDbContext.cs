@@ -6,12 +6,13 @@ namespace NationStatesAPIBot
 {
     public class BotDbContext : DbContext
     {
-        AppSettings _config;
+        private AppSettings _config;
 
         public BotDbContext(AppSettings appSettings)
         {
             _config = appSettings;
         }
+
         public DbSet<Nation> Nations { get; set; }
         public DbSet<NationStatus> NationStatuses { get; set; }
         public DbSet<User> Users { get; set; }
@@ -33,7 +34,6 @@ namespace NationStatesAPIBot
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             GenerateRelations(modelBuilder);
-
         }
 
         private void GenerateRelations(ModelBuilder modelBuilder)

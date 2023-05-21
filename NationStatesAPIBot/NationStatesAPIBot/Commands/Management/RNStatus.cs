@@ -38,11 +38,11 @@ namespace NationStatesAPIBot.Commands.Management
             StringBuilder builder = new StringBuilder();
             builder.AppendLine($"--- Status of current /rn command ---");
             builder.AppendLine($"Issued by: {IssuedBy}");
-            builder.AppendLine($"Time spend (mm:ss): {DateTimeOffset.UtcNow.Subtract(StartedAt):mm\\:ss}");
+            builder.AppendLine($"Time spend (hh:mm:ss): {DateTimeOffset.UtcNow.Subtract(StartedAt):hh\\:mm\\:ss}");
             builder.AppendLine($"Current status: {CurrentCount}/{FinalCount}");
             builder.AppendLine($"Nations skipped: {SkippedCount}");
             builder.AppendLine($"Avg. Time per found nation (mm:ss): {AvgTimePerFoundNation:mm\\:ss}");
-            builder.AppendLine($"Finish expected in approx. (mm:ss): {ExpectedIn():mm\\:ss}");
+            builder.AppendLine($"Finish expected in approx. (hh:mm:ss): {ExpectedIn():hh\\:mm\\:ss}");
             builder.AppendLine($"--- End of status ---");
             return builder.ToString();
         }

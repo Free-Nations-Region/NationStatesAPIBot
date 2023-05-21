@@ -233,7 +233,7 @@ namespace NationStatesAPIBot.Services
                 stopWatch.Restart();
                 await WriteDumpToLocalFileSystemAsync(NationStatesDumpType.Nations, nationsStream);
                 stopWatch.Stop();
-                _logger.LogDebug(_defaultEventId, GetLogMessage($"Writing nation dump from local cache took {stopWatch.Elapsed} to complete."));
+                _logger.LogDebug(_defaultEventId, GetLogMessage($"Writing nation dump to local cache took {stopWatch.Elapsed} to complete."));
                 ReadDumpsFromLocalFileSystem();
             }
             finally
