@@ -178,6 +178,7 @@ namespace NationStatesAPIBot.Services
                     {
                         _logger.LogWarning(id, LogMessageBuilder.Build(id, $"Recruitable nation check: {nation.Name} failed."));
                         await NationManager.SetNationStatusToAsync(nation, "failed");
+                        cachedNations.Remove(nation.Name);
                         return false;
                     }
                 }
@@ -185,8 +186,9 @@ namespace NationStatesAPIBot.Services
                 {
                     _logger.LogDebug(id, LogMessageBuilder.Build(id, $"{nation.Name} does not fit criteria and is therefore skipped."));
                 }
+                await NationManager.SetNationStatusToAsync(nation, "skipped");
+                cachedNations.Remove(nation.Name);
             }
-            await NationManager.SetNationStatusToAsync(nation, "skipped");
             return false;
         }
 
@@ -229,6 +231,7 @@ namespace NationStatesAPIBot.Services
                 isValid = isValid && !nationName.Contains("aryan", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("deutsch", StringComparison.InvariantCultureIgnoreCase);
                 isValid = isValid && !nationName.Contains("german", StringComparison.InvariantCultureIgnoreCase);
+                // Catches anything with numbers in it's name
                 isValid = !nationName.Any(c => char.IsDigit(c)) && nationName.Count(c => c == nationName[0]) != nationName.Length;
                 isValid = isValid && !ContainsRomanNumber(nationName);
                 //_logger.LogDebug($"{nationName} criteria fit: {isValid}");
@@ -246,8 +249,17 @@ namespace NationStatesAPIBot.Services
             return parts.Any(n => Regex.IsMatch(n, _romanNumberFilter, RegexOptions.IgnoreCase));
         }
 
+
+        Dictionary<string, int> cachedNations = new();
         public async Task<int> WouldReceiveTelegramAsync(Nation nation, EventId id)
         {
+            var WouldReceiveResult = -1;
+            if (cachedNations.TryGetValue(nation.Name, out int value))
+            {
+                WouldReceiveResult = value;
+                _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Nation {nation.Name} WouldReceive served from cache."));
+                return WouldReceiveResult;
+            }
             try
             {
                 await _dumpDataService.WaitForDataAvailabilityAsync();
@@ -258,7 +270,9 @@ namespace NationStatesAPIBot.Services
                     if (!exists)
                     {
                         _logger.LogDebug(id, LogMessageBuilder.Build(id, $"Nation {nation.Name} probably CTEd according to Dump. Skipped."));
-                        return 0;
+                        cachedNations[nation.Name] = 0;
+                        WouldReceiveResult = 0;
+                        return WouldReceiveResult;
                     }
                 }
 
@@ -266,18 +280,24 @@ namespace NationStatesAPIBot.Services
                 if (result != null)
                 {
                     XmlNodeList canRecruitNodeList = result.GetElementsByTagName("TGCANRECRUIT");
-                    return canRecruitNodeList[0].InnerText == "1" ? 1 : 0;
+                    WouldReceiveResult = canRecruitNodeList[0].InnerText == "1" ? 1 : 0;
                 }
                 else
                 {
                     _logger.LogDebug(id, LogMessageBuilder.Build(id, $" WouldReceive -> '{nation.Name}' => null. Skipped."));
-                    return 0;
+                    WouldReceiveResult = 0;
                 }
+                return WouldReceiveResult;
             }
             catch (Exception ex)
             {
                 _logger.LogError(id, ex, LogMessageBuilder.Build(id, $"GetWouldReceiveTelegramAsync '{nation.Name}' failed."));
-                return 2;
+                WouldReceiveResult = 2;
+                return WouldReceiveResult;
+            }
+            finally
+            {
+                cachedNations[nation.Name] = WouldReceiveResult;
             }
         }
 
@@ -450,6 +470,7 @@ namespace NationStatesAPIBot.Services
                                         _logger.LogWarning(_defaulEventId, LogMessageBuilder.Build(_defaulEventId, $"Sending of a Telegram to {nation.Name} failed."));
                                         await NationManager.SetNationStatusToAsync(nation, "failed");
                                     }
+                                    cachedNations.Remove(nation.Name);
                                 }
                                 pendingNations.Remove(nation);
                             }

@@ -278,25 +278,37 @@ namespace NationStatesAPIBot.Services
         private HashSet<REGION> ParseRegionsFromStream(Stream stream)
         {
             var xml = XDocument.Load(stream, LoadOptions.None);
-            return xml.Descendants("REGION").AsParallel().Select(m =>
-                new REGION
+            return xml.Descendants("REGION").AsParallel().Select(m => {
+                var name = BaseApiService.ToID(m.Element("NAME").Value);
+                var numnations = (int) m.Element("NUMNATIONS");
+                var nationnames = m.Element("NATIONS").Value.Split(":").ToHashSet();
+                var delegateVal = m.Element("DELEGATE").Value;
+                var delegateVotes = (int) m.Element("DELEGATEVOTES");
+                var delegateAuth = m.Element("DELEGATEAUTH").Value;
+                var founder = m.Element("FOUNDER").Value;
+                var power = m.Element("POWER").Value;
+                var flag = m.Element("FLAG").Value;
+                var lastUpdate = DateTimeOffset.FromUnixTimeSeconds((int) m.Element("LASTUPDATE"));
+                var embassies = m.Element("EMBASSIES").Descendants("EMBASSY").Select(e => e.Value).ToList();
+                return new REGION
                 {
-                    NAME = BaseApiService.ToID(m.Element("NAME").Value),
+                    NAME = name,
                     DumpPosition = m.NodesBeforeSelf().Count(),
-                    NUMNATIONS = (int) m.Element("NUMNATIONS"),
-                    NATIONNAMES = m.Element("NATIONS").Value.Split(":").ToHashSet(),
-                    DELEGATE = m.Element("DELEGATE").Value,
-                    DELEGATEVOTES = (int) m.Element("DELEGATEVOTES"),
-                    DELEGATEAUTH = m.Element("DELEGATEAUTH").Value,
-                    FOUNDER = m.Element("FOUNDER").Value,
-                    FOUNDERAUTH = m.Element("FOUNDERAUTH").Value,
-                    POWER = m.Element("POWER").Value,
-                    FLAG = m.Element("FLAG").Value,
-                    LASTUPDATE = DateTimeOffset.FromUnixTimeSeconds((int) m.Element("LASTUPDATE")),
+                    NUMNATIONS = numnations,
+                    NATIONNAMES = nationnames,
+                    DELEGATE = delegateVal,
+                    DELEGATEVOTES = delegateVotes,
+                    DELEGATEAUTH = delegateAuth,
+                    FOUNDER = founder,
+                    FOUNDERAUTH = "- Broken -",
+                    POWER = power,
+                    FLAG = flag,
+                    LASTUPDATE = lastUpdate,
                     OFFICERS = BuildOfficers(m),
-                    EMBASSIES = m.Element("EMBASSIES").Descendants("EMBASSY").Select(e => e.Value).ToList(),
+                    EMBASSIES = embassies,
                     WABADGES = BuildWABadges(m)
-                }).ToHashSet();
+                };
+            }).ToHashSet();
         }
 
         private List<OFFICER> BuildOfficers(XElement m)

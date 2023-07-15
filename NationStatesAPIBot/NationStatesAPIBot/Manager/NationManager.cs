@@ -105,27 +105,30 @@ namespace NationStatesAPIBot.Manager
         {
             using (var dbContext = new BotDbContext(_config))
             {
-                var current = nation.Status;
-                var status = await dbContext.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == statusName);
-                if (status == null)
+                if (nation is not null)
                 {
-                    status = new NationStatus() { Name = statusName };
-                    await dbContext.NationStatuses.AddAsync(status);
+                    var current = nation.Status;
+                    var status = await dbContext.NationStatuses.AsQueryable().FirstOrDefaultAsync(n => n.Name == statusName);
+                    if (status == null)
+                    {
+                        status = new NationStatus() { Name = statusName };
+                        await dbContext.NationStatuses.AddAsync(status);
+                        await dbContext.SaveChangesAsync();
+                    }
+                    nation.Status = status;
+                    nation.StatusId = status.Id;
+                    nation.StatusTime = DateTime.UtcNow;
+                    dbContext.Nations.Update(nation);
                     await dbContext.SaveChangesAsync();
                 }
-                nation.Status = status;
-                nation.StatusId = status.Id;
-                nation.StatusTime = DateTime.UtcNow;
-                dbContext.Nations.Update(nation);
-                await dbContext.SaveChangesAsync();
             }
         }
 
         public static async Task<int> AddUnknownNationsAsPendingAsync(List<string> newNations)
         {
-            nationLock.EnterWriteLock();
             try
             {
+                nationLock.EnterWriteLock();
                 int counter = 0;
                 using (var context = new BotDbContext(_config))
                 {
@@ -152,7 +155,10 @@ namespace NationStatesAPIBot.Manager
             }
             finally
             {
-                nationLock.ExitWriteLock();
+                if (nationLock.IsWriteLockHeld)
+                {
+                    nationLock.ExitWriteLock();
+                }
             }
         }
     }
