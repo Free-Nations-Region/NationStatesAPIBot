@@ -1,4 +1,7 @@
 # NationStatesAPIBot
+
+## This project is not maintained anymore and has been deprecated in favor for [a rewrite](https://github.com/Free-Nations-Region/CyborgianStates) 
+
 A Bot for performing API Actions on NationStates and to provide other features via DiscordAPI. It can be controlled via discord.
 
 I wrote this bot for the discord server of the [region](https://www.nationstates.net/region=the_free_nations_region "The Free Nations Region") where i am currently member of. 
@@ -14,9 +17,3 @@ It is intended to provide:
 It will be extended as needed.
 
 It probably can be used for general purpose as well.
-
-Feel free to contribute!
-
-[Release Notes](https://github.com/drehtisch/NationStatesAPIBot/wiki/Release-Notes)  
-[Command Reference](https://github.com/drehtisch/NationStatesAPIBot/wiki/Command-Reference)  
-[Roadmap](https://github.com/drehtisch/NationStatesAPIBot/wiki/Roadmap)  
